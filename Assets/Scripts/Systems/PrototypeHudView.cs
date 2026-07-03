@@ -22,6 +22,7 @@ namespace CIGAgamejam
         private Text _logText;
         private RectTransform _dayNightNeedle;
         private RectTransform _toolMenuRoot;
+        private RectTransform _actionButtonRoot;
         private int _currentDay = 1;
         private int _maxDays = 1;
         private int _inStoreCount;
@@ -65,20 +66,50 @@ namespace CIGAgamejam
         private void BuildHud()
         {
             Canvas canvas = CreateCanvas();
-            RectTransform topBar = CreatePanel(canvas.transform, "Top Bar", AnchorTopStretch(74f), new Color(0.07f, 0.08f, 0.09f, 0.94f));
-            RectTransform bottomBar = CreatePanel(canvas.transform, "Tool Menu", AnchorBottomStretch(100f), new Color(0.08f, 0.08f, 0.08f, 0.94f));
-            RectTransform logPanel = CreatePanel(canvas.transform, "Log Panel", AnchorRightMiddle(270f, 132f), new Color(0.05f, 0.05f, 0.05f, 0.78f));
-            _toolMenuRoot = bottomBar;
+            RectTransform topBar = CreatePanel(canvas.transform, "Top Bar", AnchorTopStretch(82f), new Color(0.07f, 0.08f, 0.09f, 0.94f));
+            RectTransform bottomBar = CreatePanel(canvas.transform, "Bottom Bar", AnchorBottomStretch(112f), new Color(0.08f, 0.08f, 0.08f, 0.94f));
+            RectTransform logPanel = CreatePanel(canvas.transform, "Log Panel", AnchorRightMiddle(300f, 138f), new Color(0.05f, 0.05f, 0.05f, 0.78f));
 
-            _confidenceText = CreateText(topBar, "Confidence", "\u4fe1\u5fc3 100%", 18, TextAnchor.MiddleLeft, new Vector2(12f, 0f), new Vector2(170f, 52f));
-            _flowText = CreateText(topBar, "Flow", "\u5ba2\u6d41 \u5e97\u51850 \u4eca\u65e50", 18, TextAnchor.MiddleLeft, new Vector2(188f, 0f), new Vector2(230f, 52f));
-            _phaseText = CreateText(topBar, "Phase", "\u7b2c1/1\u5929 \u591c\u665a", 18, TextAnchor.MiddleLeft, new Vector2(430f, 0f), new Vector2(180f, 52f));
-            _turnText = CreateText(topBar, "Turn", "\u56de\u5408 1", 18, TextAnchor.MiddleLeft, new Vector2(620f, 0f), new Vector2(110f, 52f));
+            HorizontalLayoutGroup topLayout = topBar.gameObject.AddComponent<HorizontalLayoutGroup>();
+            topLayout.padding = new RectOffset(16, 16, 10, 10);
+            topLayout.spacing = 14f;
+            topLayout.childAlignment = TextAnchor.MiddleLeft;
+            topLayout.childControlHeight = true;
+            topLayout.childControlWidth = false;
+            topLayout.childForceExpandHeight = true;
+            topLayout.childForceExpandWidth = false;
+
+            _confidenceText = CreateLayoutText(topBar, "Confidence", "\u4fe1\u5fc3 100%", 18, TextAnchor.MiddleLeft, 160f);
+            _flowText = CreateLayoutText(topBar, "Flow", "\u5ba2\u6d41 \u5e97\u51850 \u4eca\u65e50", 18, TextAnchor.MiddleLeft, 260f);
+            _phaseText = CreateLayoutText(topBar, "Phase", "\u7b2c1/1\u5929 \u591c\u665a", 18, TextAnchor.MiddleLeft, 170f);
+            _turnText = CreateLayoutText(topBar, "Turn", "\u56de\u5408 1", 18, TextAnchor.MiddleLeft, 100f);
+            AddFlexibleSpace(topBar);
             BuildDayNightTrack(topBar);
 
-            _logText = CreateText(logPanel, "Log Text", "\u4e8b\u4ef6\u65e5\u5fd7", 15, TextAnchor.UpperLeft, Vector2.zero, new Vector2(250f, 110f));
-            BuildToolButtons(bottomBar);
-            BuildActionButtons(bottomBar);
+            _logText = CreateText(logPanel, "Log Text", "\u4e8b\u4ef6\u65e5\u5fd7", 15, TextAnchor.UpperLeft, Vector2.zero, new Vector2(272f, 116f));
+
+            _toolMenuRoot = CreateContainer(bottomBar, "Tool Button Row", AnchorBottomToolRow());
+            HorizontalLayoutGroup toolLayout = _toolMenuRoot.gameObject.AddComponent<HorizontalLayoutGroup>();
+            toolLayout.padding = new RectOffset(0, 0, 0, 0);
+            toolLayout.spacing = 10f;
+            toolLayout.childAlignment = TextAnchor.MiddleLeft;
+            toolLayout.childControlHeight = false;
+            toolLayout.childControlWidth = false;
+            toolLayout.childForceExpandHeight = false;
+            toolLayout.childForceExpandWidth = false;
+
+            _actionButtonRoot = CreateContainer(bottomBar, "Action Button Row", AnchorBottomActionRow());
+            HorizontalLayoutGroup actionLayout = _actionButtonRoot.gameObject.AddComponent<HorizontalLayoutGroup>();
+            actionLayout.padding = new RectOffset(0, 0, 0, 0);
+            actionLayout.spacing = 10f;
+            actionLayout.childAlignment = TextAnchor.MiddleRight;
+            actionLayout.childControlHeight = false;
+            actionLayout.childControlWidth = false;
+            actionLayout.childForceExpandHeight = false;
+            actionLayout.childForceExpandWidth = false;
+
+            BuildToolButtons(_toolMenuRoot);
+            BuildActionButtons(_actionButtonRoot);
         }
 
         private Canvas CreateCanvas()
@@ -96,9 +127,15 @@ namespace CIGAgamejam
 
         private void BuildDayNightTrack(RectTransform topBar)
         {
-            RectTransform track = CreatePanel(topBar, "Day Night Track", new RectSpec(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-190f, 0f), new Vector2(280f, 16f)), new Color(0.2f, 0.2f, 0.22f, 1f));
-            CreateText(track, "Night Label", "\u591c", 14, TextAnchor.MiddleCenter, new Vector2(-120f, 23f), new Vector2(36f, 20f));
-            CreateText(track, "Day Label", "\u663c", 14, TextAnchor.MiddleCenter, new Vector2(120f, 23f), new Vector2(36f, 20f));
+            RectTransform trackRoot = CreateContainer(topBar, "Day Night Root", new RectSpec(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(300f, 56f), new Vector2(0f, 0.5f)));
+            LayoutElement rootLayout = trackRoot.gameObject.AddComponent<LayoutElement>();
+            rootLayout.preferredWidth = 300f;
+            rootLayout.minWidth = 230f;
+            rootLayout.preferredHeight = 56f;
+
+            RectTransform track = CreatePanel(trackRoot, "Day Night Track", new RectSpec(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -5f), new Vector2(270f, 16f)), new Color(0.2f, 0.2f, 0.22f, 1f));
+            CreateText(trackRoot, "Night Label", "\u591c", 14, TextAnchor.MiddleCenter, new Vector2(-118f, 16f), new Vector2(36f, 20f));
+            CreateText(trackRoot, "Day Label", "\u663c", 14, TextAnchor.MiddleCenter, new Vector2(118f, 16f), new Vector2(36f, 20f));
             _dayNightNeedle = CreatePanel(track, "Needle", new RectSpec(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(10f, 28f)), new Color(0.95f, 0.78f, 0.2f, 1f));
         }
 
@@ -122,29 +159,30 @@ namespace CIGAgamejam
                 parent,
                 $"Tool Button {tool.Id}",
                 $"{tool.DisplayName}\nx{_inventorySystem.GetCount(tool)}",
-                new Vector2(20f + index * 112f, 0f),
+                Vector2.zero,
                 new Vector2(104f, 70f),
                 () => _inputController?.SelectTool(tool));
 
+            AddFixedLayout(buttonTransform, 104f, 70f);
             _toolCountTexts[tool] = buttonTransform.GetComponentInChildren<Text>();
         }
 
         private void BuildActionButtons(RectTransform bottomBar)
         {
-            CreateButton(bottomBar, "Skip Button", "\u8df3\u8fc7", new Vector2(-250f, 0f), new Vector2(86f, 58f), () => _nightTurnSystem?.SkipTurn(), true);
-            CreateButton(bottomBar, "Day Button", "\u5f00\u59cb\u8425\u4e1a", new Vector2(-148f, 0f), new Vector2(118f, 58f), () => _gamePhaseSystem?.EndNightAndStartDay(), true);
-            CreateButton(bottomBar, "Result Button", "\u7ed3\u675f\u767d\u5929", new Vector2(-18f, 0f), new Vector2(118f, 58f), () => _gamePhaseSystem?.CompleteDaySimulation(), true);
-            CreateButton(bottomBar, "Next Button", "\u4e0b\u4e00\u591c", new Vector2(112f, 0f), new Vector2(100f, 58f), () => _gamePhaseSystem?.StartNextNightOrFail(), true);
+            AddFixedLayout(CreateButton(bottomBar, "Skip Button", "\u8df3\u8fc7", Vector2.zero, new Vector2(86f, 58f), () => _nightTurnSystem?.SkipTurn()), 86f, 58f);
+            AddFixedLayout(CreateButton(bottomBar, "Day Button", "\u5f00\u59cb\u8425\u4e1a", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.EndNightAndStartDay()), 118f, 58f);
+            AddFixedLayout(CreateButton(bottomBar, "Result Button", "\u7ed3\u675f\u767d\u5929", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.CompleteDaySimulation()), 118f, 58f);
+            AddFixedLayout(CreateButton(bottomBar, "Next Button", "\u4e0b\u4e00\u591c", Vector2.zero, new Vector2(100f, 58f), () => _gamePhaseSystem?.StartNextNightOrFail()), 100f, 58f);
         }
 
-        private RectTransform CreateButton(RectTransform parent, string name, string label, Vector2 anchoredPosition, Vector2 size, UnityEngine.Events.UnityAction action, bool alignRight = false)
+        private RectTransform CreateButton(RectTransform parent, string name, string label, Vector2 anchoredPosition, Vector2 size, UnityEngine.Events.UnityAction action)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             RectTransform rect = go.AddComponent<RectTransform>();
-            rect.anchorMin = alignRight ? new Vector2(1f, 0.5f) : new Vector2(0f, 0.5f);
+            rect.anchorMin = new Vector2(0f, 0.5f);
             rect.anchorMax = rect.anchorMin;
-            rect.pivot = alignRight ? new Vector2(1f, 0.5f) : new Vector2(0f, 0.5f);
+            rect.pivot = new Vector2(0f, 0.5f);
             rect.anchoredPosition = anchoredPosition;
             rect.sizeDelta = size;
 
@@ -153,7 +191,20 @@ namespace CIGAgamejam
             Button button = go.AddComponent<Button>();
             button.targetGraphic = image;
             button.onClick.AddListener(action);
-            CreateText(rect, "Label", label, 15, TextAnchor.MiddleCenter, Vector2.zero, size);
+            CreateStretchText(rect, "Label", label, 15, TextAnchor.MiddleCenter, new Vector2(6f, 4f));
+            return rect;
+        }
+
+        private RectTransform CreateContainer(Transform parent, string name, RectSpec spec)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            RectTransform rect = go.AddComponent<RectTransform>();
+            rect.anchorMin = spec.AnchorMin;
+            rect.anchorMax = spec.AnchorMax;
+            rect.pivot = spec.Pivot;
+            rect.anchoredPosition = spec.AnchoredPosition;
+            rect.sizeDelta = spec.SizeDelta;
             return rect;
         }
 
@@ -170,6 +221,36 @@ namespace CIGAgamejam
             Image image = go.AddComponent<Image>();
             image.color = color;
             return rect;
+        }
+
+        private Text CreateLayoutText(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, float preferredWidth)
+        {
+            Text text = CreateStretchText(parent, name, value, fontSize, anchor, Vector2.zero);
+            LayoutElement layoutElement = text.gameObject.AddComponent<LayoutElement>();
+            layoutElement.minWidth = preferredWidth * 0.75f;
+            layoutElement.preferredWidth = preferredWidth;
+            layoutElement.preferredHeight = 48f;
+            return text;
+        }
+
+        private Text CreateStretchText(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, Vector2 padding)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            RectTransform rect = go.AddComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = padding;
+            rect.offsetMax = -padding;
+            Text text = go.AddComponent<Text>();
+            text.text = value;
+            text.font = _font;
+            text.fontSize = fontSize;
+            text.color = Color.white;
+            text.alignment = anchor;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            return text;
         }
 
         private Text CreateText(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, Vector2 anchoredPosition, Vector2 size)
@@ -191,6 +272,24 @@ namespace CIGAgamejam
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
             return text;
+        }
+
+        private static void AddFlexibleSpace(RectTransform parent)
+        {
+            var go = new GameObject("Flexible Space");
+            go.transform.SetParent(parent, false);
+            go.AddComponent<RectTransform>();
+            LayoutElement layoutElement = go.AddComponent<LayoutElement>();
+            layoutElement.flexibleWidth = 1f;
+        }
+
+        private static void AddFixedLayout(RectTransform rect, float width, float height)
+        {
+            LayoutElement layoutElement = rect.gameObject.AddComponent<LayoutElement>();
+            layoutElement.minWidth = width;
+            layoutElement.preferredWidth = width;
+            layoutElement.minHeight = height;
+            layoutElement.preferredHeight = height;
         }
 
         private void RefreshAll()
@@ -284,9 +383,19 @@ namespace CIGAgamejam
             return new RectSpec(new Vector2(0f, 0f), new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, height), new Vector2(0.5f, 0f));
         }
 
+        private static RectSpec AnchorBottomToolRow()
+        {
+            return new RectSpec(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(18f, 0f), new Vector2(580f, 78f), new Vector2(0f, 0.5f));
+        }
+
+        private static RectSpec AnchorBottomActionRow()
+        {
+            return new RectSpec(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-18f, 0f), new Vector2(452f, 78f), new Vector2(1f, 0.5f));
+        }
+
         private static RectSpec AnchorRightMiddle(float width, float height)
         {
-            return new RectSpec(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-18f, 0f), new Vector2(width, height), new Vector2(1f, 0.5f));
+            return new RectSpec(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-18f, 18f), new Vector2(width, height), new Vector2(1f, 0.5f));
         }
 
         private readonly struct RectSpec

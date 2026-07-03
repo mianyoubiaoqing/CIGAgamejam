@@ -9,6 +9,7 @@ namespace CIGAgamejam
         [SerializeField] private Vector2Int _entrance = new(0, 2);
         [SerializeField] private Vector2Int _checkout = new(5, 2);
         [SerializeField] private Vector2Int _exit = new(7, 2);
+        [SerializeField] private Vector2Int[] _routeOverride;
 
         private readonly List<GridPosition> _customerRoute = new();
         private readonly HashSet<GridPosition> _reservedRouteBlocks = new();
@@ -36,6 +37,12 @@ namespace CIGAgamejam
             if (_hasConfigError) return false;
 
             _customerRoute.Clear();
+            if (TryBuildRouteOverride())
+            {
+                EventBus<OnRouteChanged>.Publish(new OnRouteChanged(true, _customerRoute.Count));
+                return true;
+            }
+
             if (!TryFindRoute(Entrance, Checkout, _reservedRouteBlocks, out List<GridPosition> toCheckout)
                 || !TryFindRoute(Checkout, Exit, _reservedRouteBlocks, out List<GridPosition> toExit))
             {
@@ -61,6 +68,32 @@ namespace CIGAgamejam
             }
 
             RebuildCustomerRoute();
+        }
+
+        private bool TryBuildRouteOverride()
+        {
+            if (_routeOverride == null || _routeOverride.Length == 0)
+                return false;
+
+            for (int i = 0; i < _routeOverride.Length; i++)
+            {
+                var position = new GridPosition(_routeOverride[i]);
+                if (!_gridSystem.IsRouteWalkable(position))
+                {
+                    _customerRoute.Clear();
+                    return false;
+                }
+
+                if (_reservedRouteBlocks.Contains(position) && !position.Equals(Checkout) && !position.Equals(Exit))
+                {
+                    _customerRoute.Clear();
+                    return false;
+                }
+
+                _customerRoute.Add(position);
+            }
+
+            return _customerRoute.Count > 0;
         }
 
         public bool TryFindRoute(

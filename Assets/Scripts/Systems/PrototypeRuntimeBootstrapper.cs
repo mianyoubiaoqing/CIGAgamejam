@@ -49,9 +49,10 @@ namespace CIGAgamejam
             SetField(economySystem, "_config", economyConfig);
 
             SetField(routeSystem, "_gridSystem", gridSystem);
-            SetField(routeSystem, "_entrance", new Vector2Int(5, 0));
+            SetField(routeSystem, "_entrance", new Vector2Int(0, 6));
             SetField(routeSystem, "_checkout", new Vector2Int(1, 5));
-            SetField(routeSystem, "_exit", new Vector2Int(5, 0));
+            SetField(routeSystem, "_exit", new Vector2Int(0, 6));
+            SetField(routeSystem, "_routeOverride", BuildCustomerLoopRoute());
 
             SetField(securityPatrolSystem, "_gridSystem", gridSystem);
             SetField(securityPatrolSystem, "_patrolPath", new[]
@@ -89,6 +90,10 @@ namespace CIGAgamejam
             SetField(worldView, "_cellSize", 0.82f);
             SetField(worldView, "_origin", new Vector2(-3.7f, -4.8f));
             SetField(worldView, "_actorMoveSpeed", 5f);
+            SetField(worldView, "_routeMarkerSizeRatio", 0.08f);
+            SetField(worldView, "_customerMarkerSizeRatio", 0.22f);
+            SetField(worldView, "_securityMarkerSizeRatio", 0.24f);
+            SetField(worldView, "_toolMarkerSizeRatio", 0.26f);
 
             SetField(inputController, "_camera", camera);
             SetField(inputController, "_placementSystem", placementSystem);
@@ -182,31 +187,73 @@ namespace CIGAgamejam
 
             for (int x = 0; x < 10; x++)
             {
-                AddCell(cells, x, 0, x == 5 ? GridCellType.Entrance : GridCellType.Wall);
+                AddCell(cells, x, 0, GridCellType.Wall);
                 AddCell(cells, x, 11, GridCellType.Wall);
             }
 
             for (int y = 1; y < 11; y++)
             {
-                AddCell(cells, 0, y, GridCellType.Wall);
+                AddCell(cells, 0, y, y == 6 ? GridCellType.Entrance : GridCellType.Wall);
                 AddCell(cells, 9, y, GridCellType.Wall);
             }
 
-            AddWarehouseLine(cells, 1, 10, 4, true);
-            AddCell(cells, 5, 10, GridCellType.Restroom);
-            AddWarehouseLine(cells, 7, 10, 2, true);
-            AddWarehouseLine(cells, 1, 8, 3, false);
-            AddWarehouseLine(cells, 8, 2, 3, false);
-            AddWarehouseLine(cells, 8, 7, 3, false);
-            AddWarehouseLine(cells, 1, 1, 8, true);
-            AddCell(cells, 5, 1, GridCellType.Exit);
+            AddWarehouseLine(cells, 2, 2, 3, true);
+            AddCell(cells, 5, 2, GridCellType.Restroom);
+            AddWarehouseLine(cells, 6, 2, 2, true);
+            AddWarehouseLine(cells, 2, 4, 3, false);
+            AddWarehouseLine(cells, 7, 4, 2, false);
+            AddWarehouseLine(cells, 4, 9, 3, true);
+            AddCell(cells, 5, 1, GridCellType.Floor);
             AddWarehouseBlock(cells, 4, 3, 2, 2);
             AddWarehouseBlock(cells, 4, 7, 2, 2);
             AddCell(cells, 1, 5, GridCellType.Checkout);
             AddCell(cells, 4, 5, GridCellType.Checkout);
             AddCell(cells, 4, 6, GridCellType.Checkout);
+            AddCell(cells, 6, 6, GridCellType.Security);
 
             return cells.ToArray();
+        }
+
+        private static Vector2Int[] BuildCustomerLoopRoute()
+        {
+            return new[]
+            {
+                new Vector2Int(0, 6),
+                new Vector2Int(1, 6),
+                new Vector2Int(1, 7),
+                new Vector2Int(1, 8),
+                new Vector2Int(1, 9),
+                new Vector2Int(1, 10),
+                new Vector2Int(2, 10),
+                new Vector2Int(3, 10),
+                new Vector2Int(4, 10),
+                new Vector2Int(5, 10),
+                new Vector2Int(6, 10),
+                new Vector2Int(7, 10),
+                new Vector2Int(8, 10),
+                new Vector2Int(8, 9),
+                new Vector2Int(8, 8),
+                new Vector2Int(8, 7),
+                new Vector2Int(8, 6),
+                new Vector2Int(8, 5),
+                new Vector2Int(8, 4),
+                new Vector2Int(8, 3),
+                new Vector2Int(8, 2),
+                new Vector2Int(8, 1),
+                new Vector2Int(7, 1),
+                new Vector2Int(6, 1),
+                new Vector2Int(5, 1),
+                new Vector2Int(4, 1),
+                new Vector2Int(3, 1),
+                new Vector2Int(2, 1),
+                new Vector2Int(1, 1),
+                new Vector2Int(1, 2),
+                new Vector2Int(1, 3),
+                new Vector2Int(1, 4),
+                new Vector2Int(1, 5),
+                new Vector2Int(1, 6),
+                new Vector2Int(0, 6)
+            };
         }
 
         private static void AddWarehouseLine(System.Collections.Generic.List<GridCellDefinition> cells, int startX, int startY, int length, bool horizontal)

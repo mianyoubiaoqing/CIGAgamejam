@@ -11,6 +11,10 @@ namespace CIGAgamejam
         [SerializeField] private float _cellSize = 1f;
         [SerializeField] private Vector2 _origin = new(-3.5f, -2.5f);
         [SerializeField, Min(0.1f)] private float _actorMoveSpeed = 5f;
+        [SerializeField, Min(0.02f)] private float _routeMarkerSizeRatio = 0.08f;
+        [SerializeField, Min(0.02f)] private float _customerMarkerSizeRatio = 0.22f;
+        [SerializeField, Min(0.02f)] private float _securityMarkerSizeRatio = 0.24f;
+        [SerializeField, Min(0.02f)] private float _toolMarkerSizeRatio = 0.26f;
 
         private readonly Dictionary<GridPosition, SpriteRenderer> _cellRenderers = new();
         private readonly Dictionary<PlacedTool, GameObject> _toolMarkers = new();
@@ -23,7 +27,7 @@ namespace CIGAgamejam
 
         private void Awake()
         {
-            _sprite = CreateSprite();
+            _sprite = CreateUnitSprite();
             BuildGrid();
             RebuildRouteMarkers();
             MoveSecurityMarker(_securityPatrolSystem != null ? _securityPatrolSystem.CurrentPosition : new GridPosition(0, 0));
@@ -70,50 +74,125 @@ namespace CIGAgamejam
             for (int x = 0; x < _gridSystem.Width; x++)
             {
                 var position = new GridPosition(x, y);
-                GameObject cell = CreateSquare($"Cell {x},{y}", GridToWorld(position), _cellSize * 0.92f, ResolveCellColor(position), 0);
+                GridCellType cellType = GridCellType.Floor;
+                _gridSystem.TryGetCellType(position, out cellType);
+
+                GameObject cell = CreateSquare($"Cell {x},{y}", GridToWorld(position), _cellSize, ResolveCellColor(cellType), 0);
                 _cellRenderers[position] = cell.GetComponent<SpriteRenderer>();
-                CreateLabel(cell.transform, ResolveCellLabel(position), Color.black, 0.22f, new Vector3(0f, -0.23f, -0.02f));
+                BuildCellDetail(cell.transform, cellType);
             }
         }
 
-        private Color ResolveCellColor(GridPosition position)
+        private Color ResolveCellColor(GridCellType cellType)
         {
-            if (_gridSystem.TryGetCellType(position, out GridCellType cellType))
-            {
-                return cellType switch
-                {
-                    GridCellType.Wall => new Color(0.25f, 0.25f, 0.25f),
-                    GridCellType.Warehouse => new Color(0.95f, 0.86f, 0.55f),
-                    GridCellType.Security => new Color(0.55f, 0.75f, 0.95f),
-                    GridCellType.Entrance => new Color(0.6f, 0.95f, 0.65f),
-                    GridCellType.Checkout => new Color(0.15f, 0.42f, 0.62f),
-                    GridCellType.Restroom => new Color(0.62f, 0.1f, 0.92f),
-                    GridCellType.Exit => new Color(0.8f, 0.65f, 0.95f),
-                    GridCellType.Blocked => new Color(0.12f, 0.12f, 0.12f),
-                    _ => new Color(0.9f, 0.9f, 0.86f)
-                };
-            }
-
-            return Color.white;
-        }
-
-        private string ResolveCellLabel(GridPosition position)
-        {
-            if (!_gridSystem.TryGetCellType(position, out GridCellType cellType))
-                return string.Empty;
-
             return cellType switch
             {
-                GridCellType.Wall => "墙",
-                GridCellType.Warehouse => "仓",
-                GridCellType.Security => "保",
-                GridCellType.Entrance => "入",
-                GridCellType.Checkout => "柜",
-                GridCellType.Restroom => "厕",
-                GridCellType.Exit => "出",
-                GridCellType.Blocked => "阻",
-                _ => string.Empty
+                GridCellType.Wall => new Color(0.23f, 0.13f, 0.08f),
+                GridCellType.Warehouse => new Color(0.79f, 0.70f, 0.58f),
+                GridCellType.Security => new Color(0.84f, 0.78f, 0.66f),
+                GridCellType.Entrance => new Color(0.84f, 0.78f, 0.66f),
+                GridCellType.Checkout => new Color(0.86f, 0.78f, 0.62f),
+                GridCellType.Restroom => new Color(0.45f, 0.36f, 0.24f),
+                GridCellType.Exit => new Color(0.84f, 0.78f, 0.66f),
+                GridCellType.Blocked => new Color(0.05f, 0.05f, 0.05f),
+                _ => new Color(0.72f, 0.69f, 0.58f)
             };
+        }
+
+        private void BuildCellDetail(Transform parent, GridCellType cellType)
+        {
+            AddCellBorder(parent, new Color(0.33f, 0.30f, 0.24f, 0.65f));
+
+            switch (cellType)
+            {
+                case GridCellType.Wall:
+                    AddWoodStripes(parent);
+                    break;
+                case GridCellType.Warehouse:
+                    AddShelfDetail(parent);
+                    break;
+                case GridCellType.Checkout:
+                    AddFloorPattern(parent);
+                    AddCheckoutDetail(parent);
+                    break;
+                case GridCellType.Restroom:
+                    AddDoorDetail(parent);
+                    break;
+                case GridCellType.Entrance:
+                    AddFloorPattern(parent);
+                    AddDoorMark(parent, new Color(0.52f, 0.84f, 0.48f, 0.85f));
+                    break;
+                case GridCellType.Exit:
+                    AddFloorPattern(parent);
+                    AddDoorMark(parent, new Color(0.64f, 0.48f, 0.86f, 0.85f));
+                    break;
+                case GridCellType.Security:
+                    AddFloorPattern(parent);
+                    AddSecurityTileMark(parent);
+                    break;
+                case GridCellType.Floor:
+                    AddFloorPattern(parent);
+                    break;
+            }
+        }
+
+        private void AddFloorPattern(Transform parent)
+        {
+            Color lineColor = new(0.48f, 0.46f, 0.39f, 0.42f);
+            CreateRect(parent, "Floor Diagonal A", Vector3.zero, new Vector2(_cellSize * 1.3f, _cellSize * 0.045f), lineColor, 1, 45f);
+            CreateRect(parent, "Floor Diagonal B", Vector3.zero, new Vector2(_cellSize * 1.3f, _cellSize * 0.045f), lineColor, 1, -45f);
+            CreateRect(parent, "Floor Center", Vector3.zero, new Vector2(_cellSize * 0.18f, _cellSize * 0.18f), new Color(0.50f, 0.48f, 0.41f, 0.35f), 1, 45f);
+        }
+
+        private void AddWoodStripes(Transform parent)
+        {
+            Color stripeColor = new(0.13f, 0.07f, 0.04f, 0.45f);
+            for (int i = -2; i <= 2; i++)
+                CreateRect(parent, "Wood Stripe", new Vector3(i * _cellSize * 0.18f, 0f, -0.01f), new Vector2(_cellSize * 0.035f, _cellSize * 0.88f), stripeColor, 1);
+
+            CreateRect(parent, "Wall Top Trim", new Vector3(0f, _cellSize * 0.42f, -0.02f), new Vector2(_cellSize * 0.95f, _cellSize * 0.06f), new Color(0.86f, 0.80f, 0.67f), 2);
+            CreateRect(parent, "Wall Bottom Trim", new Vector3(0f, -_cellSize * 0.42f, -0.02f), new Vector2(_cellSize * 0.95f, _cellSize * 0.06f), new Color(0.86f, 0.80f, 0.67f), 2);
+        }
+
+        private void AddShelfDetail(Transform parent)
+        {
+            CreateRect(parent, "Shelf Top", new Vector3(0f, _cellSize * 0.25f, -0.02f), new Vector2(_cellSize * 0.80f, _cellSize * 0.10f), new Color(0.91f, 0.85f, 0.72f), 2);
+            CreateRect(parent, "Shelf Body", Vector3.zero, new Vector2(_cellSize * 0.78f, _cellSize * 0.46f), new Color(0.47f, 0.40f, 0.34f), 2);
+            CreateRect(parent, "Shelf Line A", new Vector3(0f, _cellSize * 0.09f, -0.03f), new Vector2(_cellSize * 0.70f, _cellSize * 0.035f), new Color(0.17f, 0.14f, 0.13f), 3);
+            CreateRect(parent, "Shelf Line B", new Vector3(0f, -_cellSize * 0.08f, -0.03f), new Vector2(_cellSize * 0.70f, _cellSize * 0.035f), new Color(0.17f, 0.14f, 0.13f), 3);
+        }
+
+        private void AddCheckoutDetail(Transform parent)
+        {
+            CreateRect(parent, "Counter", Vector3.zero, new Vector2(_cellSize * 0.72f, _cellSize * 0.58f), new Color(0.91f, 0.82f, 0.62f), 2);
+            CreateRect(parent, "Register", new Vector3(0f, _cellSize * 0.08f, -0.03f), new Vector2(_cellSize * 0.38f, _cellSize * 0.24f), new Color(0.35f, 0.31f, 0.25f), 3);
+            CreateRect(parent, "Receipt", new Vector3(_cellSize * 0.20f, _cellSize * 0.22f, -0.04f), new Vector2(_cellSize * 0.16f, _cellSize * 0.20f), new Color(0.96f, 0.92f, 0.78f), 4);
+        }
+
+        private void AddDoorDetail(Transform parent)
+        {
+            CreateRect(parent, "Door Panel", Vector3.zero, new Vector2(_cellSize * 0.62f, _cellSize * 0.74f), new Color(0.43f, 0.34f, 0.23f), 2);
+            CreateRect(parent, "Door Plate", new Vector3(0f, _cellSize * 0.10f, -0.03f), new Vector2(_cellSize * 0.36f, _cellSize * 0.16f), new Color(0.55f, 0.50f, 0.38f), 3);
+            CreateRect(parent, "Door Knob", new Vector3(_cellSize * 0.24f, -_cellSize * 0.10f, -0.04f), new Vector2(_cellSize * 0.06f, _cellSize * 0.06f), new Color(0.83f, 0.75f, 0.54f), 4);
+        }
+
+        private void AddDoorMark(Transform parent, Color color)
+        {
+            CreateRect(parent, "Door Mark", Vector3.zero, new Vector2(_cellSize * 0.42f, _cellSize * 0.12f), color, 2);
+        }
+
+        private void AddSecurityTileMark(Transform parent)
+        {
+            CreateRect(parent, "Security Mark", Vector3.zero, new Vector2(_cellSize * 0.42f, _cellSize * 0.42f), new Color(0.40f, 0.55f, 0.70f, 0.55f), 2, 45f);
+        }
+
+        private void AddCellBorder(Transform parent, Color color)
+        {
+            float thickness = _cellSize * 0.025f;
+            CreateRect(parent, "Border Top", new Vector3(0f, _cellSize * 0.5f - thickness * 0.5f, -0.04f), new Vector2(_cellSize, thickness), color, 4);
+            CreateRect(parent, "Border Bottom", new Vector3(0f, -_cellSize * 0.5f + thickness * 0.5f, -0.04f), new Vector2(_cellSize, thickness), color, 4);
+            CreateRect(parent, "Border Left", new Vector3(-_cellSize * 0.5f + thickness * 0.5f, 0f, -0.04f), new Vector2(thickness, _cellSize), color, 4);
+            CreateRect(parent, "Border Right", new Vector3(_cellSize * 0.5f - thickness * 0.5f, 0f, -0.04f), new Vector2(thickness, _cellSize), color, 4);
         }
 
         private void RebuildRouteMarkers()
@@ -126,9 +205,10 @@ namespace CIGAgamejam
             if (_routeSystem == null) return;
 
             IReadOnlyList<GridPosition> route = _routeSystem.CustomerRoute;
+            float markerSize = _cellSize * _routeMarkerSizeRatio;
             for (int i = 0; i < route.Count; i++)
             {
-                GameObject marker = CreateSquare($"Route {i}", GridToWorld(route[i]) + new Vector3(0f, 0.25f, -0.05f), 0.16f, new Color(0.15f, 0.3f, 0.95f), 2);
+                GameObject marker = CreateSquare($"Route {i}", GridToWorld(route[i]) + new Vector3(0f, 0f, -0.08f), markerSize, new Color(0.20f, 0.25f, 0.95f, 0.25f), 5);
                 _routeMarkers.Add(marker);
             }
         }
@@ -139,11 +219,10 @@ namespace CIGAgamejam
 
             GameObject marker = CreateSquare(
                 $"Tool {e.Tool.InstanceId}",
-                GridToWorld(e.Tool.Origin) + new Vector3(0f, 0f, -0.1f),
-                0.54f,
-                new Color(0.95f, 0.35f, 0.25f),
-                3);
-            CreateLabel(marker.transform, e.Tool.Config.DisplayName, Color.white, 0.18f, new Vector3(0f, 0f, -0.02f));
+                GridToWorld(e.Tool.Origin) + new Vector3(0f, 0f, -0.14f),
+                _cellSize * _toolMarkerSizeRatio,
+                new Color(0.95f, 0.28f, 0.18f),
+                8);
             _toolMarkers[e.Tool] = marker;
         }
 
@@ -168,15 +247,15 @@ namespace CIGAgamejam
 
         private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
         {
+            Vector3 targetPosition = CustomerWorldPosition(e.Position, e.CustomerId);
             if (!_customerMarkers.TryGetValue(e.CustomerId, out GameObject marker) || marker == null)
             {
-                marker = CreateSquare($"Customer {e.CustomerId}", CustomerWorldPosition(e.Position), 0.32f, new Color(0.1f, 0.45f, 1f), 5);
-                AddSmoothMover(marker, CustomerWorldPosition(e.Position));
-                CreateLabel(marker.transform, e.CustomerId.ToString("00"), Color.white, 0.16f, Vector3.zero);
+                marker = CreateSquare($"Customer {e.CustomerId}", targetPosition, _cellSize * _customerMarkerSizeRatio, new Color(0.1f, 0.45f, 1f), 10);
+                AddSmoothMover(marker, targetPosition);
                 _customerMarkers[e.CustomerId] = marker;
             }
 
-            MoveMarker(marker, CustomerWorldPosition(e.Position));
+            MoveMarker(marker, targetPosition);
         }
 
         private void HandleCustomerRemoved(OnPrototypeCustomerRemoved e)
@@ -193,22 +272,28 @@ namespace CIGAgamejam
         {
             if (_securityMarker == null)
             {
-                _securityMarker = CreateSquare("Security", SecurityWorldPosition(position), 0.42f, new Color(0.1f, 0.1f, 0.1f), 4);
+                _securityMarker = CreateSquare("Security", SecurityWorldPosition(position), _cellSize * _securityMarkerSizeRatio, new Color(0.05f, 0.05f, 0.05f), 9);
                 AddSmoothMover(_securityMarker, SecurityWorldPosition(position));
-                CreateLabel(_securityMarker.transform, "保安", Color.white, 0.18f, Vector3.zero);
             }
 
             MoveMarker(_securityMarker, SecurityWorldPosition(position));
         }
 
-        private Vector3 CustomerWorldPosition(GridPosition position)
+        private Vector3 CustomerWorldPosition(GridPosition position, int customerId)
         {
-            return GridToWorld(position) + new Vector3(0.24f, 0f, -0.18f);
+            return GridToWorld(position) + ResolveCustomerOffset(customerId) + new Vector3(0f, 0f, -0.18f);
         }
 
         private Vector3 SecurityWorldPosition(GridPosition position)
         {
-            return GridToWorld(position) + new Vector3(0f, 0f, -0.2f);
+            return GridToWorld(position) + new Vector3(0f, 0f, -0.19f);
+        }
+
+        private Vector3 ResolveCustomerOffset(int customerId)
+        {
+            int lane = Mathf.Abs(customerId) % 3;
+            float xOffset = (lane - 1) * _cellSize * 0.10f;
+            return new Vector3(xOffset, _cellSize * 0.06f, 0f);
         }
 
         private void AddSmoothMover(GameObject marker, Vector3 targetPosition)
@@ -244,26 +329,25 @@ namespace CIGAgamejam
             return go;
         }
 
-        private static void CreateLabel(Transform parent, string text, Color color, float size, Vector3 localPosition)
+        private void CreateRect(Transform parent, string objectName, Vector3 localPosition, Vector2 size, Color color, int sortingOrder, float zRotation = 0f)
         {
-            if (string.IsNullOrEmpty(text)) return;
+            float inverseCellSize = _cellSize > 0f ? 1f / _cellSize : 1f;
+            var go = new GameObject(objectName);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = new Vector3(localPosition.x * inverseCellSize, localPosition.y * inverseCellSize, localPosition.z);
+            go.transform.localRotation = Quaternion.Euler(0f, 0f, zRotation);
+            go.transform.localScale = new Vector3(size.x * inverseCellSize, size.y * inverseCellSize, 1f);
 
-            var label = new GameObject("Label");
-            label.transform.SetParent(parent, false);
-            label.transform.localPosition = localPosition;
-            TextMesh textMesh = label.AddComponent<TextMesh>();
-            textMesh.text = text;
-            textMesh.color = color;
-            textMesh.fontSize = 24;
-            textMesh.characterSize = size;
-            textMesh.anchor = TextAnchor.MiddleCenter;
-            textMesh.alignment = TextAlignment.Center;
+            SpriteRenderer renderer = go.AddComponent<SpriteRenderer>();
+            renderer.sprite = _sprite;
+            renderer.color = color;
+            renderer.sortingOrder = sortingOrder;
         }
 
-        private static Sprite CreateSprite()
+        private static Sprite CreateUnitSprite()
         {
             Texture2D texture = Texture2D.whiteTexture;
-            return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), 1f);
+            return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), texture.width);
         }
     }
 }

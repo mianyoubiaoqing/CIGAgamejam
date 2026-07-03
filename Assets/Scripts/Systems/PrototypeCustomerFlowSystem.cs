@@ -9,8 +9,8 @@ namespace CIGAgamejam
         [SerializeField] private ToolResolutionSystem _toolResolutionSystem;
         [SerializeField] private EconomySystem _economySystem;
         [SerializeField] private GamePhaseSystem _gamePhaseSystem;
-        [SerializeField, Min(1)] private int _customersPerDay = 8;
-        [SerializeField, Min(0.1f)] private float _stepSeconds = 0.65f;
+        [SerializeField, Min(1)] private int _customersPerDay = 5;
+        [SerializeField, Min(0.1f)] private float _stepSeconds = 0.85f;
 
         private readonly List<MovingCustomer> _activeCustomers = new();
         private float _timer;
