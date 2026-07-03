@@ -1,7 +1,9 @@
 {
     "name": "CIGAgamejam.Runtime",
     "rootNamespace": "CIGAgamejam",
-    "references": [],
+    "references": [
+        "Unity.ugui"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

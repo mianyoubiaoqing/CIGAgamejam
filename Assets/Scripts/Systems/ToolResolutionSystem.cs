@@ -71,6 +71,8 @@ namespace CIGAgamejam
             ToolEffectDefinition[] effects = tool.Config.Effects;
             if (effects == null || effects.Length == 0) return;
 
+            bool customerWasInStore = customer != null && !customer.HasLeftStore;
+
             EventBus<OnToolTriggered>.Publish(new OnToolTriggered(tool, timing));
 
             for (int i = 0; i < effects.Length; i++)
@@ -89,7 +91,22 @@ namespace CIGAgamejam
                     new OnToolEffectResolved(tool, effect, customer != null ? customer.CustomerId : -1));
             }
 
+            bool removedCustomer = customerWasInStore && customer.HasLeftStore;
+            TryDisableAfterRemovingCustomer(tool, removedCustomer);
             tool.ConsumeUse();
+        }
+
+        private static void TryDisableAfterRemovingCustomer(PlacedTool tool, bool removedCustomer)
+        {
+            if (!removedCustomer || tool.IsDisabled)
+                return;
+
+            if (!tool.Config.PassesDisableAfterRemovingCustomerChance())
+                return;
+
+            if (tool.Disable(ToolDisableReason.AfterRemovingCustomer))
+                EventBus<OnToolDisabled>.Publish(
+                    new OnToolDisabled(tool, ToolDisableReason.AfterRemovingCustomer));
         }
 
         private void RegisterDefaultHandlers()
@@ -194,7 +211,9 @@ namespace CIGAgamejam
 
         public void Resolve(ToolEffectContext context)
         {
-            context.Tool?.Disable();
+            if (context.Tool != null && context.Tool.Disable(ToolDisableReason.Effect))
+                EventBus<OnToolDisabled>.Publish(
+                    new OnToolDisabled(context.Tool, ToolDisableReason.Effect));
         }
     }
 }

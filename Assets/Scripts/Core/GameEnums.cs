@@ -24,6 +24,7 @@ namespace CIGAgamejam
         Security,
         Entrance,
         Checkout,
+        Restroom,
         Exit,
         Blocked
     }
@@ -55,6 +56,21 @@ namespace CIGAgamejam
         BribeSecurity,
         DestroyObject,
         DisableTool
+    }
+
+    public enum ToolDisableReason
+    {
+        None,
+        BossInterference,
+        AfterRemovingCustomer,
+        Effect,
+        SecurityPatrol
+    }
+
+    public enum ToolStockSource
+    {
+        BlackBossSupport,
+        CarriedOver
     }
 
     public enum PlacementResult

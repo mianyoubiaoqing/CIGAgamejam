@@ -10,6 +10,7 @@ namespace CIGAgamejam
         public GridPosition[] OccupiedCells { get; }
         public int RemainingUses { get; private set; }
         public bool IsDisabled { get; private set; }
+        public ToolDisableReason DisableReason { get; private set; }
 
         public bool IsExhausted => RemainingUses == 0;
 
@@ -20,12 +21,17 @@ namespace CIGAgamejam
             Origin = origin;
             OccupiedCells = occupiedCells ?? Array.Empty<GridPosition>();
             RemainingUses = config != null ? config.UseLimit : 0;
+            DisableReason = ToolDisableReason.None;
         }
 
-        public void Disable()
+        public bool Disable(ToolDisableReason reason)
         {
-            if (Config != null && Config.CanBeDisabledByBoss)
-                IsDisabled = true;
+            if (IsDisabled)
+                return false;
+
+            IsDisabled = true;
+            DisableReason = reason;
+            return true;
         }
 
         public void ConsumeUse()
