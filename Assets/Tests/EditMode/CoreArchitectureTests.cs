@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -58,6 +59,7 @@ namespace CIGAgamejam
             SetPrivateField(config, "_startingDay", 5);
             SetPrivateField(config, "_maxDays", 3);
 
+            LogAssert.Expect(LogType.Error, "[CampaignConfig] MaxDays cannot be lower than StartingDay. Reset to StartingDay.");
             config.Validate();
 
             Assert.AreEqual(5, config.StartingDay);
@@ -98,6 +100,139 @@ namespace CIGAgamejam
             Assert.AreEqual(ToolEffectType.ModifyPurchaseCost, tool.Effects[1].EffectType);
         }
 
+        [Test]
+        public void ToolSelfDisablesAfterRemovingCustomerWhenChanceIsCertain()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 2);
+            SetPrivateField(gridConfig, "_height", 2);
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            ToolConfig tool = CreateTool("clown_box", GridCellType.Floor);
+            SetPrivateField(tool, "_canBeDisabledByBoss", false);
+            SetPrivateField(tool, "_disableChanceAfterRemovingCustomer", 1f);
+            SetPrivateField(tool, "_effects", new[]
+            {
+                new ToolEffectDefinition { EffectType = ToolEffectType.ScareCustomerAway, Chance = 1f }
+            });
+            tool.Validate();
+
+            Assert.IsTrue(gridSystem.TryPlaceTool(tool, new GridPosition(0, 0), out PlacedTool placedTool));
+
+            var resolutionObject = new GameObject("ToolResolutionSystem");
+            resolutionObject.SetActive(false);
+            _createdObjects.Add(resolutionObject);
+            ToolResolutionSystem resolutionSystem = resolutionObject.AddComponent<ToolResolutionSystem>();
+            SetPrivateField(resolutionSystem, "_gridSystem", gridSystem);
+            resolutionObject.SetActive(true);
+            SetPrivateField(resolutionSystem, "_hasConfigError", false);
+            InvokePrivateMethod(resolutionSystem, "RegisterDefaultHandlers");
+
+            ToolDisableReason eventReason = ToolDisableReason.None;
+            void CaptureDisable(OnToolDisabled eventData) => eventReason = eventData.Reason;
+
+            EventBus<OnToolDisabled>.Subscribe(CaptureDisable);
+            try
+            {
+                var customer = new CustomerContext(1, new GridPosition(0, 0));
+                resolutionSystem.ResolveCustomerEnterCell(customer);
+
+                Assert.IsTrue(customer.HasLeftStore);
+                Assert.IsTrue(placedTool.IsDisabled);
+                Assert.AreEqual(ToolDisableReason.AfterRemovingCustomer, placedTool.DisableReason);
+                Assert.AreEqual(ToolDisableReason.AfterRemovingCustomer, eventReason);
+            }
+            finally
+            {
+                EventBus<OnToolDisabled>.Unsubscribe(CaptureDisable);
+            }
+        }
+
+        [Test]
+        public void RouteSystemRebuildsRouteAroundReservedBlocks()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 3);
+            SetPrivateField(gridConfig, "_height", 2);
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            GameObject routeObject = CreateInactiveObject("RouteSystem");
+            RouteSystem routeSystem = routeObject.AddComponent<RouteSystem>();
+            SetPrivateField(routeSystem, "_gridSystem", gridSystem);
+            SetPrivateField(routeSystem, "_entrance", new Vector2Int(0, 0));
+            SetPrivateField(routeSystem, "_checkout", new Vector2Int(2, 0));
+            SetPrivateField(routeSystem, "_exit", new Vector2Int(2, 1));
+            routeObject.SetActive(true);
+
+            routeSystem.SetReservedRouteBlocks(new[] { new GridPosition(1, 0) });
+
+            Assert.IsTrue(routeSystem.CustomerRoute.Count > 3);
+            Assert.IsFalse(routeSystem.CustomerRoute.Contains(new GridPosition(1, 0)));
+        }
+
+        [Test]
+        public void SecurityPatrolDisablesVisibleTool()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 3);
+            SetPrivateField(gridConfig, "_height", 3);
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            ToolConfig tool = CreateTool("clown_box", GridCellType.Floor);
+            Assert.IsTrue(gridSystem.TryPlaceTool(tool, new GridPosition(1, 0), out PlacedTool placedTool));
+
+            GameObject patrolObject = CreateInactiveObject("SecurityPatrolSystem");
+            SecurityPatrolSystem patrolSystem = patrolObject.AddComponent<SecurityPatrolSystem>();
+            SetPrivateField(patrolSystem, "_gridSystem", gridSystem);
+            SetPrivateField(patrolSystem, "_patrolPath", new[] { Vector2Int.zero });
+            SetPrivateField(patrolSystem, "_visionRange", 1);
+            patrolObject.SetActive(true);
+
+            patrolSystem.BeginNightPatrol();
+
+            Assert.IsTrue(placedTool.IsDisabled);
+            Assert.AreEqual(ToolDisableReason.SecurityPatrol, placedTool.DisableReason);
+        }
+
+        [Test]
+        public void SecurityPatrolAdvancesConfiguredStepsPerTurn()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 4);
+            SetPrivateField(gridConfig, "_height", 1);
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            GameObject patrolObject = CreateInactiveObject("SecurityPatrolSystem");
+            SecurityPatrolSystem patrolSystem = patrolObject.AddComponent<SecurityPatrolSystem>();
+            SetPrivateField(patrolSystem, "_gridSystem", gridSystem);
+            SetPrivateField(patrolSystem, "_patrolPath", new[]
+            {
+                new Vector2Int(0, 0),
+                new Vector2Int(1, 0),
+                new Vector2Int(2, 0),
+                new Vector2Int(3, 0)
+            });
+            SetPrivateField(patrolSystem, "_stepsPerTurn", 2);
+            patrolObject.SetActive(true);
+
+            patrolSystem.BeginNightPatrol();
+            patrolSystem.AdvancePatrolTurn();
+
+            Assert.AreEqual(new GridPosition(2, 0), patrolSystem.CurrentPosition);
+        }
+
         private ToolConfig CreateTool(string id, GridCellType allowedCellType)
         {
             ToolConfig tool = CreateAsset<ToolConfig>();
@@ -117,6 +252,14 @@ namespace CIGAgamejam
             return gameObject.AddComponent<T>();
         }
 
+        private GameObject CreateInactiveObject(string name)
+        {
+            var gameObject = new GameObject(name);
+            gameObject.SetActive(false);
+            _createdObjects.Add(gameObject);
+            return gameObject;
+        }
+
         private T CreateAsset<T>() where T : ScriptableObject
         {
             var asset = ScriptableObject.CreateInstance<T>();
@@ -130,6 +273,14 @@ namespace CIGAgamejam
             FieldInfo field = target.GetType().GetField(fieldName, flags);
             Assert.IsNotNull(field, $"Missing private field {fieldName}");
             field.SetValue(target, value);
+        }
+
+        private static void InvokePrivateMethod(object target, string methodName)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            MethodInfo method = target.GetType().GetMethod(methodName, flags);
+            Assert.IsNotNull(method, $"Missing private method {methodName}");
+            method.Invoke(target, null);
         }
     }
 }

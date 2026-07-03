@@ -14,6 +14,8 @@ namespace CIGAgamejam
         private bool _hasConfigError;
 
         public IReadOnlyList<PlacedTool> PlacedTools => _placedTools;
+        public int Width => _hasConfigError ? 0 : _config.Width;
+        public int Height => _hasConfigError ? 0 : _config.Height;
 
         private void Awake()
         {
@@ -64,6 +66,27 @@ namespace CIGAgamejam
         public bool TryGetCellType(GridPosition position, out GridCellType cellType)
         {
             return _cellTypes.TryGetValue(position, out cellType);
+        }
+
+        public bool TryGetToolAt(GridPosition position, out PlacedTool tool)
+        {
+            return _occupants.TryGetValue(position, out tool);
+        }
+
+        public bool IsOccupied(GridPosition position)
+        {
+            return _occupants.ContainsKey(position);
+        }
+
+        public bool IsRouteWalkable(GridPosition position)
+        {
+            if (!IsInBounds(position)) return false;
+            if (!TryGetCellType(position, out GridCellType cellType)) return false;
+
+            return cellType != GridCellType.Wall
+                && cellType != GridCellType.Warehouse
+                && cellType != GridCellType.Restroom
+                && cellType != GridCellType.Blocked;
         }
 
         public PlacementResult CanPlaceTool(ToolConfig tool, GridPosition origin)
@@ -143,8 +166,9 @@ namespace CIGAgamejam
                 return null;
 
             PlacedTool selected = candidates[Random.Range(0, candidates.Count)];
-            selected.Disable();
-            EventBus<OnToolDisabled>.Publish(new OnToolDisabled(selected));
+            if (selected.Disable(ToolDisableReason.BossInterference))
+                EventBus<OnToolDisabled>.Publish(new OnToolDisabled(selected, ToolDisableReason.BossInterference));
+
             return selected;
         }
 

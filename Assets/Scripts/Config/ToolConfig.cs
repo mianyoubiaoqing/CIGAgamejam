@@ -23,6 +23,7 @@ namespace CIGAgamejam
         [SerializeField] private Vector2Int[] _triggerOffsets = { Vector2Int.zero };
         [SerializeField, Min(1)] private int _useLimit = 1;
         [SerializeField] private bool _canBeDisabledByBoss = true;
+        [SerializeField, Range(0f, 1f)] private float _disableChanceAfterRemovingCustomer;
 
         [Header("Effects")]
         [SerializeField] private ToolEffectDefinition[] _effects = Array.Empty<ToolEffectDefinition>();
@@ -39,6 +40,7 @@ namespace CIGAgamejam
         public Vector2Int[] TriggerOffsets => _triggerOffsets;
         public int UseLimit => _useLimit;
         public bool CanBeDisabledByBoss => _canBeDisabledByBoss;
+        public float DisableChanceAfterRemovingCustomer => _disableChanceAfterRemovingCustomer;
         public ToolEffectDefinition[] Effects => _effects;
 
         private void OnValidate() => Validate();
@@ -68,6 +70,8 @@ namespace CIGAgamejam
 
             if (_useLimit < 1)
                 _useLimit = 1;
+
+            _disableChanceAfterRemovingCustomer = Mathf.Clamp01(_disableChanceAfterRemovingCustomer);
         }
 
         public bool AllowsCellType(GridCellType cellType)
@@ -79,6 +83,12 @@ namespace CIGAgamejam
                     return true;
 
             return false;
+        }
+
+        public bool PassesDisableAfterRemovingCustomerChance()
+        {
+            return _disableChanceAfterRemovingCustomer > 0f
+                && UnityEngine.Random.value <= _disableChanceAfterRemovingCustomer;
         }
     }
 
