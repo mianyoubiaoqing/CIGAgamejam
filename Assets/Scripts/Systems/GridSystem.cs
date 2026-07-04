@@ -5,7 +5,6 @@ namespace CIGAgamejam
 {
     public sealed class GridSystem : MonoBehaviour
     {
-        [SerializeField] private GridConfig _config;
         [SerializeField] private TilemapGridBridge _tilemapBridge;
 
         private readonly Dictionary<GridPosition, GridCellType> _cellTypes = new();
@@ -28,23 +27,16 @@ namespace CIGAgamejam
 
         private void Awake()
         {
-            if ((_tilemapBridge != null && _tilemapBridge.IsReady) || _config != null)
-                InitializeGrid();
-            else
-                _hasConfigError = true;
+            InitializeGrid();
         }
 
         private void Start()
         {
-            if ((_tilemapBridge == null || !_tilemapBridge.IsReady) && _config == null)
-            {
-                Debug.LogError("[GridSystem] GridConfig is not assigned.");
-                _hasConfigError = true;
-                return;
-            }
-
             if (_hasConfigError)
+            {
+                Debug.LogError("[GridSystem] TilemapGridBridge is missing or has no readable visual Tilemap layers.");
                 InitializeGrid();
+            }
         }
 
         public void InitializeGrid()
@@ -56,53 +48,22 @@ namespace CIGAgamejam
             _hasConfigError = false;
 
             if (_tilemapBridge != null
-                && _tilemapBridge.TryReadCells(out Dictionary<GridPosition, GameplayTile> tileCells, out BoundsInt bounds))
+                && _tilemapBridge.TryReadCells(out Dictionary<GridPosition, GridCellType> tileCells, out BoundsInt bounds))
             {
                 _minX = bounds.xMin;
                 _minY = bounds.yMin;
                 _maxXExclusive = bounds.xMax;
                 _maxYExclusive = bounds.yMax;
-                foreach (KeyValuePair<GridPosition, GameplayTile> pair in tileCells)
+                foreach (KeyValuePair<GridPosition, GridCellType> pair in tileCells)
                 {
-                    _cellTypes[pair.Key] = pair.Value.CellType;
-                    _tileStates[pair.Key] = new PuzzleTileState(pair.Value.CellType);
+                    _cellTypes[pair.Key] = pair.Value;
+                    _tileStates[pair.Key] = new PuzzleTileState(pair.Value);
                 }
                 return;
             }
 
-            if (_config == null)
-            {
-                Debug.LogError("[GridSystem] GridConfig is not assigned.");
-                _hasConfigError = true;
-                return;
-            }
-
-            _config.Validate();
-            _minX = _config.MinX;
-            _minY = _config.MinY;
-            _maxXExclusive = _config.MaxXExclusive;
-            _maxYExclusive = _config.MaxYExclusive;
-
-            for (int y = _config.MinY; y < _config.MaxYExclusive; y++)
-            for (int x = _config.MinX; x < _config.MaxXExclusive; x++)
-            {
-                var position = new GridPosition(x, y);
-                _cellTypes[position] = GridCellType.Floor;
-                _tileStates[position] = new PuzzleTileState(GridCellType.Floor);
-            }
-
-            GridCellDefinition[] overrides = _config.CellOverrides;
-            if (overrides == null) return;
-
-            for (int i = 0; i < overrides.Length; i++)
-            {
-                GridPosition position = new GridPosition(overrides[i].Position);
-                if (IsInBounds(position))
-                {
-                    _cellTypes[position] = overrides[i].CellType;
-                    _tileStates[position] = new PuzzleTileState(overrides[i].CellType);
-                }
-            }
+            Debug.LogError("[GridSystem] TilemapGridBridge is required. GridConfig fallback has been removed.");
+            _hasConfigError = true;
         }
 
         public bool IsInBounds(GridPosition position)

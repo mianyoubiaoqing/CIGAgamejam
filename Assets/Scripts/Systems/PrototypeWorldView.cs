@@ -10,14 +10,11 @@ namespace CIGAgamejam
         [SerializeField] private RouteSystem _routeSystem;
         [SerializeField] private SecurityPatrolSystem _securityPatrolSystem;
         [SerializeField] private TilemapGridBridge _tilemapBridge;
-        [SerializeField] private float _cellSize = 1f;
-        [SerializeField] private Vector2 _origin = new(-3.5f, -2.5f);
         [SerializeField, Min(0.1f)] private float _actorMoveSpeed = 5f;
         [SerializeField, Min(0.02f)] private float _routeMarkerSizeRatio = 0.08f;
         [SerializeField, Min(0.02f)] private float _customerMarkerSizeRatio = 0.22f;
         [SerializeField, Min(0.02f)] private float _securityMarkerSizeRatio = 0.24f;
         [SerializeField, Min(0.02f)] private float _toolMarkerSizeRatio = 0.26f;
-        [SerializeField] private Tilemap _referenceTilemap;
         [Header("Tilemap Feedback")]
         [SerializeField] private Tilemap _warehouseTilemap;
         [SerializeField] private TileBase _fakeGoodsShelfTile;
@@ -68,39 +65,19 @@ namespace CIGAgamejam
 
         public bool TryWorldToGrid(Vector3 worldPosition, out GridPosition gridPosition)
         {
-            if (_tilemapBridge != null && _tilemapBridge.IsReady)
+            if (!IsBridgeReady())
             {
-                gridPosition = _tilemapBridge.WorldToCell(worldPosition);
-                return _gridSystem != null && _gridSystem.IsInBounds(gridPosition);
+                gridPosition = new GridPosition(0, 0);
+                return false;
             }
 
-            Tilemap coordinateTilemap = CoordinateTilemap;
-            if (coordinateTilemap != null)
-            {
-                Vector3Int cell = coordinateTilemap.WorldToCell(worldPosition);
-                gridPosition = new GridPosition(cell.x, cell.y);
-                return _gridSystem != null && _gridSystem.IsInBounds(gridPosition);
-            }
-
-            int x = Mathf.FloorToInt((worldPosition.x - _origin.x) / _cellSize);
-            int y = Mathf.FloorToInt((worldPosition.y - _origin.y) / _cellSize);
-            gridPosition = new GridPosition(x, y);
+            gridPosition = _tilemapBridge.WorldToCell(worldPosition);
             return _gridSystem != null && _gridSystem.IsInBounds(gridPosition);
         }
 
         public Vector3 GridToWorld(GridPosition position)
         {
-            if (_tilemapBridge != null && _tilemapBridge.IsReady)
-                return _tilemapBridge.CellToWorld(position);
-
-            Tilemap coordinateTilemap = CoordinateTilemap;
-            if (coordinateTilemap != null)
-                return coordinateTilemap.GetCellCenterWorld(new Vector3Int(position.X, position.Y, 0));
-
-            return new Vector3(
-                _origin.x + (position.X + 0.5f) * _cellSize,
-                _origin.y + (position.Y + 0.5f) * _cellSize,
-                0f);
+            return IsBridgeReady() ? _tilemapBridge.CellToWorld(position) : Vector3.zero;
         }
 
         private void BuildGrid()
@@ -114,7 +91,7 @@ namespace CIGAgamejam
                 GridCellType cellType = GridCellType.Floor;
                 _gridSystem.TryGetCellType(position, out cellType);
 
-                GameObject cell = CreateSquare($"Cell {x},{y}", GridToWorld(position), _cellSize, ResolveCellColor(cellType), 0);
+                GameObject cell = CreateSquare($"Cell {x},{y}", GridToWorld(position), CellSize, ResolveCellColor(cellType), 0);
                 _cellRenderers[position] = cell.GetComponent<SpriteRenderer>();
                 BuildCellDetail(cell.transform, cellType);
             }
@@ -177,60 +154,60 @@ namespace CIGAgamejam
         private void AddFloorPattern(Transform parent)
         {
             Color lineColor = new(0.48f, 0.46f, 0.39f, 0.42f);
-            CreateRect(parent, "Floor Diagonal A", Vector3.zero, new Vector2(_cellSize * 1.3f, _cellSize * 0.045f), lineColor, 1, 45f);
-            CreateRect(parent, "Floor Diagonal B", Vector3.zero, new Vector2(_cellSize * 1.3f, _cellSize * 0.045f), lineColor, 1, -45f);
-            CreateRect(parent, "Floor Center", Vector3.zero, new Vector2(_cellSize * 0.18f, _cellSize * 0.18f), new Color(0.50f, 0.48f, 0.41f, 0.35f), 1, 45f);
+            CreateRect(parent, "Floor Diagonal A", Vector3.zero, new Vector2(CellSize * 1.3f, CellSize * 0.045f), lineColor, 1, 45f);
+            CreateRect(parent, "Floor Diagonal B", Vector3.zero, new Vector2(CellSize * 1.3f, CellSize * 0.045f), lineColor, 1, -45f);
+            CreateRect(parent, "Floor Center", Vector3.zero, new Vector2(CellSize * 0.18f, CellSize * 0.18f), new Color(0.50f, 0.48f, 0.41f, 0.35f), 1, 45f);
         }
 
         private void AddWoodStripes(Transform parent)
         {
             Color stripeColor = new(0.13f, 0.07f, 0.04f, 0.45f);
             for (int i = -2; i <= 2; i++)
-                CreateRect(parent, "Wood Stripe", new Vector3(i * _cellSize * 0.18f, 0f, -0.01f), new Vector2(_cellSize * 0.035f, _cellSize * 0.88f), stripeColor, 1);
+                CreateRect(parent, "Wood Stripe", new Vector3(i * CellSize * 0.18f, 0f, -0.01f), new Vector2(CellSize * 0.035f, CellSize * 0.88f), stripeColor, 1);
 
-            CreateRect(parent, "Wall Top Trim", new Vector3(0f, _cellSize * 0.42f, -0.02f), new Vector2(_cellSize * 0.95f, _cellSize * 0.06f), new Color(0.86f, 0.80f, 0.67f), 2);
-            CreateRect(parent, "Wall Bottom Trim", new Vector3(0f, -_cellSize * 0.42f, -0.02f), new Vector2(_cellSize * 0.95f, _cellSize * 0.06f), new Color(0.86f, 0.80f, 0.67f), 2);
+            CreateRect(parent, "Wall Top Trim", new Vector3(0f, CellSize * 0.42f, -0.02f), new Vector2(CellSize * 0.95f, CellSize * 0.06f), new Color(0.86f, 0.80f, 0.67f), 2);
+            CreateRect(parent, "Wall Bottom Trim", new Vector3(0f, -CellSize * 0.42f, -0.02f), new Vector2(CellSize * 0.95f, CellSize * 0.06f), new Color(0.86f, 0.80f, 0.67f), 2);
         }
 
         private void AddShelfDetail(Transform parent)
         {
-            CreateRect(parent, "Shelf Top", new Vector3(0f, _cellSize * 0.25f, -0.02f), new Vector2(_cellSize * 0.80f, _cellSize * 0.10f), new Color(0.91f, 0.85f, 0.72f), 2);
-            CreateRect(parent, "Shelf Body", Vector3.zero, new Vector2(_cellSize * 0.78f, _cellSize * 0.46f), new Color(0.47f, 0.40f, 0.34f), 2);
-            CreateRect(parent, "Shelf Line A", new Vector3(0f, _cellSize * 0.09f, -0.03f), new Vector2(_cellSize * 0.70f, _cellSize * 0.035f), new Color(0.17f, 0.14f, 0.13f), 3);
-            CreateRect(parent, "Shelf Line B", new Vector3(0f, -_cellSize * 0.08f, -0.03f), new Vector2(_cellSize * 0.70f, _cellSize * 0.035f), new Color(0.17f, 0.14f, 0.13f), 3);
+            CreateRect(parent, "Shelf Top", new Vector3(0f, CellSize * 0.25f, -0.02f), new Vector2(CellSize * 0.80f, CellSize * 0.10f), new Color(0.91f, 0.85f, 0.72f), 2);
+            CreateRect(parent, "Shelf Body", Vector3.zero, new Vector2(CellSize * 0.78f, CellSize * 0.46f), new Color(0.47f, 0.40f, 0.34f), 2);
+            CreateRect(parent, "Shelf Line A", new Vector3(0f, CellSize * 0.09f, -0.03f), new Vector2(CellSize * 0.70f, CellSize * 0.035f), new Color(0.17f, 0.14f, 0.13f), 3);
+            CreateRect(parent, "Shelf Line B", new Vector3(0f, -CellSize * 0.08f, -0.03f), new Vector2(CellSize * 0.70f, CellSize * 0.035f), new Color(0.17f, 0.14f, 0.13f), 3);
         }
 
         private void AddCheckoutDetail(Transform parent)
         {
-            CreateRect(parent, "Counter", Vector3.zero, new Vector2(_cellSize * 0.72f, _cellSize * 0.58f), new Color(0.91f, 0.82f, 0.62f), 2);
-            CreateRect(parent, "Register", new Vector3(0f, _cellSize * 0.08f, -0.03f), new Vector2(_cellSize * 0.38f, _cellSize * 0.24f), new Color(0.35f, 0.31f, 0.25f), 3);
-            CreateRect(parent, "Receipt", new Vector3(_cellSize * 0.20f, _cellSize * 0.22f, -0.04f), new Vector2(_cellSize * 0.16f, _cellSize * 0.20f), new Color(0.96f, 0.92f, 0.78f), 4);
+            CreateRect(parent, "Counter", Vector3.zero, new Vector2(CellSize * 0.72f, CellSize * 0.58f), new Color(0.91f, 0.82f, 0.62f), 2);
+            CreateRect(parent, "Register", new Vector3(0f, CellSize * 0.08f, -0.03f), new Vector2(CellSize * 0.38f, CellSize * 0.24f), new Color(0.35f, 0.31f, 0.25f), 3);
+            CreateRect(parent, "Receipt", new Vector3(CellSize * 0.20f, CellSize * 0.22f, -0.04f), new Vector2(CellSize * 0.16f, CellSize * 0.20f), new Color(0.96f, 0.92f, 0.78f), 4);
         }
 
         private void AddDoorDetail(Transform parent)
         {
-            CreateRect(parent, "Door Panel", Vector3.zero, new Vector2(_cellSize * 0.62f, _cellSize * 0.74f), new Color(0.43f, 0.34f, 0.23f), 2);
-            CreateRect(parent, "Door Plate", new Vector3(0f, _cellSize * 0.10f, -0.03f), new Vector2(_cellSize * 0.36f, _cellSize * 0.16f), new Color(0.55f, 0.50f, 0.38f), 3);
-            CreateRect(parent, "Door Knob", new Vector3(_cellSize * 0.24f, -_cellSize * 0.10f, -0.04f), new Vector2(_cellSize * 0.06f, _cellSize * 0.06f), new Color(0.83f, 0.75f, 0.54f), 4);
+            CreateRect(parent, "Door Panel", Vector3.zero, new Vector2(CellSize * 0.62f, CellSize * 0.74f), new Color(0.43f, 0.34f, 0.23f), 2);
+            CreateRect(parent, "Door Plate", new Vector3(0f, CellSize * 0.10f, -0.03f), new Vector2(CellSize * 0.36f, CellSize * 0.16f), new Color(0.55f, 0.50f, 0.38f), 3);
+            CreateRect(parent, "Door Knob", new Vector3(CellSize * 0.24f, -CellSize * 0.10f, -0.04f), new Vector2(CellSize * 0.06f, CellSize * 0.06f), new Color(0.83f, 0.75f, 0.54f), 4);
         }
 
         private void AddDoorMark(Transform parent, Color color)
         {
-            CreateRect(parent, "Door Mark", Vector3.zero, new Vector2(_cellSize * 0.42f, _cellSize * 0.12f), color, 2);
+            CreateRect(parent, "Door Mark", Vector3.zero, new Vector2(CellSize * 0.42f, CellSize * 0.12f), color, 2);
         }
 
         private void AddSecurityTileMark(Transform parent)
         {
-            CreateRect(parent, "Security Mark", Vector3.zero, new Vector2(_cellSize * 0.42f, _cellSize * 0.42f), new Color(0.40f, 0.55f, 0.70f, 0.55f), 2, 45f);
+            CreateRect(parent, "Security Mark", Vector3.zero, new Vector2(CellSize * 0.42f, CellSize * 0.42f), new Color(0.40f, 0.55f, 0.70f, 0.55f), 2, 45f);
         }
 
         private void AddCellBorder(Transform parent, Color color)
         {
-            float thickness = _cellSize * 0.025f;
-            CreateRect(parent, "Border Top", new Vector3(0f, _cellSize * 0.5f - thickness * 0.5f, -0.04f), new Vector2(_cellSize, thickness), color, 4);
-            CreateRect(parent, "Border Bottom", new Vector3(0f, -_cellSize * 0.5f + thickness * 0.5f, -0.04f), new Vector2(_cellSize, thickness), color, 4);
-            CreateRect(parent, "Border Left", new Vector3(-_cellSize * 0.5f + thickness * 0.5f, 0f, -0.04f), new Vector2(thickness, _cellSize), color, 4);
-            CreateRect(parent, "Border Right", new Vector3(_cellSize * 0.5f - thickness * 0.5f, 0f, -0.04f), new Vector2(thickness, _cellSize), color, 4);
+            float thickness = CellSize * 0.025f;
+            CreateRect(parent, "Border Top", new Vector3(0f, CellSize * 0.5f - thickness * 0.5f, -0.04f), new Vector2(CellSize, thickness), color, 4);
+            CreateRect(parent, "Border Bottom", new Vector3(0f, -CellSize * 0.5f + thickness * 0.5f, -0.04f), new Vector2(CellSize, thickness), color, 4);
+            CreateRect(parent, "Border Left", new Vector3(-CellSize * 0.5f + thickness * 0.5f, 0f, -0.04f), new Vector2(thickness, CellSize), color, 4);
+            CreateRect(parent, "Border Right", new Vector3(CellSize * 0.5f - thickness * 0.5f, 0f, -0.04f), new Vector2(thickness, CellSize), color, 4);
         }
 
         private void RebuildRouteMarkers()
@@ -416,7 +393,10 @@ namespace CIGAgamejam
 
         private Vector3 GridToWorld(float gridX, float gridY)
         {
-            Tilemap coordinateTilemap = CoordinateTilemap;
+            if (!IsBridgeReady())
+                return Vector3.zero;
+
+            Tilemap coordinateTilemap = _tilemapBridge.CoordinateTilemap;
             if (coordinateTilemap != null)
             {
                 int cellX = Mathf.FloorToInt(gridX);
@@ -426,10 +406,7 @@ namespace CIGAgamejam
                 return cellCenter + new Vector3((gridX - cellX) * cellSize.x, (gridY - cellY) * cellSize.y, 0f);
             }
 
-            return new Vector3(
-                _origin.x + (gridX + 0.5f) * _cellSize,
-                _origin.y + (gridY + 0.5f) * _cellSize,
-                0f);
+            return _tilemapBridge.CellToWorld(new GridPosition(Mathf.FloorToInt(gridX), Mathf.FloorToInt(gridY)));
         }
 
         private Vector3 SecurityWorldPosition(GridPosition position)
@@ -490,7 +467,7 @@ namespace CIGAgamejam
 
         private void CreateRect(Transform parent, string objectName, Vector3 localPosition, Vector2 size, Color color, int sortingOrder, float zRotation = 0f)
         {
-            float inverseCellSize = _cellSize > 0f ? 1f / _cellSize : 1f;
+            float inverseCellSize = CellSize > 0f ? 1f / CellSize : 1f;
             var go = new GameObject(objectName);
             go.transform.SetParent(parent, false);
             go.transform.localPosition = new Vector3(localPosition.x * inverseCellSize, localPosition.y * inverseCellSize, localPosition.z);
@@ -503,25 +480,16 @@ namespace CIGAgamejam
             renderer.sortingOrder = sortingOrder;
         }
 
-        private Tilemap CoordinateTilemap => _tilemapBridge != null && _tilemapBridge.GameplayTilemap != null
-            ? _tilemapBridge.GameplayTilemap
-            : _referenceTilemap != null
-                ? _referenceTilemap
-                : _warehouseTilemap;
-
-        private float ResolveCellSize()
+        private bool IsBridgeReady()
         {
-            Tilemap coordinateTilemap = CoordinateTilemap;
-            if (coordinateTilemap != null && coordinateTilemap.layoutGrid != null)
-            {
-                Vector3 size = coordinateTilemap.layoutGrid.cellSize;
-                float maxAxis = Mathf.Max(Mathf.Abs(size.x), Mathf.Abs(size.y));
-                if (maxAxis > 0f)
-                    return maxAxis;
-            }
+            if (_tilemapBridge != null && _tilemapBridge.IsReady)
+                return true;
 
-            return _cellSize;
+            Debug.LogError("[PrototypeWorldView] TilemapGridBridge is required for all world/grid coordinate conversion.");
+            return false;
         }
+
+        private float ResolveCellSize() => _tilemapBridge != null && _tilemapBridge.IsReady ? _tilemapBridge.CellSize : 1f;
 
         private static Sprite CreateUnitSprite()
         {
