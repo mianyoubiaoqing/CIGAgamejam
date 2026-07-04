@@ -60,8 +60,10 @@ namespace CIGAgamejam
                 ? _labelFont
                 : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             Canvas canvas = CreateCanvas();
-            BuildHud();
-            ApplyBoundHudArt();
+            if (canvas == null)
+                return;
+
+            BuildHud(canvas);
             BuildResultPanel(canvas);
             BuildStartScreen(canvas);
             _hasGameStarted = _gamePhaseSystem != null && _gamePhaseSystem.CurrentPhase != GamePhase.None;
@@ -105,14 +107,10 @@ namespace CIGAgamejam
             EventBus<OnGameEnded>.Unsubscribe(HandleGameEnded);
         }
 
-        private void BuildHud()
+        private void BuildHud(Canvas canvas)
         {
-            Canvas canvas = CreateCanvas();
             if (TryBindExistingHud(canvas))
-            {
-                ConfigureHudRaycasts(canvas.transform);
                 return;
-            }
 
             if (!_allowRuntimeHudGeneration)
             {
@@ -184,6 +182,12 @@ namespace CIGAgamejam
             foreach (Canvas sceneCanvas in FindObjectsOfType<Canvas>(true))
                 if (sceneCanvas.gameObject.scene == gameObject.scene && sceneCanvas.name == "Prototype HUD")
                     return sceneCanvas;
+
+            if (!_allowRuntimeHudGeneration)
+            {
+                Debug.LogError("PrototypeHudView missing Prototype HUD canvas. Please create and bind it in the scene hierarchy, or enable runtime generation for debugging.");
+                return null;
+            }
 
             var canvasObject = new GameObject("Prototype HUD");
             canvasObject.transform.SetParent(transform, false);
@@ -302,10 +306,7 @@ namespace CIGAgamejam
             if (canvas == null || _resultPanel != null) return;
 
             if (TryBindResultPanel(canvas))
-            {
-                ConfigureHudRaycasts(canvas.transform);
                 return;
-            }
 
             if (!_allowRuntimeHudGeneration)
             {
@@ -370,11 +371,17 @@ namespace CIGAgamejam
                 _startScreen = existing.gameObject;
                 Button existingButton = FindButton(existing, "Start Button");
                 StartGameUI existingStartUI = _startScreen.GetComponent<StartGameUI>();
-                if (existingStartUI == null)
-                    existingStartUI = _startScreen.AddComponent<StartGameUI>();
-                existingStartUI.Configure(_gamePhaseSystem, existingButton);
+                if (existingStartUI != null)
+                    existingStartUI.Configure(_gamePhaseSystem, existingButton);
+                else
+                    BindActionButton(existingButton, OnStartClicked);
                 _startScreen.SetActive(_gamePhaseSystem == null || _gamePhaseSystem.CurrentPhase == GamePhase.None);
-                _startScreen.transform.SetAsLastSibling();
+                return;
+            }
+
+            if (!_allowRuntimeHudGeneration)
+            {
+                Debug.LogError("PrototypeHudView missing Start Screen in scene HUD.");
                 return;
             }
 
@@ -431,6 +438,13 @@ namespace CIGAgamejam
             StartGameUI startUI = _startScreen.AddComponent<StartGameUI>();
             startUI.Configure(_gamePhaseSystem, button);
             _startScreen.transform.SetAsLastSibling();
+        }
+
+        private void OnStartClicked()
+        {
+            _gamePhaseSystem?.BeginGame();
+            if (_startScreen != null)
+                _startScreen.SetActive(false);
         }
 
         private RectTransform CreateButton(RectTransform parent, string name, string label, Vector2 anchoredPosition, Vector2 size, UnityEngine.Events.UnityAction action, Sprite backgroundSprite = null)
@@ -636,40 +650,6 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             if (_topBarRoot != null) _topBarRoot.gameObject.SetActive(visible);
             if (_bottomBarRoot != null) _bottomBarRoot.gameObject.SetActive(visible);
             if (_logPanelRoot != null) _logPanelRoot.gameObject.SetActive(visible);
-        }
-
-        private void ApplyBoundHudArt()
-        {
-            ApplyBoundLabelFonts();
-            ApplySprite(FindImage(transform, "Prototype HUD/Log Panel"), _logPanelSprite, true);
-            ApplySprite(FindImage(transform, "Prototype HUD/Top Bar/Day Night Root/Day Night Track"), _phaseBarSprite, true);
-            ApplySprite(FindImage(transform, "Prototype HUD/Top Bar/Day Night Root/Day Night Track/Needle"), _phasePointerSprite, true);
-            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Day Button"), _buttonDaylightSprite, true);
-            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Night Button"), _buttonNightSprite, true);
-            ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Day Button/Label"));
-            ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Night Button/Label"));
-
-            ApplyStatusTextStyle(_confidenceText);
-            ApplyStatusTextStyle(_flowText);
-            ApplyStatusTextStyle(_phaseText);
-            ApplyStatusTextStyle(_turnText);
-            ApplyButtonTextStyle(_logText);
-        }
-
-        private void ApplyBoundLabelFonts()
-        {
-            if (_font == null)
-                return;
-
-            Transform hudRoot = transform.Find("Prototype HUD");
-            if (hudRoot == null)
-                return;
-
-            foreach (Text text in hudRoot.GetComponentsInChildren<Text>(true))
-            {
-                if (text != null && text.gameObject.name == "Label")
-                    text.font = _font;
-            }
         }
 
         private void RefreshButtonStates()
@@ -925,7 +905,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             if (button == null || action == null)
                 return;
 
-            button.onClick.RemoveAllListeners();
+            button.onClick.RemoveListener(action);
             button.onClick.AddListener(action);
         }
 
