@@ -16,6 +16,10 @@ namespace CIGAgamejam
         public IReadOnlyList<PlacedTool> PlacedTools => _placedTools;
         public int Width => _hasConfigError ? 0 : _config.Width;
         public int Height => _hasConfigError ? 0 : _config.Height;
+        public int MinX => _hasConfigError ? 0 : _config.MinX;
+        public int MinY => _hasConfigError ? 0 : _config.MinY;
+        public int MaxXExclusive => _hasConfigError ? 0 : _config.MaxXExclusive;
+        public int MaxYExclusive => _hasConfigError ? 0 : _config.MaxYExclusive;
 
         private void Awake()
         {
@@ -39,8 +43,8 @@ namespace CIGAgamejam
 
             _config.Validate();
 
-            for (int y = 0; y < _config.Height; y++)
-            for (int x = 0; x < _config.Width; x++)
+            for (int y = _config.MinY; y < _config.MaxYExclusive; y++)
+            for (int x = _config.MinX; x < _config.MaxXExclusive; x++)
                 _cellTypes[new GridPosition(x, y)] = GridCellType.Floor;
 
             GridCellDefinition[] overrides = _config.CellOverrides;
@@ -57,10 +61,10 @@ namespace CIGAgamejam
         public bool IsInBounds(GridPosition position)
         {
             return !_hasConfigError
-                && position.X >= 0
-                && position.Y >= 0
-                && position.X < _config.Width
-                && position.Y < _config.Height;
+                && position.X >= _config.MinX
+                && position.Y >= _config.MinY
+                && position.X < _config.MaxXExclusive
+                && position.Y < _config.MaxYExclusive;
         }
 
         public bool TryGetCellType(GridPosition position, out GridCellType cellType)

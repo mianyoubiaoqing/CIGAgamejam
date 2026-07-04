@@ -6,10 +6,6 @@ namespace CIGAgamejam
 {
     public sealed class PrototypeHudView : MonoBehaviour
     {
-        private static readonly Color ToolButtonNormalColor = new(0.24f, 0.27f, 0.31f, 1f);
-        private static readonly Color ToolButtonSelectedColor = new(0.88f, 0.62f, 0.22f, 1f);
-        private static readonly Color ToolButtonEmptyColor = new(0.13f, 0.14f, 0.16f, 1f);
-
         [SerializeField] private GamePhaseSystem _gamePhaseSystem;
         [SerializeField] private CampaignProgressSystem _campaignProgressSystem;
         [SerializeField] private EconomySystem _economySystem;
@@ -18,8 +14,6 @@ namespace CIGAgamejam
         [SerializeField] private PrototypeInputController _inputController;
 
         private readonly Dictionary<ToolConfig, Text> _toolCountTexts = new();
-        private readonly Dictionary<ToolConfig, Button> _toolButtons = new();
-        private readonly Dictionary<ToolConfig, Image> _toolButtonImages = new();
         private Font _font;
         private Text _confidenceText;
         private Text _flowText;
@@ -59,7 +53,6 @@ namespace CIGAgamejam
             EventBus<OnCustomerFlowChanged>.Subscribe(HandleCustomerFlowChanged);
             EventBus<OnToolInventoryChanged>.Subscribe(HandleToolInventoryChanged);
             EventBus<OnToolSelected>.Subscribe(HandleToolSelected);
-            EventBus<OnToolPlacementRejected>.Subscribe(HandleToolPlacementRejected);
             EventBus<OnPrototypeLogMessage>.Subscribe(HandlePrototypeLogMessage);
         }
 
@@ -73,13 +66,15 @@ namespace CIGAgamejam
             EventBus<OnCustomerFlowChanged>.Unsubscribe(HandleCustomerFlowChanged);
             EventBus<OnToolInventoryChanged>.Unsubscribe(HandleToolInventoryChanged);
             EventBus<OnToolSelected>.Unsubscribe(HandleToolSelected);
-            EventBus<OnToolPlacementRejected>.Unsubscribe(HandleToolPlacementRejected);
             EventBus<OnPrototypeLogMessage>.Unsubscribe(HandlePrototypeLogMessage);
         }
 
         private void BuildHud()
         {
             Canvas canvas = CreateCanvas();
+            if (TryBindExistingHud(canvas))
+                return;
+
             RectTransform topBar = CreatePanel(canvas.transform, "Top Bar", AnchorTopStretch(82f), new Color(0.07f, 0.08f, 0.09f, 0.94f));
             RectTransform bottomBar = CreatePanel(canvas.transform, "Bottom Bar", AnchorBottomStretch(112f), new Color(0.08f, 0.08f, 0.08f, 0.94f));
             RectTransform logPanel = CreatePanel(canvas.transform, "Log Panel", AnchorRightMiddle(300f, 138f), new Color(0.05f, 0.05f, 0.05f, 0.78f));
@@ -128,6 +123,10 @@ namespace CIGAgamejam
 
         private Canvas CreateCanvas()
         {
+            Transform existing = transform.Find("Prototype HUD");
+            if (existing != null && existing.TryGetComponent(out Canvas existingCanvas))
+                return existingCanvas;
+
             var canvasObject = new GameObject("Prototype HUD");
             canvasObject.transform.SetParent(transform, false);
             Canvas canvas = canvasObject.AddComponent<Canvas>();
@@ -137,6 +136,30 @@ namespace CIGAgamejam
             scaler.referenceResolution = new Vector2(1280f, 720f);
             canvasObject.AddComponent<GraphicRaycaster>();
             return canvas;
+        }
+
+        private bool TryBindExistingHud(Canvas canvas)
+        {
+            if (canvas == null || canvas.transform.Find("Top Bar") == null)
+                return false;
+
+            _confidenceText = FindText(canvas.transform, "Top Bar/Favorability");
+            _flowText = FindText(canvas.transform, "Top Bar/Flow");
+            _phaseText = FindText(canvas.transform, "Top Bar/Phase");
+            _turnText = FindText(canvas.transform, "Top Bar/Turn");
+            _logText = FindText(canvas.transform, "Log Panel/Log Text");
+            _dayNightNeedle = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track/Needle");
+            _toolMenuRoot = FindRect(canvas.transform, "Bottom Bar/Tool Button Row");
+            _actionButtonRoot = FindRect(canvas.transform, "Bottom Bar/Action Button Row");
+
+            return _confidenceText != null
+                && _flowText != null
+                && _phaseText != null
+                && _turnText != null
+                && _logText != null
+                && _dayNightNeedle != null
+                && _toolMenuRoot != null
+                && _actionButtonRoot != null;
         }
 
         private void BuildDayNightTrack(RectTransform topBar)
@@ -173,9 +196,6 @@ namespace CIGAgamejam
 
             AddFixedLayout(buttonTransform, 104f, 70f);
             _toolCountTexts[tool] = buttonTransform.GetComponentInChildren<Text>();
-            _toolButtons[tool] = buttonTransform.GetComponent<Button>();
-            _toolButtonImages[tool] = buttonTransform.GetComponent<Image>();
-            RefreshToolButtonState(tool);
         }
 
         private void BuildActionButtons(RectTransform bottomBar)
@@ -198,7 +218,7 @@ namespace CIGAgamejam
             rect.sizeDelta = size;
 
             Image image = go.AddComponent<Image>();
-            image.color = ToolButtonNormalColor;
+            image.color = new Color(0.18f, 0.2f, 0.23f, 1f);
             Button button = go.AddComponent<Button>();
             button.targetGraphic = image;
             button.onClick.AddListener(action);
@@ -234,7 +254,7 @@ namespace CIGAgamejam
             return rect;
         }
 
-        private Text CreateLayoutText(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, float preferredWidth)
+private Text CreateLayoutText(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, float preferredWidth)
         {
             Text text = CreateStretchText(parent, name, value, fontSize, anchor, Vector2.zero);
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -359,19 +379,11 @@ namespace CIGAgamejam
             }
 
             countText.text = $"{e.Tool.DisplayName}\nx{e.Count}";
-            RefreshToolButtonState(e.Tool);
         }
 
         private void HandleToolSelected(OnToolSelected e)
         {
             RebuildToolButtonCounts();
-        }
-
-        private void HandleToolPlacementRejected(OnToolPlacementRejected e)
-        {
-            string toolName = e.Tool != null ? e.Tool.DisplayName : "\u9053\u5177";
-            EventBus<OnPrototypeLogMessage>.Publish(
-                new OnPrototypeLogMessage($"{toolName} \u653e\u7f6e\u5931\u8d25: {ResolvePlacementFailureLabel(e.Result)} {e.Origin}"));
         }
 
         private void HandlePrototypeLogMessage(OnPrototypeLogMessage e)
@@ -386,48 +398,31 @@ namespace CIGAgamejam
 
             foreach (KeyValuePair<ToolConfig, Text> pair in _toolCountTexts)
                 if (pair.Key != null && pair.Value != null)
-                {
                     pair.Value.text = $"{pair.Key.DisplayName}\nx{_inventorySystem.GetCount(pair.Key)}";
-                    RefreshToolButtonState(pair.Key);
-                }
         }
 
         private void EnsureToolButtonsForInventory()
         {
             if (_inventorySystem == null || _toolMenuRoot == null) return;
 
+            BindExistingToolButtons();
             foreach (KeyValuePair<ToolConfig, ToolStockState> pair in _inventorySystem.Stocks)
                 if (pair.Key != null && (!_toolCountTexts.TryGetValue(pair.Key, out Text countText) || countText == null))
                     CreateToolButton(_toolMenuRoot, pair.Key, _toolCountTexts.Count);
         }
 
-        private void RefreshToolButtonState(ToolConfig tool)
+        private void BindExistingToolButtons()
         {
-            if (tool == null || _inventorySystem == null) return;
-
-            int count = _inventorySystem.GetCount(tool);
-            bool hasStock = count > 0;
-            bool isSelected = _inputController != null && _inputController.SelectedTool == tool;
-
-            if (_toolButtons.TryGetValue(tool, out Button button) && button != null)
-                button.interactable = hasStock;
-
-            if (_toolButtonImages.TryGetValue(tool, out Image image) && image != null)
-                image.color = !hasStock ? ToolButtonEmptyColor : isSelected ? ToolButtonSelectedColor : ToolButtonNormalColor;
-        }
-
-        private static string ResolvePlacementFailureLabel(PlacementResult result)
-        {
-            return result switch
+            foreach (KeyValuePair<ToolConfig, ToolStockState> pair in _inventorySystem.Stocks)
             {
-                PlacementResult.NotNightPlanning => "\u53ea\u80fd\u5728\u591c\u665a\u653e\u7f6e",
-                PlacementResult.MissingTool => "\u6ca1\u6709\u9009\u4e2d\u9053\u5177",
-                PlacementResult.OutOfBounds => "\u8d85\u51fa\u5e97\u94fa\u8303\u56f4",
-                PlacementResult.CellOccupied => "\u683c\u5b50\u5df2\u88ab\u5360\u7528",
-                PlacementResult.CellTypeNotAllowed => "\u8fd9\u4e2a\u683c\u5b50\u4e0d\u80fd\u653e\u8be5\u9053\u5177",
-                PlacementResult.DuplicateUniqueTool => "\u5df2\u7ecf\u6709\u540c\u7c7b\u552f\u4e00\u9053\u5177",
-                _ => "\u672a\u77e5\u539f\u56e0"
-            };
+                if (pair.Key == null || _toolCountTexts.ContainsKey(pair.Key))
+                    continue;
+
+                Transform button = _toolMenuRoot.Find($"Tool Button {pair.Key.Id}");
+                Text countText = button != null ? button.GetComponentInChildren<Text>() : null;
+                if (countText != null)
+                    _toolCountTexts[pair.Key] = countText;
+            }
         }
 
         private static string ResolvePhaseLabel(GamePhase phase)
@@ -465,6 +460,18 @@ namespace CIGAgamejam
         private static RectSpec AnchorRightMiddle(float width, float height)
         {
             return new RectSpec(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-18f, 18f), new Vector2(width, height), new Vector2(1f, 0.5f));
+        }
+
+        private static RectTransform FindRect(Transform root, string path)
+        {
+            Transform child = root.Find(path);
+            return child != null ? child as RectTransform : null;
+        }
+
+        private static Text FindText(Transform root, string path)
+        {
+            Transform child = root.Find(path);
+            return child != null ? child.GetComponent<Text>() : null;
         }
 
         private readonly struct RectSpec
