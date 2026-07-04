@@ -23,6 +23,10 @@ namespace CIGAgamejam
         private RectTransform _dayNightNeedle;
         private RectTransform _toolMenuRoot;
         private RectTransform _actionButtonRoot;
+        private Button _skipButton;
+        private Button _startDayButton;
+        private Button _finishDayButton;
+        private Button _nextNightButton;
         private int _currentDay = 1;
         private int _maxDays = 1;
         private int _inStoreCount;
@@ -151,6 +155,10 @@ namespace CIGAgamejam
             _dayNightNeedle = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track/Needle");
             _toolMenuRoot = FindRect(canvas.transform, "Bottom Bar/Tool Button Row");
             _actionButtonRoot = FindRect(canvas.transform, "Bottom Bar/Action Button Row");
+            _skipButton = FindButton(_actionButtonRoot, "Skip Button");
+            _startDayButton = FindButton(_actionButtonRoot, "Day Button");
+            _finishDayButton = FindButton(_actionButtonRoot, "Result Button");
+            _nextNightButton = FindButton(_actionButtonRoot, "Next Button");
 
             return _confidenceText != null
                 && _flowText != null
@@ -200,10 +208,18 @@ namespace CIGAgamejam
 
         private void BuildActionButtons(RectTransform bottomBar)
         {
-            AddFixedLayout(CreateButton(bottomBar, "Skip Button", "\u8df3\u8fc7", Vector2.zero, new Vector2(86f, 58f), () => _nightTurnSystem?.SkipTurn()), 86f, 58f);
-            AddFixedLayout(CreateButton(bottomBar, "Day Button", "\u5f00\u59cb\u8425\u4e1a", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.EndNightAndStartDay()), 118f, 58f);
-            AddFixedLayout(CreateButton(bottomBar, "Result Button", "\u7ed3\u675f\u9ed1\u591c", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.CompleteDaySimulation()), 118f, 58f);
-            AddFixedLayout(CreateButton(bottomBar, "Next Button", "\u4e0b\u4e00\u591c", Vector2.zero, new Vector2(100f, 58f), () => _gamePhaseSystem?.StartNextNightOrFail()), 100f, 58f);
+            RectTransform skip = CreateButton(bottomBar, "Skip Button", "\u8df3\u8fc7", Vector2.zero, new Vector2(86f, 58f), () => _nightTurnSystem?.SkipTurn());
+            RectTransform day = CreateButton(bottomBar, "Day Button", "\u5f00\u59cb\u8425\u4e1a", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.EndNightAndStartDay());
+            RectTransform result = CreateButton(bottomBar, "Result Button", "\u7ed3\u675f\u8425\u4e1a", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.CompleteDaySimulation());
+            RectTransform next = CreateButton(bottomBar, "Next Button", "\u4e0b\u4e00\u591c", Vector2.zero, new Vector2(100f, 58f), () => _gamePhaseSystem?.StartNextNightOrFail());
+            _skipButton = skip.GetComponent<Button>();
+            _startDayButton = day.GetComponent<Button>();
+            _finishDayButton = result.GetComponent<Button>();
+            _nextNightButton = next.GetComponent<Button>();
+            AddFixedLayout(skip, 86f, 58f);
+            AddFixedLayout(day, 118f, 58f);
+            AddFixedLayout(result, 118f, 58f);
+            AddFixedLayout(next, 100f, 58f);
         }
 
         private RectTransform CreateButton(RectTransform parent, string name, string label, Vector2 anchoredPosition, Vector2 size, UnityEngine.Events.UnityAction action)
@@ -336,6 +352,29 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             _turnText.text = $"\u56de\u5408 {(_nightTurnSystem != null ? _nightTurnSystem.CurrentTurn : 1)}";
             if (_dayNightNeedle != null)
                 _dayNightNeedle.anchoredPosition = new Vector2(phase == "\u591c\u665a" ? 0f : 270f, 0f);
+            RefreshButtonStates();
+        }
+
+        private void RefreshButtonStates()
+        {
+            GamePhase currentPhase = _gamePhaseSystem != null
+                ? _gamePhaseSystem.CurrentPhase
+                : GamePhase.NightPlanning;
+            bool isNight = currentPhase == GamePhase.NightPlanning;
+
+            if (_skipButton != null) _skipButton.interactable = isNight;
+            if (_startDayButton != null) _startDayButton.interactable = isNight;
+            if (_finishDayButton != null) _finishDayButton.interactable = currentPhase == GamePhase.DaySimulation;
+            if (_nextNightButton != null) _nextNightButton.interactable = currentPhase == GamePhase.DayResult;
+
+            foreach (KeyValuePair<ToolConfig, Text> pair in _toolCountTexts)
+            {
+                Button button = pair.Value != null ? pair.Value.GetComponentInParent<Button>() : null;
+                if (button != null)
+                    button.interactable = isNight
+                        && _inventorySystem != null
+                        && _inventorySystem.GetCount(pair.Key) > 0;
+            }
         }
 
         private void HandleDayStarted(OnDayStarted e)
@@ -379,6 +418,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             }
 
             countText.text = $"{e.Tool.DisplayName}\nx{e.Count}";
+            RefreshButtonStates();
         }
 
         private void HandleToolSelected(OnToolSelected e)
@@ -472,6 +512,13 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
         {
             Transform child = root.Find(path);
             return child != null ? child.GetComponent<Text>() : null;
+        }
+
+        private static Button FindButton(Transform root, string name)
+        {
+            if (root == null) return null;
+            Transform child = root.Find(name);
+            return child != null ? child.GetComponent<Button>() : null;
         }
 
         private readonly struct RectSpec

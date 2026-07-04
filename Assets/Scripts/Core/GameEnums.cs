@@ -39,6 +39,12 @@ namespace CIGAgamejam
         Utility
     }
 
+    public enum ToolPlacementKind
+    {
+        ModifyPuzzle,
+        ReplacePuzzle
+    }
+
     public enum ToolTriggerTiming
     {
         OnDayStart,
@@ -73,7 +79,8 @@ namespace CIGAgamejam
         BossInterference,
         AfterRemovingCustomer,
         Effect,
-        SecurityPatrol
+        SecurityPatrol,
+        Exhausted
     }
 
     public enum ToolStockSource

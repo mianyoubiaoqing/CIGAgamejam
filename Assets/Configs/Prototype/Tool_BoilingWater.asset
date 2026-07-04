@@ -17,6 +17,7 @@ MonoBehaviour:
   _category: 1
   _icon: {fileID: 0}
   _prefab: {fileID: 0}
+  _placementKind: 0
   _allowedCellTypes:
   - 0
   - 2

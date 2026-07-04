@@ -17,6 +17,7 @@ MonoBehaviour:
   _category: 5
   _icon: {fileID: 0}
   _prefab: {fileID: 0}
+  _placementKind: 0
   _allowedCellTypes:
   - 6
   _footprint:
@@ -30,6 +31,6 @@ MonoBehaviour:
   _disableChanceAfterRemovingCustomer: 0
   _effects:
   - EffectType: 7
-    Amount: 5
+    Amount: 2
     Chance: 0
     TargetCellType: 6

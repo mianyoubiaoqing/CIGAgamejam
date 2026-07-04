@@ -8,7 +8,7 @@ namespace CIGAgamejam
         [SerializeField] private GridConfig _config;
 
         private readonly Dictionary<GridPosition, GridCellType> _cellTypes = new();
-        private readonly Dictionary<GridPosition, PlacedTool> _occupants = new();
+        private readonly Dictionary<GridPosition, PuzzleTileState> _tileStates = new();
         private readonly List<PlacedTool> _placedTools = new();
         private int _nextToolInstanceId = 1;
         private bool _hasConfigError;
@@ -29,7 +29,7 @@ namespace CIGAgamejam
         public void InitializeGrid()
         {
             _cellTypes.Clear();
-            _occupants.Clear();
+            _tileStates.Clear();
             _placedTools.Clear();
             _nextToolInstanceId = 1;
             _hasConfigError = false;
@@ -45,7 +45,11 @@ namespace CIGAgamejam
 
             for (int y = _config.MinY; y < _config.MaxYExclusive; y++)
             for (int x = _config.MinX; x < _config.MaxXExclusive; x++)
-                _cellTypes[new GridPosition(x, y)] = GridCellType.Floor;
+            {
+                var position = new GridPosition(x, y);
+                _cellTypes[position] = GridCellType.Floor;
+                _tileStates[position] = new PuzzleTileState(GridCellType.Floor);
+            }
 
             GridCellDefinition[] overrides = _config.CellOverrides;
             if (overrides == null) return;
@@ -54,7 +58,10 @@ namespace CIGAgamejam
             {
                 GridPosition position = new GridPosition(overrides[i].Position);
                 if (IsInBounds(position))
+                {
                     _cellTypes[position] = overrides[i].CellType;
+                    _tileStates[position] = new PuzzleTileState(overrides[i].CellType);
+                }
             }
         }
 
@@ -74,12 +81,20 @@ namespace CIGAgamejam
 
         public bool TryGetToolAt(GridPosition position, out PlacedTool tool)
         {
-            return _occupants.TryGetValue(position, out tool);
+            tool = null;
+            if (!_tileStates.TryGetValue(position, out PuzzleTileState state)) return false;
+            tool = state.ReplacementTool ?? state.AttachedTool;
+            return tool != null;
+        }
+
+        public bool TryGetTileState(GridPosition position, out PuzzleTileState state)
+        {
+            return _tileStates.TryGetValue(position, out state);
         }
 
         public bool IsOccupied(GridPosition position)
         {
-            return _occupants.ContainsKey(position);
+            return TryGetToolAt(position, out _);
         }
 
         public bool IsRouteWalkable(GridPosition position)
@@ -110,7 +125,13 @@ namespace CIGAgamejam
                 if (!IsInBounds(position))
                     return PlacementResult.OutOfBounds;
 
-                if (_occupants.ContainsKey(position))
+                if (!_tileStates.TryGetValue(position, out PuzzleTileState state))
+                    return PlacementResult.OutOfBounds;
+
+                bool occupied = tool.PlacementKind == ToolPlacementKind.ModifyPuzzle
+                    ? state.AttachedTool != null || state.IsDestroyed
+                    : state.ReplacementTool != null || state.IsDestroyed;
+                if (occupied)
                     return PlacementResult.CellOccupied;
 
                 if (!TryGetCellType(position, out GridCellType cellType) || !CanPlaceToolOnCellType(tool, cellType))
@@ -136,9 +157,43 @@ namespace CIGAgamejam
             _placedTools.Add(placedTool);
 
             for (int i = 0; i < occupiedCells.Length; i++)
-                _occupants[occupiedCells[i]] = placedTool;
+            {
+                PuzzleTileState state = _tileStates[occupiedCells[i]];
+                bool placed = tool.PlacementKind == ToolPlacementKind.ModifyPuzzle
+                    ? state.TryAttach(placedTool)
+                    : state.TryReplace(placedTool);
+                if (!placed)
+                {
+                    RemoveToolFromBoard(placedTool);
+                    placedTool = null;
+                    return false;
+                }
+            }
 
             EventBus<OnToolPlaced>.Publish(new OnToolPlaced(placedTool));
+            return true;
+        }
+
+        public bool RemoveToolFromBoard(PlacedTool tool)
+        {
+            if (tool == null || !_placedTools.Remove(tool)) return false;
+
+            for (int i = 0; i < tool.OccupiedCells.Length; i++)
+                if (_tileStates.TryGetValue(tool.OccupiedCells[i], out PuzzleTileState state))
+                    state.Remove(tool);
+
+            return true;
+        }
+
+        public bool MarkTileDestroyed(GridPosition position)
+        {
+            if (!_tileStates.TryGetValue(position, out PuzzleTileState state)) return false;
+
+            PlacedTool attached = state.AttachedTool;
+            PlacedTool replacement = state.ReplacementTool;
+            state.MarkDestroyed();
+            if (attached != null) _placedTools.Remove(attached);
+            if (replacement != null) _placedTools.Remove(replacement);
             return true;
         }
 
@@ -171,7 +226,10 @@ namespace CIGAgamejam
 
             PlacedTool selected = candidates[Random.Range(0, candidates.Count)];
             if (selected.Disable(ToolDisableReason.BossInterference))
+            {
                 EventBus<OnToolDisabled>.Publish(new OnToolDisabled(selected, ToolDisableReason.BossInterference));
+                RemoveToolFromBoard(selected);
+            }
 
             return selected;
         }

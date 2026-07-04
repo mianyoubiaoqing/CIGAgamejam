@@ -70,7 +70,7 @@ namespace CIGAgamejam
 
         private void CheckVisibleTools()
         {
-            for (int i = 0; i < _gridSystem.PlacedTools.Count; i++)
+            for (int i = _gridSystem.PlacedTools.Count - 1; i >= 0; i--)
             {
                 PlacedTool tool = _gridSystem.PlacedTools[i];
                 if (tool == null || tool.IsDisabled || tool.IsExhausted) continue;
@@ -82,6 +82,7 @@ namespace CIGAgamejam
                     EventBus<OnSecurityRemovedTool>.Publish(new OnSecurityRemovedTool(tool, _currentPosition));
                     EventBus<OnPrototypeLogMessage>.Publish(
                         new OnPrototypeLogMessage($"保安发现并拆除了 {tool.Config.DisplayName}。"));
+                    _gridSystem.RemoveToolFromBoard(tool);
                 }
             }
         }

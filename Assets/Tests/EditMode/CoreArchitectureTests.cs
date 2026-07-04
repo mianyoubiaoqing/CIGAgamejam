@@ -53,6 +53,51 @@ namespace CIGAgamejam
         }
 
         [Test]
+        public void AttachedAndReplacementToolsCanShareABaseTile()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 1);
+            SetPrivateField(gridConfig, "_height", 1);
+            SetPrivateField(gridConfig, "_cellOverrides", new[]
+            {
+                new GridCellDefinition { Position = Vector2Int.zero, CellType = GridCellType.Warehouse }
+            });
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            ToolConfig attached = CreateTool("water", GridCellType.Warehouse);
+            SetPrivateField(attached, "_placementKind", ToolPlacementKind.ModifyPuzzle);
+            ToolConfig replacement = CreateTool("fake", GridCellType.Warehouse);
+            SetPrivateField(replacement, "_placementKind", ToolPlacementKind.ReplacePuzzle);
+
+            Assert.IsTrue(gridSystem.TryPlaceTool(attached, new GridPosition(0, 0), out PlacedTool attachedTool));
+            Assert.IsTrue(gridSystem.TryPlaceTool(replacement, new GridPosition(0, 0), out PlacedTool replacementTool));
+            Assert.IsTrue(gridSystem.TryGetTileState(new GridPosition(0, 0), out PuzzleTileState state));
+            Assert.AreSame(attachedTool, state.AttachedTool);
+            Assert.AreSame(replacementTool, state.ReplacementTool);
+            Assert.AreEqual(GridCellType.Warehouse, state.BaseCellType);
+        }
+
+        [Test]
+        public void RemovingToolReleasesItsPlacementSlot()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 1);
+            SetPrivateField(gridConfig, "_height", 1);
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            ToolConfig tool = CreateTool("clown", GridCellType.Floor);
+            Assert.IsTrue(gridSystem.TryPlaceTool(tool, new GridPosition(0, 0), out PlacedTool placedTool));
+            Assert.IsTrue(gridSystem.RemoveToolFromBoard(placedTool));
+            Assert.AreEqual(PlacementResult.Success, gridSystem.CanPlaceTool(tool, new GridPosition(0, 0)));
+        }
+
+        [Test]
         public void CampaignConfigClampsMaxDaysToStartingDay()
         {
             CampaignConfig config = CreateAsset<CampaignConfig>();
@@ -382,6 +427,8 @@ namespace CIGAgamejam
 
             Assert.IsTrue(placedTool.IsDisabled);
             Assert.AreEqual(ToolDisableReason.SecurityPatrol, placedTool.DisableReason);
+            Assert.IsFalse(gridSystem.PlacedTools.Contains(placedTool));
+            Assert.AreEqual(PlacementResult.Success, gridSystem.CanPlaceTool(tool, new GridPosition(1, 0)));
         }
 
         [Test]

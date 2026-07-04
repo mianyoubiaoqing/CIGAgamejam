@@ -14,6 +14,7 @@ namespace CIGAgamejam
         [SerializeField] private GameObject _prefab;
 
         [Header("Placement")]
+        [SerializeField] private ToolPlacementKind _placementKind = ToolPlacementKind.ReplacePuzzle;
         [SerializeField] private GridCellType[] _allowedCellTypes = { GridCellType.Floor };
         [SerializeField] private Vector2Int[] _footprint = { Vector2Int.zero };
         [SerializeField] private bool _uniquePerBoard;
@@ -33,6 +34,7 @@ namespace CIGAgamejam
         public ToolCategory Category => _category;
         public Sprite Icon => _icon;
         public GameObject Prefab => _prefab;
+        public ToolPlacementKind PlacementKind => _placementKind;
         public GridCellType[] AllowedCellTypes => _allowedCellTypes;
         public Vector2Int[] Footprint => _footprint;
         public bool UniquePerBoard => _uniquePerBoard;

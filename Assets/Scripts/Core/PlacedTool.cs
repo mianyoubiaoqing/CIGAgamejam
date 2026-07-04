@@ -8,6 +8,7 @@ namespace CIGAgamejam
         public ToolConfig Config { get; }
         public GridPosition Origin { get; }
         public GridPosition[] OccupiedCells { get; }
+        public ToolPlacementKind PlacementKind { get; }
         public int RemainingUses { get; private set; }
         public bool IsDisabled { get; private set; }
         public ToolDisableReason DisableReason { get; private set; }
@@ -20,6 +21,7 @@ namespace CIGAgamejam
             Config = config;
             Origin = origin;
             OccupiedCells = occupiedCells ?? Array.Empty<GridPosition>();
+            PlacementKind = config != null ? config.PlacementKind : ToolPlacementKind.ReplacePuzzle;
             RemainingUses = config != null ? config.UseLimit : 0;
             DisableReason = ToolDisableReason.None;
         }
