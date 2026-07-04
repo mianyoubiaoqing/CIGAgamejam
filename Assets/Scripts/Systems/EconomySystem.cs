@@ -43,12 +43,14 @@ namespace CIGAgamejam
         private void OnEnable()
         {
             EventBus<OnCustomerLeftStore>.Subscribe(HandleCustomerLeftStore);
+            EventBus<OnCustomerAngered>.Subscribe(HandleCustomerAngered);
             EventBus<OnFavorabilityDeltaRequested>.Subscribe(HandleFavorabilityDeltaRequested);
         }
 
         private void OnDestroy()
         {
             EventBus<OnCustomerLeftStore>.Unsubscribe(HandleCustomerLeftStore);
+            EventBus<OnCustomerAngered>.Unsubscribe(HandleCustomerAngered);
             EventBus<OnFavorabilityDeltaRequested>.Unsubscribe(HandleFavorabilityDeltaRequested);
         }
 
@@ -72,7 +74,7 @@ namespace CIGAgamejam
         {
             if (_hasConfigError || customer == null || customer.HasLeftStore) return;
 
-            ApplyRevenueDelta(5f);
+            ApplyRevenueDelta(_config.SuccessfulPurchaseFavorabilityDelta);
         }
 
         private void HandleCustomerLeftStore(OnCustomerLeftStore e)
@@ -83,8 +85,14 @@ namespace CIGAgamejam
                 || e.Reason == ToolEffectType.ScareCustomerGroup
                 || e.Reason == ToolEffectType.BribeSecurity)
             {
-                ApplyRevenueDelta(-10f);
+                ApplyRevenueDelta(-_config.ScaredCustomerFavorabilityPenalty);
             }
+        }
+
+        private void HandleCustomerAngered(OnCustomerAngered e)
+        {
+            if (_hasConfigError) return;
+            ApplyRevenueDelta(-_config.AngryCustomerFavorabilityPenalty);
         }
 
         private void HandleFavorabilityDeltaRequested(OnFavorabilityDeltaRequested e)
