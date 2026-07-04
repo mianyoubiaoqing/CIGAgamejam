@@ -5,7 +5,7 @@ namespace CIGAgamejam
     public sealed class GamePhaseSystem : MonoBehaviour
     {
         [SerializeField] private CampaignProgressSystem _campaignProgressSystem;
-        [SerializeField] private bool _beginOnStart = true;
+        [SerializeField] private bool _beginOnStart = false;
 
         private GamePhase _currentPhase = GamePhase.None;
         private bool _gameEnded;

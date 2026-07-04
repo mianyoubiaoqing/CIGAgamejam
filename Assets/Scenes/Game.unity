@@ -3394,7 +3394,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _campaignProgressSystem: {fileID: 990416146}
-  _beginOnStart: 1
+  _beginOnStart: 0
 --- !u!4 &990416148
 Transform:
   m_ObjectHideFlags: 0

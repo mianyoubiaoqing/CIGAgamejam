@@ -28,6 +28,9 @@ namespace CIGAgamejam
         private Text _phaseText;
         private Text _turnText;
         private Text _logText;
+        private RectTransform _topBarRoot;
+        private RectTransform _bottomBarRoot;
+        private RectTransform _logPanelRoot;
         private RectTransform _dayNightNeedle;
         private RectTransform _toolMenuRoot;
         private RectTransform _actionButtonRoot;
@@ -35,8 +38,10 @@ namespace CIGAgamejam
         private Button _startDayButton;
         private Button _finishDayButton;
         private Button _nextNightButton;
+        private GameObject _startScreen;
         private GameObject _resultPanel;
         private Text _resultText;
+        private bool _hasGameStarted;
         private int _currentDay = 1;
         private int _maxDays = 1;
         private int _inStoreCount;
@@ -50,9 +55,13 @@ namespace CIGAgamejam
         private void Awake()
         {
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            Canvas canvas = CreateCanvas();
             BuildHud();
             ApplyBoundHudArt();
-            BuildResultPanel(CreateCanvas());
+            BuildResultPanel(canvas);
+            BuildStartScreen(canvas);
+            _hasGameStarted = _gamePhaseSystem != null && _gamePhaseSystem.CurrentPhase != GamePhase.None;
+            SetHudVisible(_hasGameStarted);
             RefreshAll();
         }
 
@@ -101,6 +110,9 @@ namespace CIGAgamejam
             RectTransform topBar = CreatePanel(canvas.transform, "Top Bar", AnchorTopStretch(82f), new Color(0.07f, 0.08f, 0.09f, 0.94f));
             RectTransform bottomBar = CreatePanel(canvas.transform, "Bottom Bar", AnchorBottomStretch(112f), new Color(0.08f, 0.08f, 0.08f, 0.94f));
             RectTransform logPanel = CreatePanel(canvas.transform, "Log Panel", AnchorRightMiddle(300f, 138f), new Color(0.05f, 0.05f, 0.05f, 0.78f));
+            _topBarRoot = topBar;
+            _bottomBarRoot = bottomBar;
+            _logPanelRoot = logPanel;
             ApplySprite(logPanel.GetComponent<Image>(), _logPanelSprite, true);
 
             HorizontalLayoutGroup topLayout = topBar.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -171,6 +183,9 @@ namespace CIGAgamejam
             if (canvas == null || canvas.transform.Find("Top Bar") == null)
                 return false;
 
+            _topBarRoot = FindRect(canvas.transform, "Top Bar");
+            _bottomBarRoot = FindRect(canvas.transform, "Bottom Bar");
+            _logPanelRoot = FindRect(canvas.transform, "Log Panel");
             _confidenceText = FindText(canvas.transform, "Top Bar/Favorability");
             _flowText = FindText(canvas.transform, "Top Bar/Flow");
             _phaseText = FindText(canvas.transform, "Top Bar/Phase");
@@ -193,6 +208,9 @@ namespace CIGAgamejam
                 && _phaseText != null
                 && _turnText != null
                 && _logText != null
+                && _topBarRoot != null
+                && _bottomBarRoot != null
+                && _logPanelRoot != null
                 && _dayNightNeedle != null
                 && _toolMenuRoot != null
                 && _actionButtonRoot != null;
@@ -305,6 +323,79 @@ namespace CIGAgamejam
             _resultPanel.SetActive(false);
         }
 
+        private void BuildStartScreen(Canvas canvas)
+        {
+            if (canvas == null) return;
+
+            Transform existing = canvas.transform.Find("Start Screen");
+            if (existing != null)
+            {
+                _startScreen = existing.gameObject;
+                Button existingButton = FindButton(existing, "Start Button");
+                StartGameUI existingStartUI = _startScreen.GetComponent<StartGameUI>();
+                if (existingStartUI == null)
+                    existingStartUI = _startScreen.AddComponent<StartGameUI>();
+                existingStartUI.Configure(_gamePhaseSystem, existingButton);
+                _startScreen.SetActive(_gamePhaseSystem == null || _gamePhaseSystem.CurrentPhase == GamePhase.None);
+                _startScreen.transform.SetAsLastSibling();
+                return;
+            }
+
+            RectTransform screen = CreatePanel(
+                canvas.transform,
+                "Start Screen",
+                new RectSpec(Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero),
+                new Color(0.03f, 0.03f, 0.04f, 0.95f));
+            _startScreen = screen.gameObject;
+
+            Text title = CreateText(
+                screen,
+                "Title Text",
+                "捣蛋鬼要捣蛋",
+                48,
+                TextAnchor.MiddleCenter,
+                new Vector2(0f, 120f),
+                new Vector2(620f, 86f));
+            title.fontStyle = FontStyle.Bold;
+            ApplyStatusTextStyle(title);
+            RectTransform titleRect = title.rectTransform;
+            titleRect.anchorMin = new Vector2(0.5f, 0.5f);
+            titleRect.anchorMax = titleRect.anchorMin;
+            titleRect.pivot = new Vector2(0.5f, 0.5f);
+
+            RectTransform startButton = CreateButton(
+                screen,
+                "Start Button",
+                "开始游戏",
+                new Vector2(0f, 8f),
+                new Vector2(220f, 64f),
+                null,
+                _buttonDaylightSprite);
+            startButton.anchorMin = new Vector2(0.5f, 0.5f);
+            startButton.anchorMax = startButton.anchorMin;
+            startButton.pivot = new Vector2(0.5f, 0.5f);
+            Button button = startButton.GetComponent<Button>();
+            button.onClick.RemoveAllListeners();
+
+            Text subtitle = CreateText(
+                screen,
+                "Subtitle",
+                "夜晚布设机关，白天整蛊顾客",
+                18,
+                TextAnchor.MiddleCenter,
+                new Vector2(0f, -96f),
+                new Vector2(520f, 42f));
+            ApplyStatusTextStyle(subtitle);
+            RectTransform subtitleRect = subtitle.rectTransform;
+            subtitleRect.anchorMin = new Vector2(0.5f, 0.5f);
+            subtitleRect.anchorMax = subtitleRect.anchorMin;
+            subtitleRect.pivot = new Vector2(0.5f, 0.5f);
+
+            StartGameUI startUI = _startScreen.AddComponent<StartGameUI>();
+            startUI.Configure(_gamePhaseSystem, button);
+            _startScreen.transform.SetAsLastSibling();
+        }
+
         private RectTransform CreateButton(RectTransform parent, string name, string label, Vector2 anchoredPosition, Vector2 size, UnityEngine.Events.UnityAction action, Sprite backgroundSprite = null)
         {
             var go = new GameObject(name);
@@ -321,7 +412,8 @@ namespace CIGAgamejam
             ApplySprite(image, backgroundSprite, true);
             Button button = go.AddComponent<Button>();
             button.targetGraphic = image;
-            button.onClick.AddListener(action);
+            if (action != null)
+                button.onClick.AddListener(action);
             Text text = CreateStretchText(rect, "Label", label, 15, TextAnchor.MiddleCenter, new Vector2(6f, 4f));
             ApplyButtonTextStyle(text);
             return rect;
@@ -484,6 +576,9 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
         private void RefreshAll()
         {
+            if (_confidenceText == null || _flowText == null || _phaseText == null || _turnText == null)
+                return;
+
             _confidenceText.text = $"\u597d\u611f\u5ea6 {_confidence:0}%";
             _flowText.text = $"\u5ba2\u6d41 \u5e97\u5185{_inStoreCount} \u4eca\u65e5{_todayTotal}";
             string phase = _gamePhaseSystem != null ? ResolvePhaseLabel(_gamePhaseSystem.CurrentPhase) : "\u591c\u665a";
@@ -492,6 +587,13 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             if (_dayNightNeedle != null)
                 _dayNightNeedle.anchoredPosition = new Vector2(phase == "\u591c\u665a" ? 0f : 270f, 0f);
             RefreshButtonStates();
+        }
+
+        private void SetHudVisible(bool visible)
+        {
+            if (_topBarRoot != null) _topBarRoot.gameObject.SetActive(visible);
+            if (_bottomBarRoot != null) _bottomBarRoot.gameObject.SetActive(visible);
+            if (_logPanelRoot != null) _logPanelRoot.gameObject.SetActive(visible);
         }
 
         private void ApplyBoundHudArt()
@@ -547,7 +649,16 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             RefreshAll();
         }
 
-        private void HandleGamePhaseChanged(OnGamePhaseChanged e) => RefreshAll();
+        private void HandleGamePhaseChanged(OnGamePhaseChanged e)
+        {
+            if (e.NewPhase == GamePhase.NightPlanning && !_hasGameStarted)
+            {
+                _hasGameStarted = true;
+                SetHudVisible(true);
+            }
+
+            RefreshAll();
+        }
 
         private void HandleNightTurnStarted(OnNightTurnStarted e) => RefreshAll();
 
