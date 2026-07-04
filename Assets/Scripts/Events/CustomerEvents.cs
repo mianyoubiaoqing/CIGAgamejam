@@ -4,11 +4,58 @@ namespace CIGAgamejam
     {
         public readonly int CustomerId;
         public readonly ToolEffectType Reason;
+        public readonly CustomerState State;
 
         public OnCustomerLeftStore(int customerId, ToolEffectType reason)
+            : this(customerId, reason, CustomerState.Scared)
+        {
+        }
+
+        public OnCustomerLeftStore(int customerId, ToolEffectType reason, CustomerState state)
         {
             CustomerId = customerId;
             Reason = reason;
+            State = state;
+        }
+    }
+
+    public readonly struct OnFavorabilityDeltaRequested
+    {
+        public readonly float Delta;
+        public readonly int CustomerId;
+        public readonly string Reason;
+
+        public OnFavorabilityDeltaRequested(float delta, int customerId, string reason)
+        {
+            Delta = delta;
+            CustomerId = customerId;
+            Reason = reason;
+        }
+    }
+
+    public readonly struct OnGroupScareRequested
+    {
+        public readonly GridPosition Origin;
+        public readonly int Count;
+        public readonly int PrimaryCustomerId;
+
+        public OnGroupScareRequested(GridPosition origin, int count, int primaryCustomerId)
+        {
+            Origin = origin;
+            Count = count;
+            PrimaryCustomerId = primaryCustomerId;
+        }
+    }
+
+    public readonly struct OnWorldObjectDestroyed
+    {
+        public readonly GridPosition Position;
+        public readonly GridCellType CellType;
+
+        public OnWorldObjectDestroyed(GridPosition position, GridCellType cellType)
+        {
+            Position = position;
+            CellType = cellType;
         }
     }
 }

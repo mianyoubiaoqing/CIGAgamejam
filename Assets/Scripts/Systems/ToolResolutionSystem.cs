@@ -8,7 +8,11 @@ namespace CIGAgamejam
         [SerializeField] private GridSystem _gridSystem;
 
         private readonly Dictionary<ToolEffectType, IToolEffectHandler> _handlers = new();
+        private readonly HashSet<GridPosition> _destroyedObjects = new();
+        private readonly Dictionary<int, HashSet<GridPosition>> _destroyedObjectTriggersByCustomer = new();
         private bool _hasConfigError;
+
+        public IReadOnlyCollection<GridPosition> DestroyedObjects => _destroyedObjects;
 
         private void Awake()
         {
@@ -21,6 +25,16 @@ namespace CIGAgamejam
             RegisterDefaultHandlers();
         }
 
+        private void OnEnable()
+        {
+            EventBus<OnToolPlaced>.Subscribe(HandleToolPlaced);
+        }
+
+        private void OnDestroy()
+        {
+            EventBus<OnToolPlaced>.Unsubscribe(HandleToolPlaced);
+        }
+
         public void ResolveDayStartTools()
         {
             ResolveTrigger(ToolTriggerTiming.OnDayStart, null, default);
@@ -29,6 +43,7 @@ namespace CIGAgamejam
         public void ResolveCustomerEnterCell(CustomerContext customer)
         {
             if (customer == null) return;
+            ResolveDestroyedObjectProximity(customer);
             ResolveTrigger(ToolTriggerTiming.OnCustomerEnterCell, customer, customer.Position);
         }
 
@@ -53,6 +68,14 @@ namespace CIGAgamejam
         {
             if (handler == null) return;
             _handlers[handler.EffectType] = handler;
+        }
+
+        private void HandleToolPlaced(OnToolPlaced e)
+        {
+            if (e.Tool?.Config == null || e.Tool.Config.TriggerTiming != ToolTriggerTiming.OnManualResolve)
+                return;
+
+            ResolveManual(e.Tool.Origin);
         }
 
         private void ResolveTrigger(ToolTriggerTiming timing, CustomerContext customer, GridPosition position)
@@ -87,6 +110,9 @@ namespace CIGAgamejam
 
                 var context = new ToolEffectContext(tool, effect, customer);
                 handler.Resolve(context);
+                if (effect.EffectType == ToolEffectType.DestroyObject)
+                    MarkDestroyedObject(tool.Origin);
+
                 EventBus<OnToolEffectResolved>.Publish(
                     new OnToolEffectResolved(tool, effect, customer != null ? customer.CustomerId : -1));
             }
@@ -116,7 +142,39 @@ namespace CIGAgamejam
             RegisterHandler(new ReplaceGoodsWithFakeEffectHandler());
             RegisterHandler(new BribeSecurityEffectHandler());
             RegisterHandler(new DestroyObjectEffectHandler());
+            RegisterHandler(new ReduceFavorabilityEffectHandler());
+            RegisterHandler(new ScareCustomerGroupEffectHandler());
             RegisterHandler(new DisableToolEffectHandler());
+        }
+
+        private void MarkDestroyedObject(GridPosition position)
+        {
+            if (!_gridSystem.TryGetCellType(position, out GridCellType cellType))
+                cellType = GridCellType.Floor;
+
+            if (_destroyedObjects.Add(position))
+                EventBus<OnWorldObjectDestroyed>.Publish(new OnWorldObjectDestroyed(position, cellType));
+        }
+
+        private void ResolveDestroyedObjectProximity(CustomerContext customer)
+        {
+            foreach (GridPosition destroyedPosition in _destroyedObjects)
+            {
+                int distance = Mathf.Abs(customer.Position.X - destroyedPosition.X)
+                    + Mathf.Abs(customer.Position.Y - destroyedPosition.Y);
+                if (distance > 1) continue;
+
+                if (!_destroyedObjectTriggersByCustomer.TryGetValue(customer.CustomerId, out HashSet<GridPosition> triggered))
+                {
+                    triggered = new HashSet<GridPosition>();
+                    _destroyedObjectTriggersByCustomer[customer.CustomerId] = triggered;
+                }
+
+                if (!triggered.Add(destroyedPosition)) continue;
+
+                EventBus<OnFavorabilityDeltaRequested>.Publish(
+                    new OnFavorabilityDeltaRequested(-2f, customer.CustomerId, "DestroyedObjectProximity"));
+            }
         }
     }
 
@@ -160,9 +218,38 @@ namespace CIGAgamejam
             if (context.Customer == null) return;
 
             context.Customer.HasLeftStore = true;
+            context.Customer.State = CustomerState.Scared;
             context.Customer.WasScaredAway = true;
             EventBus<OnCustomerLeftStore>.Publish(
-                new OnCustomerLeftStore(context.Customer.CustomerId, ToolEffectType.ScareCustomerAway));
+                new OnCustomerLeftStore(context.Customer.CustomerId, ToolEffectType.ScareCustomerAway, CustomerState.Scared));
+        }
+    }
+
+    public sealed class ScareCustomerGroupEffectHandler : IToolEffectHandler
+    {
+        public ToolEffectType EffectType => ToolEffectType.ScareCustomerGroup;
+
+        public void Resolve(ToolEffectContext context)
+        {
+            if (context.Customer == null || context.Tool == null) return;
+
+            int count = ResolveScareCount();
+            context.Customer.HasLeftStore = true;
+            context.Customer.WasScaredAway = true;
+            context.Customer.State = CustomerState.Scared;
+            EventBus<OnCustomerLeftStore>.Publish(
+                new OnCustomerLeftStore(context.Customer.CustomerId, ToolEffectType.ScareCustomerGroup, CustomerState.Scared));
+
+            EventBus<OnGroupScareRequested>.Publish(
+                new OnGroupScareRequested(context.Tool.Origin, Mathf.Max(0, count - 1), context.Customer.CustomerId));
+        }
+
+        private static int ResolveScareCount()
+        {
+            float roll = Random.value;
+            if (roll < 0.5f) return 1;
+            if (roll < 0.8f) return 2;
+            return 3;
         }
     }
 
@@ -175,9 +262,10 @@ namespace CIGAgamejam
             if (context.Customer == null) return;
 
             context.Customer.HasLeftStore = true;
+            context.Customer.State = CustomerState.Angry;
             context.Customer.BoughtFakeGoods = true;
             EventBus<OnCustomerLeftStore>.Publish(
-                new OnCustomerLeftStore(context.Customer.CustomerId, ToolEffectType.ReplaceGoodsWithFake));
+                new OnCustomerLeftStore(context.Customer.CustomerId, ToolEffectType.ReplaceGoodsWithFake, CustomerState.Angry));
         }
     }
 
@@ -190,9 +278,10 @@ namespace CIGAgamejam
             if (context.Customer == null) return;
 
             context.Customer.HasLeftStore = true;
+            context.Customer.State = CustomerState.Scared;
             context.Customer.WasRemovedBySecurity = true;
             EventBus<OnCustomerLeftStore>.Publish(
-                new OnCustomerLeftStore(context.Customer.CustomerId, ToolEffectType.BribeSecurity));
+                new OnCustomerLeftStore(context.Customer.CustomerId, ToolEffectType.BribeSecurity, CustomerState.Scared));
         }
     }
 
@@ -202,6 +291,24 @@ namespace CIGAgamejam
 
         public void Resolve(ToolEffectContext context)
         {
+        }
+    }
+
+    public sealed class ReduceFavorabilityEffectHandler : IToolEffectHandler
+    {
+        public ToolEffectType EffectType => ToolEffectType.ReduceFavorability;
+
+        public void Resolve(ToolEffectContext context)
+        {
+            if (context.Customer == null) return;
+
+            float amount = Mathf.Abs(context.Effect.Amount);
+            if (amount <= 0f)
+                amount = 2f;
+
+            context.Customer.State = CustomerState.Angry;
+            EventBus<OnFavorabilityDeltaRequested>.Publish(
+                new OnFavorabilityDeltaRequested(-amount, context.Customer.CustomerId, "ToolReduceFavorability"));
         }
     }
 

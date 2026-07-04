@@ -72,6 +72,9 @@ namespace CIGAgamejam
         private void BuildHud()
         {
             Canvas canvas = CreateCanvas();
+            if (TryBindExistingHud(canvas))
+                return;
+
             RectTransform topBar = CreatePanel(canvas.transform, "Top Bar", AnchorTopStretch(82f), new Color(0.07f, 0.08f, 0.09f, 0.94f));
             RectTransform bottomBar = CreatePanel(canvas.transform, "Bottom Bar", AnchorBottomStretch(112f), new Color(0.08f, 0.08f, 0.08f, 0.94f));
             RectTransform logPanel = CreatePanel(canvas.transform, "Log Panel", AnchorRightMiddle(300f, 138f), new Color(0.05f, 0.05f, 0.05f, 0.78f));
@@ -85,7 +88,7 @@ namespace CIGAgamejam
             topLayout.childForceExpandHeight = true;
             topLayout.childForceExpandWidth = false;
 
-            _confidenceText = CreateLayoutText(topBar, "Confidence", "\u4fe1\u5fc3 100%", 16, TextAnchor.MiddleLeft, 120f);
+            _confidenceText = CreateLayoutText(topBar, "Favorability", "\u597d\u611f\u5ea6 100%", 16, TextAnchor.MiddleLeft, 140f);
             _flowText = CreateLayoutText(topBar, "Flow", "\u5ba2\u6d41 \u5e97\u51850 \u4eca\u65e5", 16, TextAnchor.MiddleLeft, 300f);
             _phaseText = CreateLayoutText(topBar, "Phase", "\u7b2c1/1\u5929 \u591c\u665a", 16, TextAnchor.MiddleLeft, 140f);
             _turnText = CreateLayoutText(topBar, "Turn", "\u56de\u5408 1", 16, TextAnchor.MiddleLeft, 70f);
@@ -120,6 +123,10 @@ namespace CIGAgamejam
 
         private Canvas CreateCanvas()
         {
+            Transform existing = transform.Find("Prototype HUD");
+            if (existing != null && existing.TryGetComponent(out Canvas existingCanvas))
+                return existingCanvas;
+
             var canvasObject = new GameObject("Prototype HUD");
             canvasObject.transform.SetParent(transform, false);
             Canvas canvas = canvasObject.AddComponent<Canvas>();
@@ -129,6 +136,30 @@ namespace CIGAgamejam
             scaler.referenceResolution = new Vector2(1280f, 720f);
             canvasObject.AddComponent<GraphicRaycaster>();
             return canvas;
+        }
+
+        private bool TryBindExistingHud(Canvas canvas)
+        {
+            if (canvas == null || canvas.transform.Find("Top Bar") == null)
+                return false;
+
+            _confidenceText = FindText(canvas.transform, "Top Bar/Favorability");
+            _flowText = FindText(canvas.transform, "Top Bar/Flow");
+            _phaseText = FindText(canvas.transform, "Top Bar/Phase");
+            _turnText = FindText(canvas.transform, "Top Bar/Turn");
+            _logText = FindText(canvas.transform, "Log Panel/Log Text");
+            _dayNightNeedle = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track/Needle");
+            _toolMenuRoot = FindRect(canvas.transform, "Bottom Bar/Tool Button Row");
+            _actionButtonRoot = FindRect(canvas.transform, "Bottom Bar/Action Button Row");
+
+            return _confidenceText != null
+                && _flowText != null
+                && _phaseText != null
+                && _turnText != null
+                && _logText != null
+                && _dayNightNeedle != null
+                && _toolMenuRoot != null
+                && _actionButtonRoot != null;
         }
 
         private void BuildDayNightTrack(RectTransform topBar)
@@ -298,7 +329,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
         private void RefreshAll()
         {
-            _confidenceText.text = $"\u4fe1\u5fc3 {_confidence:0}%";
+            _confidenceText.text = $"\u597d\u611f\u5ea6 {_confidence:0}%";
             _flowText.text = $"\u5ba2\u6d41 \u5e97\u5185{_inStoreCount} \u4eca\u65e5{_todayTotal}";
             string phase = _gamePhaseSystem != null ? ResolvePhaseLabel(_gamePhaseSystem.CurrentPhase) : "\u591c\u665a";
             _phaseText.text = $"\u7b2c{_currentDay}/{_maxDays}\u5929 {phase}";
@@ -374,9 +405,24 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
         {
             if (_inventorySystem == null || _toolMenuRoot == null) return;
 
+            BindExistingToolButtons();
             foreach (KeyValuePair<ToolConfig, ToolStockState> pair in _inventorySystem.Stocks)
                 if (pair.Key != null && (!_toolCountTexts.TryGetValue(pair.Key, out Text countText) || countText == null))
                     CreateToolButton(_toolMenuRoot, pair.Key, _toolCountTexts.Count);
+        }
+
+        private void BindExistingToolButtons()
+        {
+            foreach (KeyValuePair<ToolConfig, ToolStockState> pair in _inventorySystem.Stocks)
+            {
+                if (pair.Key == null || _toolCountTexts.ContainsKey(pair.Key))
+                    continue;
+
+                Transform button = _toolMenuRoot.Find($"Tool Button {pair.Key.Id}");
+                Text countText = button != null ? button.GetComponentInChildren<Text>() : null;
+                if (countText != null)
+                    _toolCountTexts[pair.Key] = countText;
+            }
         }
 
         private static string ResolvePhaseLabel(GamePhase phase)
@@ -403,7 +449,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
         private static RectSpec AnchorBottomToolRow()
         {
-            return new RectSpec(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(18f, 0f), new Vector2(580f, 78f), new Vector2(0f, 0.5f));
+            return new RectSpec(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(18f, 0f), new Vector2(720f, 78f), new Vector2(0f, 0.5f));
         }
 
         private static RectSpec AnchorBottomActionRow()
@@ -414,6 +460,18 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
         private static RectSpec AnchorRightMiddle(float width, float height)
         {
             return new RectSpec(new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-18f, 18f), new Vector2(width, height), new Vector2(1f, 0.5f));
+        }
+
+        private static RectTransform FindRect(Transform root, string path)
+        {
+            Transform child = root.Find(path);
+            return child != null ? child as RectTransform : null;
+        }
+
+        private static Text FindText(Transform root, string path)
+        {
+            Transform child = root.Find(path);
+            return child != null ? child.GetComponent<Text>() : null;
         }
 
         private readonly struct RectSpec

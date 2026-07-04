@@ -18,12 +18,11 @@ MonoBehaviour:
   _icon: {fileID: 0}
   _prefab: {fileID: 0}
   _allowedCellTypes:
-  - 3
   - 5
   _footprint:
   - {x: 0, y: 0}
   _uniquePerBoard: 0
-  _triggerTiming: 0
+  _triggerTiming: 1
   _triggerOffsets:
   - {x: 0, y: 0}
   _useLimit: 1
@@ -33,4 +32,4 @@ MonoBehaviour:
   - EffectType: 3
     Amount: 1
     Chance: 0
-    TargetCellType: 3
+    TargetCellType: 5

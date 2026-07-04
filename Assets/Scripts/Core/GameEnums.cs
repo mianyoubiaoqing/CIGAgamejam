@@ -50,12 +50,21 @@ namespace CIGAgamejam
 
     public enum ToolEffectType
     {
-        ModifyPurchaseCost,
-        ScareCustomerAway,
-        ReplaceGoodsWithFake,
-        BribeSecurity,
-        DestroyObject,
-        DisableTool
+        ModifyPurchaseCost = 0,
+        ScareCustomerAway = 1,
+        ReplaceGoodsWithFake = 2,
+        BribeSecurity = 3,
+        DestroyObject = 4,
+        DisableTool = 5,
+        ScareCustomerGroup = 6,
+        ReduceFavorability = 7
+    }
+
+    public enum CustomerState
+    {
+        Normal,
+        Angry,
+        Scared
     }
 
     public enum ToolDisableReason

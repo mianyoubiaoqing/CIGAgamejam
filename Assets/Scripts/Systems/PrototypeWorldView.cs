@@ -17,6 +17,7 @@ namespace CIGAgamejam
         [SerializeField, Min(0.02f)] private float _toolMarkerSizeRatio = 0.26f;
 
         private readonly Dictionary<GridPosition, SpriteRenderer> _cellRenderers = new();
+        private readonly Dictionary<GridPosition, GameObject> _destroyedObjectMarkers = new();
         private readonly Dictionary<PlacedTool, GameObject> _toolMarkers = new();
         private readonly Dictionary<int, GameObject> _customerMarkers = new();
         private readonly List<GameObject> _routeMarkers = new();
@@ -28,7 +29,6 @@ namespace CIGAgamejam
         private void Awake()
         {
             _sprite = CreateUnitSprite();
-            BuildGrid();
             RebuildRouteMarkers();
             MoveSecurityMarker(_securityPatrolSystem != null ? _securityPatrolSystem.CurrentPosition : new GridPosition(0, 0));
         }
@@ -41,6 +41,7 @@ namespace CIGAgamejam
             EventBus<OnRouteChanged>.Subscribe(HandleRouteChanged);
             EventBus<OnPrototypeCustomerMoved>.Subscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Subscribe(HandleCustomerRemoved);
+            EventBus<OnWorldObjectDestroyed>.Subscribe(HandleWorldObjectDestroyed);
         }
 
         private void OnDestroy()
@@ -51,19 +52,23 @@ namespace CIGAgamejam
             EventBus<OnRouteChanged>.Unsubscribe(HandleRouteChanged);
             EventBus<OnPrototypeCustomerMoved>.Unsubscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Unsubscribe(HandleCustomerRemoved);
+            EventBus<OnWorldObjectDestroyed>.Unsubscribe(HandleWorldObjectDestroyed);
         }
 
         public bool TryWorldToGrid(Vector3 worldPosition, out GridPosition gridPosition)
         {
-            int x = Mathf.FloorToInt((worldPosition.x - _origin.x) / _cellSize + 0.5f);
-            int y = Mathf.FloorToInt((worldPosition.y - _origin.y) / _cellSize + 0.5f);
+            int x = Mathf.FloorToInt((worldPosition.x - _origin.x) / _cellSize);
+            int y = Mathf.FloorToInt((worldPosition.y - _origin.y) / _cellSize);
             gridPosition = new GridPosition(x, y);
             return _gridSystem != null && _gridSystem.IsInBounds(gridPosition);
         }
 
         public Vector3 GridToWorld(GridPosition position)
         {
-            return new Vector3(_origin.x + position.X * _cellSize, _origin.y + position.Y * _cellSize, 0f);
+            return new Vector3(
+                _origin.x + (position.X + 0.5f) * _cellSize,
+                _origin.y + (position.Y + 0.5f) * _cellSize,
+                0f);
         }
 
         private void BuildGrid()
@@ -250,10 +255,13 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
             Vector3 targetPosition = CustomerWorldPosition(e.GridX, e.GridY, e.CustomerId);
             if (!_customerMarkers.TryGetValue(e.CustomerId, out GameObject marker) || marker == null)
             {
-                marker = CreateSquare($"Customer {e.CustomerId}", targetPosition, _cellSize * _customerMarkerSizeRatio, new Color(0.1f, 0.45f, 1f), 10);
+                marker = CreateSquare($"Customer {e.CustomerId}", targetPosition, _cellSize * _customerMarkerSizeRatio, ResolveCustomerColor(e.State), 10);
                 _customerMarkers[e.CustomerId] = marker;
             }
 
+            SpriteRenderer renderer = marker.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+                renderer.color = ResolveCustomerColor(e.State);
             marker.transform.position = targetPosition;
         }
 
@@ -267,6 +275,26 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
             _customerMarkers.Remove(e.CustomerId);
         }
 
+        private void HandleWorldObjectDestroyed(OnWorldObjectDestroyed e)
+        {
+            if (!_cellRenderers.TryGetValue(e.Position, out SpriteRenderer renderer) || renderer == null)
+            {
+                if (_destroyedObjectMarkers.ContainsKey(e.Position))
+                    return;
+
+                GameObject marker = CreateSquare(
+                    $"Destroyed {e.Position.X},{e.Position.Y}",
+                    GridToWorld(e.Position) + new Vector3(0f, 0f, -0.12f),
+                    _cellSize * 0.72f,
+                    new Color(0.18f, 0.18f, 0.18f, 0.72f),
+                    7);
+                _destroyedObjectMarkers[e.Position] = marker;
+                return;
+            }
+
+            renderer.color = new Color(0.28f, 0.28f, 0.28f);
+        }
+
         private void MoveSecurityMarker(GridPosition position)
         {
             if (_securityMarker == null)
@@ -278,11 +306,11 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
             MoveMarker(_securityMarker, SecurityWorldPosition(position));
         }
 
-private Vector3 CustomerWorldPosition(float gridX, float gridY, int customerId)
+        private Vector3 CustomerWorldPosition(float gridX, float gridY, int customerId)
         {
             Vector3 gridPosition = new(
-                _origin.x + gridX * _cellSize,
-                _origin.y + gridY * _cellSize,
+                _origin.x + (gridX + 0.5f) * _cellSize,
+                _origin.y + (gridY + 0.5f) * _cellSize,
                 0f);
             return gridPosition + ResolveCustomerOffset(customerId) + new Vector3(0f, 0f, -0.18f);
         }
@@ -316,6 +344,16 @@ private Vector3 CustomerWorldPosition(float gridX, float gridY, int customerId)
             }
 
             marker.transform.position = targetPosition;
+        }
+
+        private static Color ResolveCustomerColor(CustomerState state)
+        {
+            return state switch
+            {
+                CustomerState.Angry => new Color(1f, 0.35f, 0.08f),
+                CustomerState.Scared => new Color(0.82f, 0.22f, 0.95f),
+                _ => new Color(0.1f, 0.45f, 1f)
+            };
         }
 
         private GameObject CreateSquare(string objectName, Vector3 position, float size, Color color, int sortingOrder)

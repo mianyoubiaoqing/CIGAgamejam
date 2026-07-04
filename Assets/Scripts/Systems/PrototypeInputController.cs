@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace CIGAgamejam
 {
@@ -25,6 +26,7 @@ namespace CIGAgamejam
 
             if (!Input.GetMouseButtonDown(0)) return;
             if (_camera == null || _worldView == null || _placementSystem == null || _inventorySystem == null) return;
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
             Vector3 worldPosition = _camera.ScreenToWorldPoint(Input.mousePosition);
             if (!_worldView.TryWorldToGrid(worldPosition, out GridPosition gridPosition))
@@ -38,7 +40,9 @@ namespace CIGAgamejam
             _selectedTool = tool;
             EventBus<OnToolSelected>.Publish(new OnToolSelected(tool));
             EventBus<OnPrototypeLogMessage>.Publish(
-                new OnPrototypeLogMessage(tool == null ? "取消选择道具。" : $"选择 {tool.DisplayName}: 点击店铺格子放置。"));
+                new OnPrototypeLogMessage(tool == null
+                    ? "\u53d6\u6d88\u9009\u62e9\u9053\u5177\u3002"
+                    : $"\u9009\u62e9 {tool.DisplayName}: \u70b9\u51fb\u5e97\u94fa\u683c\u5b50\u653e\u7f6e\u3002"));
         }
 
         public bool TryPlaceSelectedTool(GridPosition gridPosition)
@@ -48,18 +52,15 @@ namespace CIGAgamejam
             ToolConfig tool = _selectedTool;
             if (_inventorySystem.GetCount(tool) <= 0)
             {
-                EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage($"{tool.DisplayName} 库存不足。"));
+                EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage($"{tool.DisplayName} \u5e93\u5b58\u4e0d\u8db3\u3002"));
                 return false;
             }
 
             if (!_placementSystem.TryPlaceTool(tool, gridPosition, out _))
-            {
-                EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage($"{tool.DisplayName} 不能放在 {gridPosition}。"));
                 return false;
-            }
 
             _inventorySystem.TryConsume(tool);
-            _nightTurnSystem?.RecordPlayerAction($"放置 {tool.DisplayName}");
+            _nightTurnSystem?.RecordPlayerAction($"\u653e\u7f6e {tool.DisplayName}");
             return true;
         }
     }
