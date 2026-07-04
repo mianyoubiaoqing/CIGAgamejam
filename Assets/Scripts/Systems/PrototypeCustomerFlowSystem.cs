@@ -155,7 +155,7 @@ private void AdvanceCustomer(int index, float deltaTime)
             if (!moving.HasPurchased && position.Equals(_routeSystem.Checkout))
             {
                 _toolResolutionSystem?.ResolveCustomerPurchase(moving.Context);
-                if (!moving.Context.HasLeftStore)
+                if (!moving.Context.HasLeftStore && !moving.Context.BoughtFakeGoods)
                     _economySystem?.RecordCustomerPurchase(moving.Context);
                 moving.HasPurchased = true;
             }

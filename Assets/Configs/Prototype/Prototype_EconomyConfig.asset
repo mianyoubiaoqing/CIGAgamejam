@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _startingRevenueIndex: 100
   _bankruptcyThreshold: 20
-  _baseCustomerRevenue: 8
+  _baseCustomerRevenue: 5

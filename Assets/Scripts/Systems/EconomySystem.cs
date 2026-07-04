@@ -27,14 +27,12 @@ namespace CIGAgamejam
 
         private void OnEnable()
         {
-            EventBus<OnToolEffectResolved>.Subscribe(HandleToolEffectResolved);
             EventBus<OnCustomerLeftStore>.Subscribe(HandleCustomerLeftStore);
             EventBus<OnFavorabilityDeltaRequested>.Subscribe(HandleFavorabilityDeltaRequested);
         }
 
         private void OnDestroy()
         {
-            EventBus<OnToolEffectResolved>.Unsubscribe(HandleToolEffectResolved);
             EventBus<OnCustomerLeftStore>.Unsubscribe(HandleCustomerLeftStore);
             EventBus<OnFavorabilityDeltaRequested>.Unsubscribe(HandleFavorabilityDeltaRequested);
         }
@@ -59,16 +57,7 @@ namespace CIGAgamejam
         {
             if (_hasConfigError || customer == null || customer.HasLeftStore) return;
 
-            ApplyRevenueDelta(3f);
-        }
-
-        private void HandleToolEffectResolved(OnToolEffectResolved e)
-        {
-            if (_hasConfigError) return;
-
-            float penalty = ResolveRevenuePenalty(e.Effect);
-            if (penalty > 0f)
-                ApplyRevenueDelta(-penalty);
+            ApplyRevenueDelta(5f);
         }
 
         private void HandleCustomerLeftStore(OnCustomerLeftStore e)
@@ -79,7 +68,7 @@ namespace CIGAgamejam
                 || e.Reason == ToolEffectType.ScareCustomerGroup
                 || e.Reason == ToolEffectType.BribeSecurity)
             {
-                ApplyRevenueDelta(-5f);
+                ApplyRevenueDelta(-10f);
             }
         }
 
@@ -89,16 +78,5 @@ namespace CIGAgamejam
             ApplyRevenueDelta(e.Delta);
         }
 
-        private static float ResolveRevenuePenalty(ToolEffectDefinition effect)
-        {
-            float configured = Mathf.Abs(effect.Amount);
-            if (configured > 0f)
-                return configured;
-
-            return effect.EffectType switch
-            {
-                _ => 0f
-            };
-        }
     }
 }
