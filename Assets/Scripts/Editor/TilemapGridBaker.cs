@@ -44,6 +44,7 @@ namespace CIGAgamejam.Editor
 
             TilemapGridBridge bridge = gridSystem.GetComponent<TilemapGridBridge>();
             if (bridge == null) bridge = Undo.AddComponent<TilemapGridBridge>(gridSystem.gameObject);
+            SetReference(bridge, "_groundTilemap", ground);
             SetVisualLayers(bridge, ground, wall, shelf);
             SetReference(gridSystem, "_tilemapBridge", bridge);
             if (worldView != null) SetReference(worldView, "_tilemapBridge", bridge);
