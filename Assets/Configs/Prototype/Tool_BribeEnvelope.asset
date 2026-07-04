@@ -15,11 +15,10 @@ MonoBehaviour:
   _id: bribe_envelope
   _displayName: "\u4E00\u4EFD\u4FE1\u5C01"
   _category: 4
-  _icon: {fileID: 0}
+  _icon: {fileID: 21300000, guid: 5f37635130dc5d041a9d36dfc431f732, type: 3}
   _prefab: {fileID: 0}
   _placementKind: 0
-  _allowedCellTypes:
-  - 5
+  _allowedCellTypes: 05000000
   _footprint:
   - {x: 0, y: 0}
   _uniquePerBoard: 0

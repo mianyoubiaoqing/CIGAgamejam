@@ -15,11 +15,10 @@ MonoBehaviour:
   _id: qrcode
   _displayName: "\u4E8C\u7EF4\u7801"
   _category: 5
-  _icon: {fileID: 0}
+  _icon: {fileID: 21300000, guid: 5aa5a4b2d2089504b80d69baf9e23f45, type: 3}
   _prefab: {fileID: 0}
   _placementKind: 0
-  _allowedCellTypes:
-  - 6
+  _allowedCellTypes: 06000000
   _footprint:
   - {x: 0, y: 0}
   _uniquePerBoard: 0
