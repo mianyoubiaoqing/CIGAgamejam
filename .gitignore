@@ -116,3 +116,4 @@ ProjectSettings/ProjectVersion.txt
 /Docs/*FixLog*.txt
 ProjectSettings/PackageManagerSettings.asset
 ProjectSettings/ProjectVersion.txt
+Packages/packages-lock.json
