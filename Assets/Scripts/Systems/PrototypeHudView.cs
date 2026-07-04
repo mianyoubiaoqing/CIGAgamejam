@@ -85,7 +85,7 @@ namespace CIGAgamejam
             topLayout.childForceExpandHeight = true;
             topLayout.childForceExpandWidth = false;
 
-            _confidenceText = CreateLayoutText(topBar, "Confidence", "\u4fe1\u5fc3 100%", 16, TextAnchor.MiddleLeft, 120f);
+            _confidenceText = CreateLayoutText(topBar, "Favorability", "\u597d\u611f\u5ea6 100%", 16, TextAnchor.MiddleLeft, 140f);
             _flowText = CreateLayoutText(topBar, "Flow", "\u5ba2\u6d41 \u5e97\u51850 \u4eca\u65e5", 16, TextAnchor.MiddleLeft, 300f);
             _phaseText = CreateLayoutText(topBar, "Phase", "\u7b2c1/1\u5929 \u591c\u665a", 16, TextAnchor.MiddleLeft, 140f);
             _turnText = CreateLayoutText(topBar, "Turn", "\u56de\u5408 1", 16, TextAnchor.MiddleLeft, 70f);
@@ -298,7 +298,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
         private void RefreshAll()
         {
-            _confidenceText.text = $"\u4fe1\u5fc3 {_confidence:0}%";
+            _confidenceText.text = $"\u597d\u611f\u5ea6 {_confidence:0}%";
             _flowText.text = $"\u5ba2\u6d41 \u5e97\u5185{_inStoreCount} \u4eca\u65e5{_todayTotal}";
             string phase = _gamePhaseSystem != null ? ResolvePhaseLabel(_gamePhaseSystem.CurrentPhase) : "\u591c\u665a";
             _phaseText.text = $"\u7b2c{_currentDay}/{_maxDays}\u5929 {phase}";
@@ -403,7 +403,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
         private static RectSpec AnchorBottomToolRow()
         {
-            return new RectSpec(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(18f, 0f), new Vector2(580f, 78f), new Vector2(0f, 0.5f));
+            return new RectSpec(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(18f, 0f), new Vector2(720f, 78f), new Vector2(0f, 0.5f));
         }
 
         private static RectSpec AnchorBottomActionRow()

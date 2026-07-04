@@ -41,6 +41,7 @@ namespace CIGAgamejam
             EventBus<OnRouteChanged>.Subscribe(HandleRouteChanged);
             EventBus<OnPrototypeCustomerMoved>.Subscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Subscribe(HandleCustomerRemoved);
+            EventBus<OnWorldObjectDestroyed>.Subscribe(HandleWorldObjectDestroyed);
         }
 
         private void OnDestroy()
@@ -51,6 +52,7 @@ namespace CIGAgamejam
             EventBus<OnRouteChanged>.Unsubscribe(HandleRouteChanged);
             EventBus<OnPrototypeCustomerMoved>.Unsubscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Unsubscribe(HandleCustomerRemoved);
+            EventBus<OnWorldObjectDestroyed>.Unsubscribe(HandleWorldObjectDestroyed);
         }
 
         public bool TryWorldToGrid(Vector3 worldPosition, out GridPosition gridPosition)
@@ -250,10 +252,13 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
             Vector3 targetPosition = CustomerWorldPosition(e.GridX, e.GridY, e.CustomerId);
             if (!_customerMarkers.TryGetValue(e.CustomerId, out GameObject marker) || marker == null)
             {
-                marker = CreateSquare($"Customer {e.CustomerId}", targetPosition, _cellSize * _customerMarkerSizeRatio, new Color(0.1f, 0.45f, 1f), 10);
+                marker = CreateSquare($"Customer {e.CustomerId}", targetPosition, _cellSize * _customerMarkerSizeRatio, ResolveCustomerColor(e.State), 10);
                 _customerMarkers[e.CustomerId] = marker;
             }
 
+            SpriteRenderer renderer = marker.GetComponent<SpriteRenderer>();
+            if (renderer != null)
+                renderer.color = ResolveCustomerColor(e.State);
             marker.transform.position = targetPosition;
         }
 
@@ -265,6 +270,14 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
             if (marker != null)
                 Destroy(marker);
             _customerMarkers.Remove(e.CustomerId);
+        }
+
+        private void HandleWorldObjectDestroyed(OnWorldObjectDestroyed e)
+        {
+            if (!_cellRenderers.TryGetValue(e.Position, out SpriteRenderer renderer) || renderer == null)
+                return;
+
+            renderer.color = new Color(0.28f, 0.28f, 0.28f);
         }
 
         private void MoveSecurityMarker(GridPosition position)
@@ -316,6 +329,16 @@ private Vector3 CustomerWorldPosition(float gridX, float gridY, int customerId)
             }
 
             marker.transform.position = targetPosition;
+        }
+
+        private static Color ResolveCustomerColor(CustomerState state)
+        {
+            return state switch
+            {
+                CustomerState.Angry => new Color(1f, 0.35f, 0.08f),
+                CustomerState.Scared => new Color(0.82f, 0.22f, 0.95f),
+                _ => new Color(0.1f, 0.45f, 1f)
+            };
         }
 
         private GameObject CreateSquare(string objectName, Vector3 position, float size, Color color, int sortingOrder)

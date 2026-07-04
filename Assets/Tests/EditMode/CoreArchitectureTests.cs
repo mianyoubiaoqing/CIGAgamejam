@@ -82,6 +82,75 @@ namespace CIGAgamejam
 
             Assert.IsTrue(customer.HasLeftStore);
             Assert.IsTrue(customer.WasScaredAway);
+            Assert.AreEqual(CustomerState.Scared, customer.State);
+        }
+
+        [Test]
+        public void EconomyUsesFavorabilityDesignValues()
+        {
+            EconomySystem economySystem = CreateEconomySystem(100f, 20f);
+            SetPrivateField(economySystem, "_currentRevenueIndex", 100f);
+            SetPrivateField(economySystem, "_hasConfigError", false);
+            float lastValue = economySystem.CurrentRevenueIndex;
+
+            void CaptureRevenue(OnRevenueChanged eventData) => lastValue = eventData.CurrentRevenueIndex;
+            EventBus<OnRevenueChanged>.Subscribe(CaptureRevenue);
+            try
+            {
+                economySystem.RecordCustomerPurchase(new CustomerContext(1, new GridPosition(0, 0)));
+                Assert.AreEqual(103f, lastValue);
+
+                InvokePrivateMethod(
+                    economySystem,
+                    "HandleCustomerLeftStore",
+                    new OnCustomerLeftStore(1, ToolEffectType.ScareCustomerAway, CustomerState.Scared));
+                Assert.AreEqual(98f, lastValue);
+
+                InvokePrivateMethod(
+                    economySystem,
+                    "HandleFavorabilityDeltaRequested",
+                    new OnFavorabilityDeltaRequested(-2f, 1, "QRCode"));
+                Assert.AreEqual(96f, lastValue);
+            }
+            finally
+            {
+                EventBus<OnRevenueChanged>.Unsubscribe(CaptureRevenue);
+            }
+        }
+
+        [Test]
+        public void ManualResolveToolMarksObjectDestroyed()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 2);
+            SetPrivateField(gridConfig, "_height", 2);
+            SetPrivateField(gridConfig, "_cellOverrides", new[]
+            {
+                new GridCellDefinition { Position = Vector2Int.zero, CellType = GridCellType.Warehouse }
+            });
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            ToolConfig tool = CreateTool("boiling_water", GridCellType.Warehouse);
+            SetPrivateField(tool, "_triggerTiming", ToolTriggerTiming.OnManualResolve);
+            SetPrivateField(tool, "_effects", new[]
+            {
+                new ToolEffectDefinition { EffectType = ToolEffectType.DestroyObject, Chance = 1f }
+            });
+            tool.Validate();
+
+            GameObject resolutionObject = CreateInactiveObject("ToolResolutionSystem");
+            ToolResolutionSystem resolutionSystem = resolutionObject.AddComponent<ToolResolutionSystem>();
+            SetPrivateField(resolutionSystem, "_gridSystem", gridSystem);
+            resolutionObject.SetActive(true);
+            SetPrivateField(resolutionSystem, "_hasConfigError", false);
+            InvokePrivateMethod(resolutionSystem, "RegisterDefaultHandlers");
+
+            Assert.IsTrue(gridSystem.TryPlaceTool(tool, new GridPosition(0, 0), out _));
+            resolutionSystem.ResolveManual(new GridPosition(0, 0));
+            Assert.IsTrue(resolutionSystem.DestroyedObjects.Contains(new GridPosition(0, 0)));
         }
 
         [Test]
@@ -267,6 +336,19 @@ namespace CIGAgamejam
             return asset;
         }
 
+        private EconomySystem CreateEconomySystem(float startingValue, float threshold)
+        {
+            EconomyConfig economyConfig = CreateAsset<EconomyConfig>();
+            SetPrivateField(economyConfig, "_startingRevenueIndex", startingValue);
+            SetPrivateField(economyConfig, "_bankruptcyThreshold", threshold);
+
+            GameObject economyObject = CreateInactiveObject("EconomySystem");
+            EconomySystem economySystem = economyObject.AddComponent<EconomySystem>();
+            SetPrivateField(economySystem, "_config", economyConfig);
+            economyObject.SetActive(true);
+            return economySystem;
+        }
+
         private static void SetPrivateField(object target, string fieldName, object value)
         {
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -281,6 +363,14 @@ namespace CIGAgamejam
             MethodInfo method = target.GetType().GetMethod(methodName, flags);
             Assert.IsNotNull(method, $"Missing private method {methodName}");
             method.Invoke(target, null);
+        }
+
+        private static void InvokePrivateMethod(object target, string methodName, object argument)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            MethodInfo method = target.GetType().GetMethod(methodName, flags);
+            Assert.IsNotNull(method, $"Missing private method {methodName}");
+            method.Invoke(target, new[] { argument });
         }
     }
 }

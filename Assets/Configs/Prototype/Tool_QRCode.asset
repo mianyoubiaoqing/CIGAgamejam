@@ -10,26 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be038afdd4ddce944b5344d8053bc7a8, type: 3}
-  m_Name: Tool_FakeGoods
+  m_Name: Tool_QRCode
   m_EditorClassIdentifier: 
-  _id: fake_goods
-  _displayName: "\u5047\u8D27"
-  _category: 3
+  _id: qrcode
+  _displayName: "\u4E8C\u7EF4\u7801"
+  _category: 5
   _icon: {fileID: 0}
   _prefab: {fileID: 0}
   _allowedCellTypes:
-  - 2
+  - 6
   _footprint:
   - {x: 0, y: 0}
   _uniquePerBoard: 0
-  _triggerTiming: 3
+  _triggerTiming: 1
   _triggerOffsets:
   - {x: 0, y: 0}
-  _useLimit: 1
+  _useLimit: 3
   _canBeDisabledByBoss: 1
-  _disableChanceAfterRemovingCustomer: 0.25
+  _disableChanceAfterRemovingCustomer: 0
   _effects:
-  - EffectType: 2
-    Amount: 1
+  - EffectType: 7
+    Amount: 2
     Chance: 0
-    TargetCellType: 2
+    TargetCellType: 6

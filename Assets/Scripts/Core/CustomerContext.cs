@@ -4,6 +4,7 @@ namespace CIGAgamejam
     {
         public int CustomerId { get; }
         public GridPosition Position { get; set; }
+        public CustomerState State { get; set; }
         public bool HasLeftStore { get; set; }
         public bool WasScaredAway { get; set; }
         public bool BoughtFakeGoods { get; set; }
@@ -14,6 +15,7 @@ namespace CIGAgamejam
         {
             CustomerId = customerId;
             Position = position;
+            State = CustomerState.Normal;
             PurchaseCostModifier = 0f;
         }
     }
