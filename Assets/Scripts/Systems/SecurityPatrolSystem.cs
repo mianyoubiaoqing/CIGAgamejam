@@ -126,7 +126,10 @@ namespace CIGAgamejam
             }
 
             if (e.NewPhase == GamePhase.DaySimulation)
+            {
                 EventBus<OnSecurityPatrolPathCleared>.Publish(new OnSecurityPatrolPathCleared());
+                EventBus<OnSecurityPatrolCleared>.Publish(new OnSecurityPatrolCleared());
+            }
         }
 
         private List<GridPosition> CollectWalkableCandidates()

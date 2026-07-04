@@ -51,6 +51,7 @@ namespace CIGAgamejam
             EventBus<OnSecurityPatrolMoved>.Subscribe(HandleSecurityMoved);
             EventBus<OnSecurityPatrolPathChanged>.Subscribe(HandlePatrolPathChanged);
             EventBus<OnSecurityPatrolPathCleared>.Subscribe(HandlePatrolPathCleared);
+            EventBus<OnSecurityPatrolCleared>.Subscribe(HandlePatrolCleared);
             EventBus<OnRouteChanged>.Subscribe(HandleRouteChanged);
             EventBus<OnPrototypeCustomerMoved>.Subscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Subscribe(HandleCustomerRemoved);
@@ -64,6 +65,7 @@ namespace CIGAgamejam
             EventBus<OnSecurityPatrolMoved>.Unsubscribe(HandleSecurityMoved);
             EventBus<OnSecurityPatrolPathChanged>.Unsubscribe(HandlePatrolPathChanged);
             EventBus<OnSecurityPatrolPathCleared>.Unsubscribe(HandlePatrolPathCleared);
+            EventBus<OnSecurityPatrolCleared>.Unsubscribe(HandlePatrolCleared);
             EventBus<OnRouteChanged>.Unsubscribe(HandleRouteChanged);
             EventBus<OnPrototypeCustomerMoved>.Unsubscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Unsubscribe(HandleCustomerRemoved);
@@ -353,6 +355,16 @@ namespace CIGAgamejam
         private void HandlePatrolPathCleared(OnSecurityPatrolPathCleared e)
         {
             ClearPatrolPathMarkers();
+        }
+
+        private void HandlePatrolCleared(OnSecurityPatrolCleared e)
+        {
+            ClearPatrolPathMarkers();
+
+            if (_securityMarker != null)
+                Destroy(_securityMarker);
+
+            _securityMarker = null;
         }
 
         private void HandleRouteChanged(OnRouteChanged e)

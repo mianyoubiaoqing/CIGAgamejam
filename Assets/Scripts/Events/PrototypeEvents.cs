@@ -62,6 +62,10 @@ namespace CIGAgamejam
     {
     }
 
+    public readonly struct OnSecurityPatrolCleared
+    {
+    }
+
     public readonly struct OnToolInventoryChanged
     {
         public readonly ToolConfig Tool;
