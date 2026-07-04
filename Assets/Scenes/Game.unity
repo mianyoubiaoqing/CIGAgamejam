@@ -964,9 +964,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 319444050}
-  - component: {fileID: 319444052}
-  - component: {fileID: 319444051}
-  - component: {fileID: 319444054}
   - component: {fileID: 319444053}
   m_Layer: 0
   m_Name: LuckyTree_01
@@ -990,38 +987,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 342208146}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &319444051
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 319444049}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 789aba18aaeb4b942aa410d7723a1dc3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _kind: 1
-  _snapHandle: {fileID: 319444052}
-  _occupiesCellType: 0
-  _acceptedToolCategories: 01000000
-  _state: 0
---- !u!114 &319444052
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 319444049}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 319444054}
 --- !u!212 &319444053
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1074,26 +1039,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &319444054
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 319444049}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.08
-    g: 0.68
-    b: 0.42
-    a: 0.95
-  _size: 0.72
-  _sortingOrder: 25
 --- !u!1 &341084207
 GameObject:
   m_ObjectHideFlags: 0
@@ -1103,8 +1048,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 341084209}
-  - component: {fileID: 341084208}
-  - component: {fileID: 341084210}
   - component: {fileID: 341084211}
   m_Layer: 0
   m_Name: PatrolPoint_02
@@ -1113,21 +1056,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &341084208
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341084207}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 341084210}
 --- !u!4 &341084209
 Transform:
   m_ObjectHideFlags: 0
@@ -1143,26 +1071,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 767944932}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &341084210
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341084207}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 1
-    g: 0.45
-    b: 0.08
-    a: 0.95
-  _size: 0.34
-  _sortingOrder: 20
 --- !u!212 &341084211
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1262,9 +1170,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 350985132}
-  - component: {fileID: 350985134}
-  - component: {fileID: 350985133}
-  - component: {fileID: 350985136}
   - component: {fileID: 350985135}
   m_Layer: 0
   m_Name: Shelf_01
@@ -1288,38 +1193,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 342208146}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &350985133
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 350985131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 789aba18aaeb4b942aa410d7723a1dc3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _kind: 0
-  _snapHandle: {fileID: 350985134}
-  _occupiesCellType: 2
-  _acceptedToolCategories: 000000000300000001000000
-  _state: 0
---- !u!114 &350985134
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 350985131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 350985136}
 --- !u!212 &350985135
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1372,26 +1245,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &350985136
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 350985131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.25
-    g: 0.78
-    b: 0.22
-    a: 0.95
-  _size: 0.72
-  _sortingOrder: 25
 --- !u!1 &367524908
 GameObject:
   m_ObjectHideFlags: 0
@@ -1720,10 +1573,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 411979041}
-  - component: {fileID: 411979045}
-  - component: {fileID: 411979044}
   - component: {fileID: 411979043}
-  - component: {fileID: 411979042}
   m_Layer: 0
   m_Name: LuckyTree_Entrance
   m_TagString: Untagged
@@ -1746,23 +1596,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 342208146}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &411979042
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 411979040}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 789aba18aaeb4b942aa410d7723a1dc3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _kind: 1
-  _snapHandle: {fileID: 411979045}
-  _occupiesCellType: 0
-  _acceptedToolCategories: 01000000
-  _state: 0
 --- !u!212 &411979043
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -1815,41 +1648,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &411979044
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 411979040}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.08
-    g: 0.68
-    b: 0.42
-    a: 0.95
-  _size: 0.72
-  _sortingOrder: 25
---- !u!114 &411979045
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 411979040}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 411979044}
 --- !u!213 &423703177
 Sprite:
   m_ObjectHideFlags: 0
@@ -2482,8 +2280,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 557677344}
-  - component: {fileID: 557677343}
-  - component: {fileID: 557677345}
   - component: {fileID: 557677346}
   m_Layer: 0
   m_Name: PatrolPoint_06
@@ -2492,21 +2288,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &557677343
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 557677342}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 557677345}
 --- !u!4 &557677344
 Transform:
   m_ObjectHideFlags: 0
@@ -2522,26 +2303,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 767944932}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &557677345
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 557677342}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 1
-    g: 0.45
-    b: 0.08
-    a: 0.95
-  _size: 0.34
-  _sortingOrder: 20
 --- !u!212 &557677346
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2603,8 +2364,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 591201573}
-  - component: {fileID: 591201572}
-  - component: {fileID: 591201574}
   - component: {fileID: 591201575}
   m_Layer: 0
   m_Name: PatrolPoint_05
@@ -2613,21 +2372,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &591201572
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591201571}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 591201574}
 --- !u!4 &591201573
 Transform:
   m_ObjectHideFlags: 0
@@ -2643,26 +2387,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 767944932}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &591201574
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591201571}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 1
-    g: 0.45
-    b: 0.08
-    a: 0.95
-  _size: 0.34
-  _sortingOrder: 20
 --- !u!212 &591201575
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4202,9 +3926,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 706897571}
-  - component: {fileID: 706897573}
-  - component: {fileID: 706897572}
-  - component: {fileID: 706897575}
   - component: {fileID: 706897574}
   m_Layer: 0
   m_Name: Checkout_01
@@ -4228,38 +3949,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 342208146}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &706897572
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 706897570}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 789aba18aaeb4b942aa410d7723a1dc3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _kind: 2
-  _snapHandle: {fileID: 706897573}
-  _occupiesCellType: 5
-  _acceptedToolCategories: 04000000
-  _state: 0
---- !u!114 &706897573
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 706897570}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 706897575}
 --- !u!212 &706897574
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4312,26 +4001,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &706897575
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 706897570}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.15
-    g: 0.55
-    b: 0.9
-    a: 0.95
-  _size: 0.72
-  _sortingOrder: 25
 --- !u!1 &735527586
 GameObject:
   m_ObjectHideFlags: 0
@@ -4341,8 +4010,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 735527588}
-  - component: {fileID: 735527587}
-  - component: {fileID: 735527589}
   - component: {fileID: 735527590}
   m_Layer: 0
   m_Name: PatrolPoint_04
@@ -4351,21 +4018,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &735527587
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 735527586}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 735527589}
 --- !u!4 &735527588
 Transform:
   m_ObjectHideFlags: 0
@@ -4381,26 +4033,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 767944932}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &735527589
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 735527586}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 1
-    g: 0.45
-    b: 0.08
-    a: 0.95
-  _size: 0.34
-  _sortingOrder: 20
 --- !u!212 &735527590
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4462,7 +4094,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 767944932}
-  - component: {fileID: 767944931}
   m_Layer: 0
   m_Name: Security Patrol
   m_TagString: Untagged
@@ -4470,30 +4101,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &767944931
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 767944930}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b2439078362d856499881410a555d4c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _patrolPoints:
-  - {fileID: 1594590108}
-  - {fileID: 341084208}
-  - {fileID: 1585184118}
-  - {fileID: 735527587}
-  - {fileID: 591201572}
-  - {fileID: 557677343}
-  - {fileID: 1774424911}
-  - {fileID: 1814858200}
-  _visionRange: 1
-  _stepsPerTurn: 1
-  _lineRenderer: {fileID: 1569293366}
 --- !u!4 &767944932
 Transform:
   m_ObjectHideFlags: 0
@@ -4528,9 +4135,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 784688626}
-  - component: {fileID: 784688628}
-  - component: {fileID: 784688627}
-  - component: {fileID: 784688630}
   - component: {fileID: 784688629}
   m_Layer: 0
   m_Name: Shelf_02
@@ -4554,38 +4158,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 342208146}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &784688627
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 784688625}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 789aba18aaeb4b942aa410d7723a1dc3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _kind: 0
-  _snapHandle: {fileID: 784688628}
-  _occupiesCellType: 2
-  _acceptedToolCategories: 000000000300000001000000
-  _state: 0
---- !u!114 &784688628
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 784688625}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 784688630}
 --- !u!212 &784688629
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4638,26 +4210,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &784688630
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 784688625}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.25
-    g: 0.78
-    b: 0.22
-    a: 0.95
-  _size: 0.72
-  _sortingOrder: 25
 --- !u!114 &814066906
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6514,8 +6066,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1314396299}
-  - component: {fileID: 1314396300}
-  - component: {fileID: 1314396302}
   - component: {fileID: 1314396301}
   m_Layer: 0
   m_Name: SecurityActor
@@ -6539,21 +6089,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 767944932}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1314396300
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1314396298}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 1314396302}
 --- !u!212 &1314396301
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -6606,26 +6141,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &1314396302
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1314396298}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 1
-    g: 0.45
-    b: 0.08
-    a: 0.95
-  _size: 0.34
-  _sortingOrder: 20
 --- !u!1 &1338623073
 GameObject:
   m_ObjectHideFlags: 0
@@ -6635,7 +6150,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1338623075}
-  - component: {fileID: 1338623074}
   m_Layer: 0
   m_Name: Route Authoring
   m_TagString: Untagged
@@ -6643,24 +6157,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1338623074
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1338623073}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb1766a42c5dc344b86bd37089334e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _entrance: {fileID: 1937869016}
-  _checkout: {fileID: 1927979048}
-  _restroom: {fileID: 2088270699}
-  _exit: {fileID: 2137798728}
-  _routeOverridePoints: []
-  _lineRenderer: {fileID: 856324811}
 --- !u!4 &1338623075
 Transform:
   m_ObjectHideFlags: 0
@@ -7466,8 +6962,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1585184119}
-  - component: {fileID: 1585184118}
-  - component: {fileID: 1585184120}
   - component: {fileID: 1585184121}
   m_Layer: 0
   m_Name: PatrolPoint_03
@@ -7476,21 +6970,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1585184118
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1585184117}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 1585184120}
 --- !u!4 &1585184119
 Transform:
   m_ObjectHideFlags: 0
@@ -7506,26 +6985,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 767944932}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1585184120
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1585184117}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 1
-    g: 0.45
-    b: 0.08
-    a: 0.95
-  _size: 0.34
-  _sortingOrder: 20
 --- !u!212 &1585184121
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -7587,8 +7046,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1594590109}
-  - component: {fileID: 1594590108}
-  - component: {fileID: 1594590110}
   - component: {fileID: 1594590111}
   m_Layer: 0
   m_Name: PatrolPoint_01
@@ -7597,21 +7054,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1594590108
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1594590107}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 1594590110}
 --- !u!4 &1594590109
 Transform:
   m_ObjectHideFlags: 0
@@ -7627,26 +7069,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 767944932}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1594590110
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1594590107}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 1
-    g: 0.45
-    b: 0.08
-    a: 0.95
-  _size: 0.34
-  _sortingOrder: 20
 --- !u!212 &1594590111
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -7875,9 +7297,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1655375854}
-  - component: {fileID: 1655375856}
-  - component: {fileID: 1655375855}
-  - component: {fileID: 1655375858}
   - component: {fileID: 1655375857}
   m_Layer: 0
   m_Name: RestroomDoor_01
@@ -7901,38 +7320,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 342208146}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1655375855
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1655375853}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 789aba18aaeb4b942aa410d7723a1dc3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _kind: 3
-  _snapHandle: {fileID: 1655375856}
-  _occupiesCellType: 6
-  _acceptedToolCategories: 05000000
-  _state: 0
---- !u!114 &1655375856
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1655375853}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 1655375858}
 --- !u!212 &1655375857
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -7985,26 +7372,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &1655375858
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1655375853}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.64
-    g: 0.2
-    b: 0.9
-    a: 0.95
-  _size: 0.72
-  _sortingOrder: 25
 --- !u!1 &1685013341
 GameObject:
   m_ObjectHideFlags: 0
@@ -8458,8 +7825,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1774424912}
-  - component: {fileID: 1774424911}
-  - component: {fileID: 1774424913}
   - component: {fileID: 1774424914}
   m_Layer: 0
   m_Name: PatrolPoint_07
@@ -8468,21 +7833,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1774424911
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1774424910}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 1774424913}
 --- !u!4 &1774424912
 Transform:
   m_ObjectHideFlags: 0
@@ -8498,26 +7848,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 767944932}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1774424913
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1774424910}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 1
-    g: 0.45
-    b: 0.08
-    a: 0.95
-  _size: 0.34
-  _sortingOrder: 20
 --- !u!212 &1774424914
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -8789,9 +8119,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1811595521}
-  - component: {fileID: 1811595523}
-  - component: {fileID: 1811595522}
-  - component: {fileID: 1811595525}
   - component: {fileID: 1811595524}
   m_Layer: 0
   m_Name: WallSlot_ClownBox_01
@@ -8815,38 +8142,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 342208146}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1811595522
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811595520}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 789aba18aaeb4b942aa410d7723a1dc3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _kind: 4
-  _snapHandle: {fileID: 1811595523}
-  _occupiesCellType: 1
-  _acceptedToolCategories: 02000000
-  _state: 0
---- !u!114 &1811595523
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811595520}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 1811595525}
 --- !u!212 &1811595524
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -8899,26 +8194,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &1811595525
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811595520}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.96
-    g: 0.7
-    b: 0.18
-    a: 0.95
-  _size: 0.72
-  _sortingOrder: 25
 --- !u!1 &1814858199
 GameObject:
   m_ObjectHideFlags: 0
@@ -8928,8 +8203,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1814858201}
-  - component: {fileID: 1814858200}
-  - component: {fileID: 1814858202}
   - component: {fileID: 1814858203}
   m_Layer: 0
   m_Name: PatrolPoint_08
@@ -8938,21 +8211,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1814858200
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1814858199}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 1814858202}
 --- !u!4 &1814858201
 Transform:
   m_ObjectHideFlags: 0
@@ -8968,26 +8226,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 767944932}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1814858202
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1814858199}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 1
-    g: 0.45
-    b: 0.08
-    a: 0.95
-  _size: 0.34
-  _sortingOrder: 20
 --- !u!212 &1814858203
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -9192,7 +8430,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1831942371}
   - component: {fileID: 1831942369}
-  - component: {fileID: 1831942370}
   m_Layer: 0
   m_Name: Shop Tilemaps
   m_TagString: Untagged
@@ -9212,25 +8449,6 @@ Grid:
   m_CellGap: {x: 0, y: 0, z: 0}
   m_CellLayout: 0
   m_CellSwizzle: 0
---- !u!114 &1831942370
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1831942368}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2fb6d760869158419446a1c61f98ea5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _gridConfig: {fileID: 11400000, guid: 7128edfcccb33dd459b949877aa98115, type: 2}
-  _wallTilemap: {fileID: 1850470950}
-  _warehouseTilemap: {fileID: 182005159}
-  _fixtureTilemap: {fileID: 1977734398}
-  _blockerTilemap: {fileID: 1378725128}
-  _size: {x: 9, y: 12}
 --- !u!4 &1831942371
 Transform:
   m_ObjectHideFlags: 0
@@ -10178,8 +9396,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1927979049}
-  - component: {fileID: 1927979048}
-  - component: {fileID: 1927979050}
   - component: {fileID: 1927979051}
   m_Layer: 0
   m_Name: CheckoutTarget
@@ -10188,21 +9404,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1927979048
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1927979047}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 1927979050}
 --- !u!4 &1927979049
 Transform:
   m_ObjectHideFlags: 0
@@ -10218,26 +9419,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1338623075}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1927979050
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1927979047}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.1
-    g: 0.45
-    b: 1
-    a: 0.95
-  _size: 0.42
-  _sortingOrder: 20
 --- !u!212 &1927979051
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -10299,8 +9480,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1937869017}
-  - component: {fileID: 1937869016}
-  - component: {fileID: 1937869018}
   - component: {fileID: 1937869019}
   m_Layer: 0
   m_Name: CustomerEntrance
@@ -10309,21 +9488,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1937869016
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1937869015}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 1937869018}
 --- !u!4 &1937869017
 Transform:
   m_ObjectHideFlags: 0
@@ -10339,26 +9503,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1338623075}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1937869018
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1937869015}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.1
-    g: 0.8
-    b: 1
-    a: 0.95
-  _size: 0.42
-  _sortingOrder: 20
 --- !u!212 &1937869019
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -10879,8 +10023,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2088270700}
-  - component: {fileID: 2088270699}
-  - component: {fileID: 2088270701}
   - component: {fileID: 2088270702}
   m_Layer: 0
   m_Name: RestroomTarget
@@ -10889,21 +10031,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2088270699
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2088270698}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 2088270701}
 --- !u!4 &2088270700
 Transform:
   m_ObjectHideFlags: 0
@@ -10919,26 +10046,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1338623075}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2088270701
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2088270698}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.72
-    g: 0.2
-    b: 1
-    a: 0.95
-  _size: 0.42
-  _sortingOrder: 20
 --- !u!212 &2088270702
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -11210,8 +10317,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2137798729}
-  - component: {fileID: 2137798728}
-  - component: {fileID: 2137798730}
   - component: {fileID: 2137798731}
   m_Layer: 0
   m_Name: CustomerExit
@@ -11220,21 +10325,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2137798728
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2137798727}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7a9c019d4c29df47857fdd913fbc805, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _grid: {fileID: 1831942369}
-  _snapToCellCenter: 1
-  _markerView: {fileID: 2137798730}
 --- !u!4 &2137798729
 Transform:
   m_ObjectHideFlags: 0
@@ -11250,26 +10340,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1338623075}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2137798730
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2137798727}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d973ec5be6e6d440984d274f8dea92d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _artSprite: {fileID: 0}
-  _color:
-    r: 0.1
-    g: 1
-    b: 0.52
-    a: 0.95
-  _size: 0.42
-  _sortingOrder: 20
 --- !u!212 &2137798731
 SpriteRenderer:
   m_ObjectHideFlags: 0
