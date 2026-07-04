@@ -13,6 +13,7 @@ namespace CIGAgamejam
         [SerializeField] private ToolInventorySystem _inventorySystem;
         [SerializeField] private NightTurnSystem _nightTurnSystem;
         [SerializeField] private PrototypeInputController _inputController;
+        [SerializeField] private bool _allowRuntimeHudGeneration;
         [Header("HUD Art")]
         [SerializeField] private Sprite _buttonDaylightSprite;
         [SerializeField] private Sprite _buttonNightSprite;
@@ -22,6 +23,8 @@ namespace CIGAgamejam
         [SerializeField] private Sprite _logPanelSprite;
 
         private readonly Dictionary<ToolConfig, Text> _toolCountTexts = new();
+        private readonly Dictionary<ToolConfig, Button> _toolButtons = new();
+        private readonly Dictionary<ToolConfig, Image> _toolIcons = new();
         private Font _font;
         private Text _confidenceText;
         private Text _flowText;
@@ -105,7 +108,16 @@ namespace CIGAgamejam
         {
             Canvas canvas = CreateCanvas();
             if (TryBindExistingHud(canvas))
+            {
+                ConfigureHudRaycasts(canvas.transform);
                 return;
+            }
+
+            if (!_allowRuntimeHudGeneration)
+            {
+                Debug.LogError("PrototypeHudView missing/incomplete scene HUD. Please build the Prototype HUD hierarchy in Game.unity or enable runtime generation for debugging.");
+                return;
+            }
 
             RectTransform topBar = CreatePanel(canvas.transform, "Top Bar", AnchorTopStretch(82f), new Color(0.07f, 0.08f, 0.09f, 0.94f));
             RectTransform bottomBar = CreatePanel(canvas.transform, "Bottom Bar", AnchorBottomStretch(112f), new Color(0.08f, 0.08f, 0.08f, 0.94f));
@@ -159,6 +171,7 @@ namespace CIGAgamejam
 
             BuildToolButtons(_toolMenuRoot);
             BuildActionButtons(_actionButtonRoot);
+            ConfigureHudRaycasts(canvas.transform);
         }
 
         private Canvas CreateCanvas()
@@ -170,9 +183,11 @@ namespace CIGAgamejam
             var canvasObject = new GameObject("Prototype HUD");
             canvasObject.transform.SetParent(transform, false);
             Canvas canvas = canvasObject.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.worldCamera = Camera.main;
+            canvas.sortingOrder = 5000;
             CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
             scaler.referenceResolution = new Vector2(1280f, 720f);
             canvasObject.AddComponent<GraphicRaycaster>();
             return canvas;
@@ -268,6 +283,7 @@ namespace CIGAgamejam
                 CreateIconImage(buttonTransform, "Icon", tool.Icon, new Vector2(0f, 11f), new Vector2(42f, 42f));
 
             _toolCountTexts[tool] = label;
+            _toolButtons[tool] = FindButton(buttonTransform, string.Empty);
         }
 
         private void BuildActionButtons(RectTransform bottomBar)
@@ -276,10 +292,10 @@ namespace CIGAgamejam
             RectTransform day = CreateButton(bottomBar, "Day Button", "\u5f00\u59cb\u8425\u4e1a", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.EndNightAndStartDay(), _buttonDaylightSprite);
             RectTransform result = CreateButton(bottomBar, "Result Button", "\u7ed3\u675f\u8425\u4e1a", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.CompleteDaySimulation(), _buttonDaylightSprite);
             RectTransform next = CreateButton(bottomBar, "Next Button", "\u4e0b\u4e00\u591c", Vector2.zero, new Vector2(100f, 58f), () => _gamePhaseSystem?.StartNextNightOrFail(), _buttonNightSprite);
-            _skipButton = skip.GetComponent<Button>();
-            _startDayButton = day.GetComponent<Button>();
-            _finishDayButton = result.GetComponent<Button>();
-            _nextNightButton = next.GetComponent<Button>();
+            _skipButton = FindButton(skip, string.Empty);
+            _startDayButton = FindButton(day, string.Empty);
+            _finishDayButton = FindButton(result, string.Empty);
+            _nextNightButton = FindButton(next, string.Empty);
             AddFixedLayout(skip, 86f, 58f);
             AddFixedLayout(day, 118f, 58f);
             AddFixedLayout(result, 118f, 58f);
@@ -289,6 +305,18 @@ namespace CIGAgamejam
         private void BuildResultPanel(Canvas canvas)
         {
             if (canvas == null || _resultPanel != null) return;
+
+            if (TryBindResultPanel(canvas))
+            {
+                ConfigureHudRaycasts(canvas.transform);
+                return;
+            }
+
+            if (!_allowRuntimeHudGeneration)
+            {
+                Debug.LogError("PrototypeHudView missing Game Result Panel in scene HUD.");
+                return;
+            }
 
             RectTransform panel = CreatePanel(
                 canvas.transform,
@@ -321,6 +349,20 @@ namespace CIGAgamejam
             restart.anchorMax = restart.anchorMin;
             restart.pivot = new Vector2(0.5f, 0.5f);
             _resultPanel.SetActive(false);
+            ConfigureHudRaycasts(canvas.transform);
+        }
+
+        private bool TryBindResultPanel(Canvas canvas)
+        {
+            Transform panel = canvas.transform.Find("Game Result Panel");
+            if (panel == null) return false;
+
+            _resultPanel = panel.gameObject;
+            _resultText = FindText(panel, "Result Text");
+            Button restartButton = FindButton(panel, "Restart Button");
+            BindActionButton(restartButton, ReloadCurrentScene);
+            _resultPanel.SetActive(false);
+            return _resultText != null && restartButton != null;
         }
 
         private void BuildStartScreen(Canvas canvas)
@@ -374,7 +416,7 @@ namespace CIGAgamejam
             startButton.anchorMin = new Vector2(0.5f, 0.5f);
             startButton.anchorMax = startButton.anchorMin;
             startButton.pivot = new Vector2(0.5f, 0.5f);
-            Button button = startButton.GetComponent<Button>();
+            Button button = FindButton(startButton, string.Empty);
             button.onClick.RemoveAllListeners();
 
             Text subtitle = CreateText(
@@ -407,10 +449,15 @@ namespace CIGAgamejam
             rect.anchoredPosition = anchoredPosition;
             rect.sizeDelta = size;
 
-            Image image = go.AddComponent<Image>();
+            RectTransform background = CreatePanel(
+                rect,
+                "Background",
+                new RectSpec(Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero),
+                new Color(0.18f, 0.2f, 0.23f, 1f));
+            Image image = background.GetComponent<Image>();
             image.color = new Color(0.18f, 0.2f, 0.23f, 1f);
             ApplySprite(image, backgroundSprite, true);
-            Button button = go.AddComponent<Button>();
+            Button button = background.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
             if (action != null)
                 button.onClick.AddListener(action);
@@ -601,10 +648,10 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             ApplySprite(FindImage(transform, "Prototype HUD/Log Panel"), _logPanelSprite, true);
             ApplySprite(FindImage(transform, "Prototype HUD/Top Bar/Day Night Root/Day Night Track"), _phaseBarSprite, true);
             ApplySprite(FindImage(transform, "Prototype HUD/Top Bar/Day Night Root/Day Night Track/Needle"), _phasePointerSprite, true);
-            ApplySprite(FindImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Skip Button"), _buttonNightSprite, true);
-            ApplySprite(FindImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Day Button"), _buttonDaylightSprite, true);
-            ApplySprite(FindImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Result Button"), _buttonDaylightSprite, true);
-            ApplySprite(FindImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Button"), _buttonNightSprite, true);
+            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Skip Button"), _buttonNightSprite, true);
+            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Day Button"), _buttonDaylightSprite, true);
+            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Result Button"), _buttonDaylightSprite, true);
+            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Button"), _buttonNightSprite, true);
             ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Skip Button/Label"));
             ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Day Button/Label"));
             ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Result Button/Label"));
@@ -632,7 +679,9 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
             foreach (KeyValuePair<ToolConfig, Text> pair in _toolCountTexts)
             {
-                Button button = pair.Value != null ? pair.Value.GetComponentInParent<Button>() : null;
+                Button button = _toolButtons.TryGetValue(pair.Key, out Button boundButton)
+                    ? boundButton
+                    : pair.Value != null ? pair.Value.GetComponentInParent<Button>() : null;
                 if (button != null)
                     button.interactable = isNight
                         && _inventorySystem != null
@@ -684,7 +733,9 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
             if (!_toolCountTexts.TryGetValue(e.Tool, out Text countText) || countText == null)
             {
-                CreateToolButton(_toolMenuRoot, e.Tool, _toolCountTexts.Count);
+                BindExistingToolButton(e.Tool, e.Count);
+                if (!_toolCountTexts.ContainsKey(e.Tool) && _allowRuntimeHudGeneration)
+                    CreateToolButton(_toolMenuRoot, e.Tool, _toolCountTexts.Count);
                 RebuildToolButtonCounts();
                 return;
             }
@@ -758,35 +809,61 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
             BindExistingToolButtons();
             foreach (KeyValuePair<ToolConfig, ToolStockState> pair in _inventorySystem.Stocks)
-                if (pair.Key != null && (!_toolCountTexts.TryGetValue(pair.Key, out Text countText) || countText == null))
+                if (pair.Key != null
+                    && (!_toolCountTexts.TryGetValue(pair.Key, out Text countText) || countText == null)
+                    && _allowRuntimeHudGeneration)
                     CreateToolButton(_toolMenuRoot, pair.Key, _toolCountTexts.Count);
         }
 
         private void BindExistingToolButtons()
         {
+            if (_inventorySystem == null) return;
+
             foreach (KeyValuePair<ToolConfig, ToolStockState> pair in _inventorySystem.Stocks)
             {
-                if (pair.Key == null || _toolCountTexts.ContainsKey(pair.Key))
+                if (pair.Key == null)
                     continue;
 
-                Transform button = _toolMenuRoot.Find($"Tool Button {pair.Key.Id}");
-                Text countText = button != null ? button.GetComponentInChildren<Text>() : null;
-                if (countText != null)
-                {
-                    _toolCountTexts[pair.Key] = countText;
-                    Button uiButton = button.GetComponent<Button>();
-                    ToolConfig tool = pair.Key;
-                    if (uiButton != null)
-                    {
-                        uiButton.onClick.RemoveAllListeners();
-                        uiButton.onClick.AddListener(() => _inputController?.SelectTool(tool));
-                    }
+                BindExistingToolButton(pair.Key, pair.Value.Count);
+            }
+        }
 
-                    ApplySprite(button.GetComponent<Image>(), _buttonPropSprite, true);
-                    ApplyButtonTextStyle(countText);
-                    if (pair.Key.Icon != null && button.Find("Icon") == null)
-                        CreateIconImage(button as RectTransform, "Icon", pair.Key.Icon, new Vector2(0f, 11f), new Vector2(42f, 42f));
-                }
+        private void BindExistingToolButton(ToolConfig tool, int count)
+        {
+            if (tool == null || _toolMenuRoot == null) return;
+
+            Transform root = _toolMenuRoot.Find($"Tool Button {tool.Id}");
+            if (root == null) return;
+
+            Text label = FindText(root, "Label") ?? root.GetComponentInChildren<Text>(true);
+            Button button = FindButton(root, string.Empty);
+            Image icon = FindImage(root, "Icon");
+            Image background = FindButtonImage(root, string.Empty);
+
+            if (button != null)
+            {
+                ToolConfig selectedTool = tool;
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(() => _inputController?.SelectTool(selectedTool));
+                _toolButtons[tool] = button;
+            }
+
+            if (label != null)
+            {
+                label.text = $"{tool.DisplayName}\nx{count}";
+                ApplyButtonTextStyle(label);
+                _toolCountTexts[tool] = label;
+            }
+
+            ApplySprite(background, _buttonPropSprite, true);
+
+            if (icon != null)
+            {
+                icon.sprite = tool.Icon;
+                icon.enabled = tool.Icon != null;
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                _toolIcons[tool] = icon;
             }
         }
 
@@ -839,13 +916,6 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             return child != null ? child.GetComponent<Text>() : null;
         }
 
-        private static Button FindButton(Transform root, string name)
-        {
-            if (root == null) return null;
-            Transform child = root.Find(name);
-            return child != null ? child.GetComponent<Button>() : null;
-        }
-
         private static void BindActionButton(Button button, UnityEngine.Events.UnityAction action)
         {
             if (button == null || action == null)
@@ -859,6 +929,57 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
         {
             Transform child = root.Find(path);
             return child != null ? child.GetComponent<Image>() : null;
+        }
+
+        private static Image FindButtonImage(Transform root, string path)
+        {
+            if (root == null) return null;
+
+            Transform target = string.IsNullOrEmpty(path) ? root : root.Find(path);
+            if (target == null) return null;
+
+            Transform background = target.Find("Background");
+            if (background != null && background.TryGetComponent(out Image backgroundImage))
+                return backgroundImage;
+
+            return target.GetComponent<Image>();
+        }
+
+        private static Button FindButton(Transform root, string name)
+        {
+            if (root == null) return null;
+
+            Transform target = string.IsNullOrEmpty(name) ? root : root.Find(name);
+            if (target == null) return null;
+
+            Transform background = target.Find("Background");
+            if (background != null && background.TryGetComponent(out Button backgroundButton))
+                return backgroundButton;
+
+            if (target.TryGetComponent(out Button button))
+                return button;
+
+            return target.GetComponentInChildren<Button>(true);
+        }
+
+        private static void ConfigureHudRaycasts(Transform root)
+        {
+            if (root == null) return;
+
+            foreach (Graphic graphic in root.GetComponentsInChildren<Graphic>(true))
+                graphic.raycastTarget = false;
+
+            foreach (Button button in root.GetComponentsInChildren<Button>(true))
+            {
+                if (button.targetGraphic != null)
+                {
+                    button.targetGraphic.raycastTarget = true;
+                    continue;
+                }
+
+                if (button.TryGetComponent(out Graphic graphic))
+                    graphic.raycastTarget = true;
+            }
         }
 
         private readonly struct RectSpec
