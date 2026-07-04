@@ -161,10 +161,10 @@ namespace CIGAgamejam
         {
             return new[]
             {
-                CreateTool("clown_box", "\u5c0f\u4e11\u76d2", ToolCategory.Scare, ToolTriggerTiming.OnCustomerPassFrontCell, new[] { GridCellType.Wall, GridCellType.Floor }, ToolEffectType.ScareCustomerAway, 10f, 0.35f),
-                CreateTool("fake_goods", "\u5047\u8d27", ToolCategory.FakeGoods, ToolTriggerTiming.OnCustomerPurchase, new[] { GridCellType.Warehouse }, ToolEffectType.ReplaceGoodsWithFake, 8f, 0.2f),
-                CreateTool("bribe_envelope", "\u4fe1\u5c01", ToolCategory.Bribe, ToolTriggerTiming.OnCustomerEnterCell, new[] { GridCellType.Security, GridCellType.Floor }, ToolEffectType.BribeSecurity, 10f, 0.4f),
-                CreateTool("boiling_water", "\u5f00\u6c34", ToolCategory.Destroy, ToolTriggerTiming.OnManualResolve, new[] { GridCellType.Floor, GridCellType.Warehouse }, ToolEffectType.DestroyObject, 5f, 0f, false)
+                CreateTool("clown_box", "\u5c0f\u4e11\u76d2", ToolCategory.Scare, ToolTriggerTiming.OnCustomerPassFrontCell, ToolTriggerAreaMode.ExactOffsets, true, true, new[] { GridCellType.Wall, GridCellType.Floor }, ToolEffectType.ScareCustomerAway, 10f, 0.35f),
+                CreateTool("fake_goods", "\u5047\u8d27", ToolCategory.FakeGoods, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Warehouse }, ToolEffectType.ReplaceGoodsWithFake, 8f, 0.2f),
+                CreateTool("bribe_envelope", "\u4fe1\u5c01", ToolCategory.Bribe, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Security, GridCellType.Floor }, ToolEffectType.BribeSecurity, 10f, 0.4f),
+                CreateTool("boiling_water", "\u5f00\u6c34", ToolCategory.Destroy, ToolTriggerTiming.OnManualResolve, ToolTriggerAreaMode.ExactOffsets, true, false, new[] { GridCellType.Floor, GridCellType.Warehouse }, ToolEffectType.DestroyObject, 5f, 0f, false)
             };
         }
 
@@ -215,6 +215,9 @@ namespace CIGAgamejam
             string displayName,
             ToolCategory category,
             ToolTriggerTiming timing,
+            ToolTriggerAreaMode triggerAreaMode,
+            bool consumeUseOnTrigger,
+            bool disableWhenCustomerAngered,
             GridCellType[] allowedCells,
             ToolEffectType effectType,
             float amount,
@@ -230,7 +233,11 @@ namespace CIGAgamejam
             SetField(config, "_footprint", new[] { Vector2Int.zero });
             SetField(config, "_triggerOffsets", BuildTriggerOffsets());
             SetField(config, "_triggerTiming", timing);
+            SetField(config, "_triggerAreaMode", triggerAreaMode);
+            SetField(config, "_triggerRadius", 1);
             SetField(config, "_useLimit", 3);
+            SetField(config, "_consumeUseOnTrigger", consumeUseOnTrigger);
+            SetField(config, "_disableWhenCustomerAngered", disableWhenCustomerAngered);
             SetField(config, "_canBeDisabledByBoss", canBeDisabledByBoss);
             SetField(config, "_disableChanceAfterRemovingCustomer", disableChanceAfterRemovingCustomer);
             SetField(config, "_effects", new[]

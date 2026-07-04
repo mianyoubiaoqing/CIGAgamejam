@@ -285,11 +285,30 @@ namespace CIGAgamejam
 
         private static bool TriggerAreaContains(PlacedTool tool, GridPosition position)
         {
+            if (tool.Config.TriggerAreaMode == ToolTriggerAreaMode.CustomerProximity)
+                return IsWithinTriggerRadius(tool, position);
+
             Vector2Int[] offsets = tool.Config.TriggerOffsets;
             for (int i = 0; i < offsets.Length; i++)
             {
                 GridPosition triggerPosition = Offset(tool.Origin, offsets[i]);
                 if (triggerPosition.Equals(position))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsWithinTriggerRadius(PlacedTool tool, GridPosition position)
+        {
+            int radius = Mathf.Max(0, tool.Config.TriggerRadius);
+            GridPosition[] occupiedCells = tool.OccupiedCells;
+            for (int i = 0; i < occupiedCells.Length; i++)
+            {
+                GridPosition cell = occupiedCells[i];
+                int dx = Mathf.Abs(position.X - cell.X);
+                int dy = Mathf.Abs(position.Y - cell.Y);
+                if (Mathf.Max(dx, dy) <= radius)
                     return true;
             }
 

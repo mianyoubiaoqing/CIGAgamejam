@@ -14,6 +14,7 @@ namespace CIGAgamejam
         [SerializeField] private NightTurnSystem _nightTurnSystem;
         [SerializeField] private PrototypeInputController _inputController;
         [SerializeField] private bool _allowRuntimeHudGeneration;
+        [SerializeField] private Font _labelFont;
         [Header("HUD Art")]
         [SerializeField] private Sprite _buttonDaylightSprite;
         [SerializeField] private Sprite _buttonNightSprite;
@@ -55,7 +56,9 @@ namespace CIGAgamejam
 
         private void Awake()
         {
-            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _font = _labelFont != null
+                ? _labelFont
+                : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             Canvas canvas = CreateCanvas();
             BuildHud();
             ApplyBoundHudArt();
@@ -637,6 +640,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
         private void ApplyBoundHudArt()
         {
+            ApplyBoundLabelFonts();
             ApplySprite(FindImage(transform, "Prototype HUD/Log Panel"), _logPanelSprite, true);
             ApplySprite(FindImage(transform, "Prototype HUD/Top Bar/Day Night Root/Day Night Track"), _phaseBarSprite, true);
             ApplySprite(FindImage(transform, "Prototype HUD/Top Bar/Day Night Root/Day Night Track/Needle"), _phasePointerSprite, true);
@@ -650,6 +654,22 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             ApplyStatusTextStyle(_phaseText);
             ApplyStatusTextStyle(_turnText);
             ApplyButtonTextStyle(_logText);
+        }
+
+        private void ApplyBoundLabelFonts()
+        {
+            if (_font == null)
+                return;
+
+            Transform hudRoot = transform.Find("Prototype HUD");
+            if (hudRoot == null)
+                return;
+
+            foreach (Text text in hudRoot.GetComponentsInChildren<Text>(true))
+            {
+                if (text != null && text.gameObject.name == "Label")
+                    text.font = _font;
+            }
         }
 
         private void RefreshButtonStates()

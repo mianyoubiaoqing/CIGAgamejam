@@ -55,6 +55,12 @@ namespace CIGAgamejam
         OnManualResolve
     }
 
+    public enum ToolTriggerAreaMode
+    {
+        ExactOffsets,
+        CustomerProximity
+    }
+
     public enum ToolEffectType
     {
         ModifyPurchaseCost = 0,

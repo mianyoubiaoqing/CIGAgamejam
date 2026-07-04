@@ -10,6 +10,7 @@ namespace CIGAgamejam
         private readonly Dictionary<ToolEffectType, IToolEffectHandler> _handlers = new();
         private readonly HashSet<GridPosition> _destroyedObjects = new();
         private readonly Dictionary<int, HashSet<GridPosition>> _destroyedObjectTriggersByCustomer = new();
+        private readonly Dictionary<int, HashSet<int>> _triggeredToolsByCustomer = new();
         private bool _hasConfigError;
 
         public IReadOnlyCollection<GridPosition> DestroyedObjects => _destroyedObjects;
@@ -28,11 +29,13 @@ namespace CIGAgamejam
         private void OnEnable()
         {
             EventBus<OnToolPlaced>.Subscribe(HandleToolPlaced);
+            EventBus<OnGamePhaseChanged>.Subscribe(HandleGamePhaseChanged);
         }
 
         private void OnDestroy()
         {
             EventBus<OnToolPlaced>.Unsubscribe(HandleToolPlaced);
+            EventBus<OnGamePhaseChanged>.Unsubscribe(HandleGamePhaseChanged);
         }
 
         public void ResolveDayStartTools()
@@ -78,6 +81,15 @@ namespace CIGAgamejam
             ResolveManual(e.Tool.Origin);
         }
 
+        private void HandleGamePhaseChanged(OnGamePhaseChanged e)
+        {
+            if (e.NewPhase == GamePhase.DaySimulation)
+            {
+                _triggeredToolsByCustomer.Clear();
+                _destroyedObjectTriggersByCustomer.Clear();
+            }
+        }
+
         private void ResolveTrigger(ToolTriggerTiming timing, CustomerContext customer, GridPosition position)
         {
             if (_hasConfigError) return;
@@ -90,11 +102,14 @@ namespace CIGAgamejam
         private void ResolveTool(PlacedTool tool, ToolTriggerTiming timing, CustomerContext customer)
         {
             if (tool == null || !tool.CanTrigger(timing)) return;
+            if (customer != null && HasCustomerAlreadyTriggeredTool(customer.CustomerId, tool.InstanceId))
+                return;
 
             ToolEffectDefinition[] effects = tool.Config.Effects;
             if (effects == null || effects.Length == 0) return;
 
             bool customerWasInStore = customer != null && !customer.HasLeftStore;
+            bool resolvedAnyEffect = false;
 
             EventBus<OnToolTriggered>.Publish(new OnToolTriggered(tool, timing));
 
@@ -109,6 +124,7 @@ namespace CIGAgamejam
                         new OnDayStartScareQuotaRequested(RollScareCount()));
                     EventBus<OnToolEffectResolved>.Publish(
                         new OnToolEffectResolved(tool, effect, -1));
+                    resolvedAnyEffect = true;
                     continue;
                 }
 
@@ -120,6 +136,7 @@ namespace CIGAgamejam
 
                 var context = new ToolEffectContext(tool, effect, customer);
                 handler.Resolve(context);
+                resolvedAnyEffect = true;
                 if (effect.EffectType == ToolEffectType.DestroyObject)
                 {
                     MarkDestroyedObject(tool.Origin);
@@ -130,10 +147,31 @@ namespace CIGAgamejam
                     new OnToolEffectResolved(tool, effect, customer != null ? customer.CustomerId : -1));
             }
 
+            if (customer != null && resolvedAnyEffect)
+                MarkCustomerTriggeredTool(customer.CustomerId, tool.InstanceId);
+
             bool removedCustomer = customerWasInStore && customer.HasLeftStore;
             TryDisableAfterRemovingCustomer(tool, removedCustomer);
-            tool.ConsumeUse();
+            if (tool.Config.ConsumeUseOnTrigger)
+                tool.ConsumeUse();
             RetireInactiveTool(tool);
+        }
+
+        private bool HasCustomerAlreadyTriggeredTool(int customerId, int toolInstanceId)
+        {
+            return _triggeredToolsByCustomer.TryGetValue(customerId, out HashSet<int> triggered)
+                && triggered.Contains(toolInstanceId);
+        }
+
+        private void MarkCustomerTriggeredTool(int customerId, int toolInstanceId)
+        {
+            if (!_triggeredToolsByCustomer.TryGetValue(customerId, out HashSet<int> triggered))
+            {
+                triggered = new HashSet<int>();
+                _triggeredToolsByCustomer[customerId] = triggered;
+            }
+
+            triggered.Add(toolInstanceId);
         }
 
         private static int RollScareCount()
@@ -215,7 +253,7 @@ namespace CIGAgamejam
 
         public static void DisableAngerSource(PlacedTool tool)
         {
-            if (tool != null && tool.Disable(ToolDisableReason.Effect))
+            if (tool != null && tool.Config != null && tool.Config.DisableWhenCustomerAngered && tool.Disable(ToolDisableReason.Effect))
                 EventBus<OnToolDisabled>.Publish(new OnToolDisabled(tool, ToolDisableReason.Effect));
         }
     }

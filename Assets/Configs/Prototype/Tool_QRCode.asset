@@ -23,9 +23,13 @@ MonoBehaviour:
   - {x: 0, y: 0}
   _uniquePerBoard: 0
   _triggerTiming: 1
+  _triggerAreaMode: 1
   _triggerOffsets:
   - {x: 0, y: 0}
-  _useLimit: 3
+  _triggerRadius: 1
+  _useLimit: 999
+  _consumeUseOnTrigger: 0
+  _disableWhenCustomerAngered: 0
   _canBeDisabledByBoss: 1
   _disableChanceAfterRemovingCustomer: 0
   _effects:

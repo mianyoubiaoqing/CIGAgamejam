@@ -30,7 +30,7 @@ namespace CIGAgamejam
                 return;
             }
 
-            ResetPosition();
+            ResetPositionRandomly();
         }
 
         private void OnEnable()
@@ -115,12 +115,24 @@ namespace CIGAgamejam
                 : new GridPosition(0, 0);
         }
 
+        private void ResetPositionRandomly()
+        {
+            if (_patrolPath.Count == 0)
+            {
+                ResetPosition();
+                return;
+            }
+
+            _patrolIndex = Random.Range(0, _patrolPath.Count);
+            _currentPosition = _patrolPath[_patrolIndex];
+        }
+
         private void HandleGamePhaseChanged(OnGamePhaseChanged e)
         {
             if (e.NewPhase == GamePhase.NightPlanning)
             {
                 GenerateRandomPatrolPath();
-                ResetPosition();
+                ResetPositionRandomly();
                 PublishPatrolPathChanged();
                 return;
             }

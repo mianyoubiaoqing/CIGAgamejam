@@ -21,8 +21,12 @@ namespace CIGAgamejam
 
         [Header("Trigger")]
         [SerializeField] private ToolTriggerTiming _triggerTiming = ToolTriggerTiming.OnCustomerEnterCell;
+        [SerializeField] private ToolTriggerAreaMode _triggerAreaMode = ToolTriggerAreaMode.ExactOffsets;
         [SerializeField] private Vector2Int[] _triggerOffsets = { Vector2Int.zero };
+        [SerializeField, Min(0)] private int _triggerRadius = 1;
         [SerializeField, Min(1)] private int _useLimit = 1;
+        [SerializeField] private bool _consumeUseOnTrigger = true;
+        [SerializeField] private bool _disableWhenCustomerAngered = true;
         [SerializeField] private bool _canBeDisabledByBoss = true;
         [SerializeField, Range(0f, 1f)] private float _disableChanceAfterRemovingCustomer;
 
@@ -39,8 +43,12 @@ namespace CIGAgamejam
         public Vector2Int[] Footprint => _footprint;
         public bool UniquePerBoard => _uniquePerBoard;
         public ToolTriggerTiming TriggerTiming => _triggerTiming;
+        public ToolTriggerAreaMode TriggerAreaMode => _triggerAreaMode;
         public Vector2Int[] TriggerOffsets => _triggerOffsets;
+        public int TriggerRadius => _triggerRadius;
         public int UseLimit => _useLimit;
+        public bool ConsumeUseOnTrigger => _consumeUseOnTrigger;
+        public bool DisableWhenCustomerAngered => _disableWhenCustomerAngered;
         public bool CanBeDisabledByBoss => _canBeDisabledByBoss;
         public float DisableChanceAfterRemovingCustomer => _disableChanceAfterRemovingCustomer;
         public ToolEffectDefinition[] Effects => _effects;
@@ -72,6 +80,9 @@ namespace CIGAgamejam
 
             if (_useLimit < 1)
                 _useLimit = 1;
+
+            if (_triggerRadius < 0)
+                _triggerRadius = 0;
 
             _disableChanceAfterRemovingCustomer = Mathf.Clamp01(_disableChanceAfterRemovingCustomer);
         }
