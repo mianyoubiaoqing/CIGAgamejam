@@ -39,9 +39,12 @@ namespace CIGAgamejam
             EventBus<OnDayStartScareQuotaRequested>.Unsubscribe(HandleDayStartScareQuotaRequested);
         }
 
-private void Update()
+        private void Update()
         {
-            if (!_isSimulating || _routeSystem == null || _routeSystem.CustomerRoute.Count == 0)
+            if (!_isSimulating)
+                return;
+
+            if (!HasCustomerRoute())
                 return;
 
             float deltaTime = Time.deltaTime;
@@ -49,7 +52,8 @@ private void Update()
             while (_spawnedToday < _customersPerDayForCurrentDay && _timer >= _spawnInterval)
             {
                 _timer -= _spawnInterval;
-                SpawnCustomer();
+                if (!TrySpawnCustomer())
+                    break;
             }
 
             for (int i = _activeCustomers.Count - 1; i >= 0; i--)
@@ -73,29 +77,42 @@ private void Update()
                 _isSimulating = false;
         }
 
-private void BeginDaySimulation()
+        private void BeginDaySimulation()
         {
             _isSimulating = true;
-            _timer = 0f;
+            _timer = _spawnInterval;
             _spawnedToday = 0;
             _dayStartScareQuota = 0;
             _activeCustomers.Clear();
             _customersPerDayForCurrentDay = Mathf.Max(1, ResolveCustomersForCurrentFavorability());
             _toolResolutionSystem?.ResolveDayStartTools();
             PublishFlow();
+            if (!HasCustomerRoute())
+            {
+                EventBus<OnPrototypeLogMessage>.Publish(
+                    new OnPrototypeLogMessage("白天无法生成顾客: 顾客路线未生成，请检查 RouteSystem 的入口、收银台、出口是否落在可行走地板上。"));
+            }
+
             EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("进入白天: 老板先随机破坏一个可破坏陷阱，顾客开始进店。"));
         }
 
-private void CompleteDaySimulation()
+        private void CompleteDaySimulation()
         {
             _isSimulating = false;
             _gamePhaseSystem?.CompleteDaySimulation();
             EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("白天结束: 查看信心变化，准备进入下一夜。"));
         }
 
-private void SpawnCustomer()
+        private bool TrySpawnCustomer()
         {
             List<GridPosition> personalRoute = BuildPersonalRoute();
+            if (personalRoute == null || personalRoute.Count == 0)
+            {
+                EventBus<OnPrototypeLogMessage>.Publish(
+                    new OnPrototypeLogMessage("白天无法生成顾客: 当前顾客路线为空。"));
+                return false;
+            }
+
             GridPosition start = personalRoute[0];
             var customer = new CustomerContext(_nextCustomerId++, start);
             if (_dayStartScareQuota > 0)
@@ -111,6 +128,12 @@ private void SpawnCustomer()
             _spawnedToday++;
             EventBus<OnPrototypeCustomerMoved>.Publish(
                 new OnPrototypeCustomerMoved(customer.CustomerId, start, start.X, start.Y, customer.State));
+            return true;
+        }
+
+        private bool HasCustomerRoute()
+        {
+            return _routeSystem != null && _routeSystem.CustomerRoute.Count > 0;
         }
 
         private List<GridPosition> BuildPersonalRoute()
