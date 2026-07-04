@@ -7,7 +7,7 @@ namespace CIGAgamejam
     public sealed class ToolInventorySystem : MonoBehaviour
     {
         [SerializeField] private ToolStockDefinition[] _blackBossSupport = Array.Empty<ToolStockDefinition>();
-        [SerializeField] private bool _carryUnusedTools = true;
+        [SerializeField] private bool _carryUnusedTools = false;
 
         private readonly Dictionary<ToolConfig, ToolStockState> _stocks = new();
         private bool _hasStarted;

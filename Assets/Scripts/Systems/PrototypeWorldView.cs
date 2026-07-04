@@ -28,6 +28,8 @@ namespace CIGAgamejam
         private readonly Dictionary<GridPosition, SpriteRenderer> _cellRenderers = new();
         private readonly Dictionary<GridPosition, GameObject> _destroyedObjectMarkers = new();
         private readonly Dictionary<PlacedTool, GameObject> _toolMarkers = new();
+        private readonly Dictionary<GridPosition, TileBase> _originalWarehouseTiles = new();
+        private readonly Dictionary<GridPosition, Color> _originalWarehouseColors = new();
         private readonly Dictionary<int, GameObject> _customerMarkers = new();
         private readonly List<GameObject> _routeMarkers = new();
         private readonly List<GameObject> _patrolPathMarkers = new();
@@ -48,6 +50,7 @@ namespace CIGAgamejam
         {
             EventBus<OnToolPlaced>.Subscribe(HandleToolPlaced);
             EventBus<OnToolDisabled>.Subscribe(HandleToolDisabled);
+            EventBus<OnToolRemoved>.Subscribe(HandleToolRemoved);
             EventBus<OnSecurityPatrolMoved>.Subscribe(HandleSecurityMoved);
             EventBus<OnSecurityPatrolPathChanged>.Subscribe(HandlePatrolPathChanged);
             EventBus<OnSecurityPatrolPathCleared>.Subscribe(HandlePatrolPathCleared);
@@ -62,6 +65,7 @@ namespace CIGAgamejam
         {
             EventBus<OnToolPlaced>.Unsubscribe(HandleToolPlaced);
             EventBus<OnToolDisabled>.Unsubscribe(HandleToolDisabled);
+            EventBus<OnToolRemoved>.Unsubscribe(HandleToolRemoved);
             EventBus<OnSecurityPatrolMoved>.Unsubscribe(HandleSecurityMoved);
             EventBus<OnSecurityPatrolPathChanged>.Unsubscribe(HandlePatrolPathChanged);
             EventBus<OnSecurityPatrolPathCleared>.Unsubscribe(HandlePatrolPathCleared);
@@ -300,6 +304,12 @@ namespace CIGAgamejam
                 var cell = new Vector3Int(position.X, position.Y, 0);
                 if (_warehouseTilemap.HasTile(cell))
                 {
+                    if (!_originalWarehouseTiles.ContainsKey(position))
+                    {
+                        _originalWarehouseTiles[position] = _warehouseTilemap.GetTile(cell);
+                        _originalWarehouseColors[position] = _warehouseTilemap.GetColor(cell);
+                    }
+
                     if (_fakeGoodsShelfTile != null)
                     {
                         _warehouseTilemap.SetTile(cell, _fakeGoodsShelfTile);
@@ -326,6 +336,42 @@ namespace CIGAgamejam
 
             SpriteRenderer renderer = marker.GetComponent<SpriteRenderer>();
             renderer.color = new Color(0.35f, 0.35f, 0.35f);
+        }
+
+        private void HandleToolRemoved(OnToolRemoved e)
+        {
+            if (e.Tool == null)
+                return;
+
+            if (_toolMarkers.TryGetValue(e.Tool, out GameObject marker))
+            {
+                if (marker != null)
+                    Destroy(marker);
+                _toolMarkers.Remove(e.Tool);
+            }
+
+            foreach (GridPosition position in e.Tool.OccupiedCells)
+                RestoreWarehouseFeedback(position);
+        }
+
+        private void RestoreWarehouseFeedback(GridPosition position)
+        {
+            if (_warehouseTilemap == null)
+                return;
+
+            var cell = new Vector3Int(position.X, position.Y, 0);
+            if (_originalWarehouseTiles.TryGetValue(position, out TileBase originalTile))
+            {
+                _warehouseTilemap.SetTile(cell, originalTile);
+                _originalWarehouseTiles.Remove(position);
+            }
+
+            if (_originalWarehouseColors.TryGetValue(position, out Color originalColor))
+            {
+                _warehouseTilemap.SetTileFlags(cell, TileFlags.None);
+                _warehouseTilemap.SetColor(cell, originalColor);
+                _originalWarehouseColors.Remove(position);
+            }
         }
 
         private void HandleSecurityMoved(OnSecurityPatrolMoved e)

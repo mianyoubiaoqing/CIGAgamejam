@@ -84,6 +84,11 @@ namespace CIGAgamejam
         Exhausted
     }
 
+    public enum ToolRemovalReason
+    {
+        DayExpired
+    }
+
     public enum ToolStockSource
     {
         BlackBossSupport,

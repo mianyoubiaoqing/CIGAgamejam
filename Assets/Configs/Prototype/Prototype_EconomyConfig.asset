@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Prototype_EconomyConfig
   m_EditorClassIdentifier: 
   _startingRevenueIndex: 100
+  _maximumRevenueIndex: 100
   _bankruptcyThreshold: 20
   _successfulPurchaseFavorabilityDelta: 3
   _scaredCustomerFavorabilityPenalty: 10

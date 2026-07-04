@@ -6,6 +6,7 @@ namespace CIGAgamejam
     public sealed class GridSystem : MonoBehaviour
     {
         [SerializeField] private TilemapGridBridge _tilemapBridge;
+        [SerializeField] private bool _clearPlacedToolsAtDayEnd = true;
 
         private readonly Dictionary<GridPosition, GridCellType> _cellTypes = new();
         private readonly Dictionary<GridPosition, PuzzleTileState> _tileStates = new();
@@ -28,6 +29,16 @@ namespace CIGAgamejam
         private void Awake()
         {
             InitializeGrid();
+        }
+
+        private void OnEnable()
+        {
+            EventBus<OnDayEnded>.Subscribe(HandleDayEnded);
+        }
+
+        private void OnDestroy()
+        {
+            EventBus<OnDayEnded>.Unsubscribe(HandleDayEnded);
         }
 
         private void Start()
@@ -180,6 +191,25 @@ namespace CIGAgamejam
                     state.Remove(tool);
 
             return true;
+        }
+
+        public void ClearPlacedToolsForNewDay()
+        {
+            for (int i = _placedTools.Count - 1; i >= 0; i--)
+            {
+                PlacedTool tool = _placedTools[i];
+                if (!RemoveToolFromBoard(tool))
+                    continue;
+
+                EventBus<OnToolRemoved>.Publish(
+                    new OnToolRemoved(tool, ToolRemovalReason.DayExpired));
+            }
+        }
+
+        private void HandleDayEnded(OnDayEnded e)
+        {
+            if (_clearPlacedToolsAtDayEnd)
+                ClearPlacedToolsForNewDay();
         }
 
         public bool MarkTileDestroyed(GridPosition position)

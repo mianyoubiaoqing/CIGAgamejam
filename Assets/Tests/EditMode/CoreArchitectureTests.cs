@@ -239,19 +239,19 @@ namespace CIGAgamejam
             try
             {
                 economySystem.RecordCustomerPurchase(new CustomerContext(1, new GridPosition(0, 0)));
-                Assert.AreEqual(105f, lastValue);
+                Assert.AreEqual(100f, lastValue);
 
                 InvokePrivateMethod(
                     economySystem,
                     "HandleCustomerLeftStore",
                     new OnCustomerLeftStore(1, ToolEffectType.ScareCustomerAway, CustomerState.Scared));
-                Assert.AreEqual(95f, lastValue);
+                Assert.AreEqual(90f, lastValue);
 
                 InvokePrivateMethod(
                     economySystem,
                     "HandleFavorabilityDeltaRequested",
                     new OnFavorabilityDeltaRequested(-5f, 1, "Anger"));
-                Assert.AreEqual(90f, lastValue);
+                Assert.AreEqual(85f, lastValue);
             }
             finally
             {
