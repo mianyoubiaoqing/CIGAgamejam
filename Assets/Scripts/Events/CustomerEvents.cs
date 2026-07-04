@@ -33,6 +33,20 @@ namespace CIGAgamejam
         }
     }
 
+    public readonly struct OnCustomerAngered
+    {
+        public readonly int CustomerId;
+        public readonly ToolEffectType Reason;
+        public readonly PlacedTool SourceTool;
+
+        public OnCustomerAngered(int customerId, ToolEffectType reason, PlacedTool sourceTool)
+        {
+            CustomerId = customerId;
+            Reason = reason;
+            SourceTool = sourceTool;
+        }
+    }
+
     public readonly struct OnGroupScareRequested
     {
         public readonly GridPosition Origin;

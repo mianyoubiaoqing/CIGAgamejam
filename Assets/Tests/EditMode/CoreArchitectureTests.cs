@@ -98,23 +98,135 @@ namespace CIGAgamejam
             try
             {
                 economySystem.RecordCustomerPurchase(new CustomerContext(1, new GridPosition(0, 0)));
-                Assert.AreEqual(103f, lastValue);
+                Assert.AreEqual(105f, lastValue);
 
                 InvokePrivateMethod(
                     economySystem,
                     "HandleCustomerLeftStore",
                     new OnCustomerLeftStore(1, ToolEffectType.ScareCustomerAway, CustomerState.Scared));
-                Assert.AreEqual(98f, lastValue);
+                Assert.AreEqual(95f, lastValue);
 
                 InvokePrivateMethod(
                     economySystem,
                     "HandleFavorabilityDeltaRequested",
-                    new OnFavorabilityDeltaRequested(-2f, 1, "QRCode"));
-                Assert.AreEqual(96f, lastValue);
+                    new OnFavorabilityDeltaRequested(-5f, 1, "Anger"));
+                Assert.AreEqual(90f, lastValue);
             }
             finally
             {
                 EventBus<OnRevenueChanged>.Unsubscribe(CaptureRevenue);
+            }
+        }
+
+        [Test]
+        public void RepeatedAngerTriggersApplyFavorabilityPenaltyEachTime()
+        {
+            EconomySystem economySystem = CreateEconomySystem(100f, 20f);
+            SetPrivateField(economySystem, "_currentRevenueIndex", 100f);
+            SetPrivateField(economySystem, "_hasConfigError", false);
+            float lastValue = economySystem.CurrentRevenueIndex;
+
+            void CaptureRevenue(OnRevenueChanged eventData) => lastValue = eventData.CurrentRevenueIndex;
+            EventBus<OnRevenueChanged>.Subscribe(CaptureRevenue);
+            try
+            {
+                InvokePrivateMethod(
+                    economySystem,
+                    "HandleFavorabilityDeltaRequested",
+                    new OnFavorabilityDeltaRequested(-5f, 1, "AngerA"));
+                Assert.AreEqual(95f, lastValue);
+
+                InvokePrivateMethod(
+                    economySystem,
+                    "HandleFavorabilityDeltaRequested",
+                    new OnFavorabilityDeltaRequested(-5f, 1, "AngerB"));
+                Assert.AreEqual(90f, lastValue);
+            }
+            finally
+            {
+                EventBus<OnRevenueChanged>.Unsubscribe(CaptureRevenue);
+            }
+        }
+
+        [Test]
+        public void AngerEffectPublishesPenaltyEveryTimeItResolves()
+        {
+            int penaltyEvents = 0;
+            float totalDelta = 0f;
+            void CapturePenalty(OnFavorabilityDeltaRequested eventData)
+            {
+                penaltyEvents++;
+                totalDelta += eventData.Delta;
+            }
+
+            EventBus<OnFavorabilityDeltaRequested>.Subscribe(CapturePenalty);
+            try
+            {
+                var customer = new CustomerContext(1, new GridPosition(0, 0));
+                var effect = new ToolEffectDefinition
+                {
+                    EffectType = ToolEffectType.ReduceFavorability,
+                    Chance = 1f
+                };
+                var handler = new ReduceFavorabilityEffectHandler();
+
+                handler.Resolve(new ToolEffectContext(null, effect, customer));
+                handler.Resolve(new ToolEffectContext(null, effect, customer));
+
+                Assert.AreEqual(CustomerState.Angry, customer.State);
+                Assert.AreEqual(2, penaltyEvents);
+                Assert.AreEqual(-10f, totalDelta);
+            }
+            finally
+            {
+                EventBus<OnFavorabilityDeltaRequested>.Unsubscribe(CapturePenalty);
+            }
+        }
+
+        [Test]
+        public void FakeGoodsAngersCustomerAndDisablesSourceWithoutLeavingStore()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 2);
+            SetPrivateField(gridConfig, "_height", 2);
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            ToolConfig tool = CreateTool("fake_goods", GridCellType.Floor);
+            SetPrivateField(tool, "_effects", new[]
+            {
+                new ToolEffectDefinition { EffectType = ToolEffectType.ReplaceGoodsWithFake, Chance = 1f }
+            });
+            tool.Validate();
+            Assert.IsTrue(gridSystem.TryPlaceTool(tool, new GridPosition(0, 0), out PlacedTool placedTool));
+
+            bool angered = false;
+            ToolDisableReason eventReason = ToolDisableReason.None;
+            void CaptureAnger(OnCustomerAngered eventData) => angered = true;
+            void CaptureDisable(OnToolDisabled eventData) => eventReason = eventData.Reason;
+
+            EventBus<OnCustomerAngered>.Subscribe(CaptureAnger);
+            EventBus<OnToolDisabled>.Subscribe(CaptureDisable);
+            try
+            {
+                var customer = new CustomerContext(1, new GridPosition(0, 0));
+                var handler = new ReplaceGoodsWithFakeEffectHandler();
+                handler.Resolve(new ToolEffectContext(placedTool, tool.Effects[0], customer));
+
+                Assert.IsFalse(customer.HasLeftStore);
+                Assert.IsTrue(customer.BoughtFakeGoods);
+                Assert.AreEqual(CustomerState.Angry, customer.State);
+                Assert.IsTrue(placedTool.IsDisabled);
+                Assert.AreEqual(ToolDisableReason.Effect, placedTool.DisableReason);
+                Assert.AreEqual(ToolDisableReason.Effect, eventReason);
+                Assert.IsTrue(angered);
+            }
+            finally
+            {
+                EventBus<OnCustomerAngered>.Unsubscribe(CaptureAnger);
+                EventBus<OnToolDisabled>.Unsubscribe(CaptureDisable);
             }
         }
 
