@@ -102,13 +102,7 @@ namespace CIGAgamejam
         public bool IsRouteWalkable(GridPosition position)
         {
             if (!IsInBounds(position)) return false;
-            if (!TryGetCellType(position, out GridCellType cellType)) return false;
-
-            return cellType != GridCellType.Wall
-                && cellType != GridCellType.Warehouse
-                && cellType != GridCellType.Restroom
-                && cellType != GridCellType.FortuneTree
-                && cellType != GridCellType.Blocked;
+            return _tilemapBridge != null && _tilemapBridge.HasGroundTile(position);
         }
 
         public PlacementResult CanPlaceTool(ToolConfig tool, GridPosition origin)

@@ -7,11 +7,18 @@ namespace CIGAgamejam
 {
     public sealed class TilemapGridBridge : MonoBehaviour
     {
+        [SerializeField] private Tilemap _groundTilemap;
         [SerializeField] private LogicTilemapLayer[] _visualLayers = Array.Empty<LogicTilemapLayer>();
 
-        public Tilemap CoordinateTilemap => ResolveCoordinateTilemap();
+        public Tilemap CoordinateTilemap => _groundTilemap != null ? _groundTilemap : ResolveCoordinateTilemap();
         public float CellSize => ResolveCellSize();
-        public bool IsReady => CoordinateTilemap != null;
+        public bool IsReady => _groundTilemap != null;
+
+        public bool HasGroundTile(GridPosition position)
+        {
+            return _groundTilemap != null
+                && _groundTilemap.HasTile(new Vector3Int(position.X, position.Y, 0));
+        }
 
         public bool TryReadCells(
             out Dictionary<GridPosition, GridCellType> cells,
