@@ -245,17 +245,16 @@ namespace CIGAgamejam
             RebuildRouteMarkers();
         }
 
-        private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
+private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
         {
-            Vector3 targetPosition = CustomerWorldPosition(e.Position, e.CustomerId);
+            Vector3 targetPosition = CustomerWorldPosition(e.GridX, e.GridY, e.CustomerId);
             if (!_customerMarkers.TryGetValue(e.CustomerId, out GameObject marker) || marker == null)
             {
                 marker = CreateSquare($"Customer {e.CustomerId}", targetPosition, _cellSize * _customerMarkerSizeRatio, new Color(0.1f, 0.45f, 1f), 10);
-                AddSmoothMover(marker, targetPosition);
                 _customerMarkers[e.CustomerId] = marker;
             }
 
-            MoveMarker(marker, targetPosition);
+            marker.transform.position = targetPosition;
         }
 
         private void HandleCustomerRemoved(OnPrototypeCustomerRemoved e)
@@ -279,9 +278,13 @@ namespace CIGAgamejam
             MoveMarker(_securityMarker, SecurityWorldPosition(position));
         }
 
-        private Vector3 CustomerWorldPosition(GridPosition position, int customerId)
+private Vector3 CustomerWorldPosition(float gridX, float gridY, int customerId)
         {
-            return GridToWorld(position) + ResolveCustomerOffset(customerId) + new Vector3(0f, 0f, -0.18f);
+            Vector3 gridPosition = new(
+                _origin.x + gridX * _cellSize,
+                _origin.y + gridY * _cellSize,
+                0f);
+            return gridPosition + ResolveCustomerOffset(customerId) + new Vector3(0f, 0f, -0.18f);
         }
 
         private Vector3 SecurityWorldPosition(GridPosition position)

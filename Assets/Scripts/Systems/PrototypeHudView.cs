@@ -71,18 +71,18 @@ namespace CIGAgamejam
             RectTransform logPanel = CreatePanel(canvas.transform, "Log Panel", AnchorRightMiddle(300f, 138f), new Color(0.05f, 0.05f, 0.05f, 0.78f));
 
             HorizontalLayoutGroup topLayout = topBar.gameObject.AddComponent<HorizontalLayoutGroup>();
-            topLayout.padding = new RectOffset(16, 16, 10, 10);
-            topLayout.spacing = 14f;
+            topLayout.padding = new RectOffset(12, 12, 10, 10);
+            topLayout.spacing = 10f;
             topLayout.childAlignment = TextAnchor.MiddleLeft;
             topLayout.childControlHeight = true;
-            topLayout.childControlWidth = false;
+            topLayout.childControlWidth = true;
             topLayout.childForceExpandHeight = true;
             topLayout.childForceExpandWidth = false;
 
-            _confidenceText = CreateLayoutText(topBar, "Confidence", "\u4fe1\u5fc3 100%", 18, TextAnchor.MiddleLeft, 160f);
-            _flowText = CreateLayoutText(topBar, "Flow", "\u5ba2\u6d41 \u5e97\u51850 \u4eca\u65e50", 18, TextAnchor.MiddleLeft, 260f);
-            _phaseText = CreateLayoutText(topBar, "Phase", "\u7b2c1/1\u5929 \u591c\u665a", 18, TextAnchor.MiddleLeft, 170f);
-            _turnText = CreateLayoutText(topBar, "Turn", "\u56de\u5408 1", 18, TextAnchor.MiddleLeft, 100f);
+            _confidenceText = CreateLayoutText(topBar, "Confidence", "\u4fe1\u5fc3 100%", 16, TextAnchor.MiddleLeft, 120f);
+            _flowText = CreateLayoutText(topBar, "Flow", "\u5ba2\u6d41 \u5e97\u51850 \u4eca\u65e5", 16, TextAnchor.MiddleLeft, 300f);
+            _phaseText = CreateLayoutText(topBar, "Phase", "\u7b2c1/1\u5929 \u591c\u665a", 16, TextAnchor.MiddleLeft, 140f);
+            _turnText = CreateLayoutText(topBar, "Turn", "\u56de\u5408 1", 16, TextAnchor.MiddleLeft, 70f);
             AddFlexibleSpace(topBar);
             BuildDayNightTrack(topBar);
 
@@ -171,7 +171,7 @@ namespace CIGAgamejam
         {
             AddFixedLayout(CreateButton(bottomBar, "Skip Button", "\u8df3\u8fc7", Vector2.zero, new Vector2(86f, 58f), () => _nightTurnSystem?.SkipTurn()), 86f, 58f);
             AddFixedLayout(CreateButton(bottomBar, "Day Button", "\u5f00\u59cb\u8425\u4e1a", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.EndNightAndStartDay()), 118f, 58f);
-            AddFixedLayout(CreateButton(bottomBar, "Result Button", "\u7ed3\u675f\u767d\u5929", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.CompleteDaySimulation()), 118f, 58f);
+            AddFixedLayout(CreateButton(bottomBar, "Result Button", "\u7ed3\u675f\u9ed1\u591c", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.CompleteDaySimulation()), 118f, 58f);
             AddFixedLayout(CreateButton(bottomBar, "Next Button", "\u4e0b\u4e00\u591c", Vector2.zero, new Vector2(100f, 58f), () => _gamePhaseSystem?.StartNextNightOrFail()), 100f, 58f);
         }
 
@@ -223,12 +223,16 @@ namespace CIGAgamejam
             return rect;
         }
 
-        private Text CreateLayoutText(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, float preferredWidth)
+private Text CreateLayoutText(RectTransform parent, string name, string value, int fontSize, TextAnchor anchor, float preferredWidth)
         {
             Text text = CreateStretchText(parent, name, value, fontSize, anchor, Vector2.zero);
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+
             LayoutElement layoutElement = text.gameObject.AddComponent<LayoutElement>();
-            layoutElement.minWidth = preferredWidth * 0.75f;
+            layoutElement.minWidth = preferredWidth;
             layoutElement.preferredWidth = preferredWidth;
+            layoutElement.flexibleWidth = 0f;
             layoutElement.preferredHeight = 48f;
             return text;
         }
@@ -295,7 +299,7 @@ namespace CIGAgamejam
         private void RefreshAll()
         {
             _confidenceText.text = $"\u4fe1\u5fc3 {_confidence:0}%";
-            _flowText.text = $"\u5ba2\u6d41 \u5e97\u5185{_inStoreCount} \u4eca\u65e5{_todayTotal} \u8d8b\u52bf{_flowTrend:+0%;-0%;0%}";
+            _flowText.text = $"\u5ba2\u6d41 \u5e97\u5185{_inStoreCount} \u4eca\u65e5{_todayTotal}";
             string phase = _gamePhaseSystem != null ? ResolvePhaseLabel(_gamePhaseSystem.CurrentPhase) : "\u591c\u665a";
             _phaseText.text = $"\u7b2c{_currentDay}/{_maxDays}\u5929 {phase}";
             _turnText.text = $"\u56de\u5408 {(_nightTurnSystem != null ? _nightTurnSystem.CurrentTurn : 1)}";

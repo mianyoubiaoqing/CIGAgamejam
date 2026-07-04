@@ -10,7 +10,8 @@ namespace CIGAgamejam
         [SerializeField] private EconomySystem _economySystem;
         [SerializeField] private GamePhaseSystem _gamePhaseSystem;
         [SerializeField, Min(1)] private int _customersPerDay = 5;
-        [SerializeField, Min(0.1f)] private float _stepSeconds = 0.85f;
+        [SerializeField, Min(0.1f)] private float _spawnInterval = 0.85f;
+        [SerializeField, Min(0.1f)] private float _cellsPerSecond = 1.176f;
 
         private readonly List<MovingCustomer> _activeCustomers = new();
         private float _timer;
@@ -28,17 +29,26 @@ namespace CIGAgamejam
             EventBus<OnGamePhaseChanged>.Unsubscribe(HandleGamePhaseChanged);
         }
 
-        private void Update()
+private void Update()
         {
             if (!_isSimulating || _routeSystem == null || _routeSystem.CustomerRoute.Count == 0)
                 return;
 
-            _timer += Time.deltaTime;
-            if (_timer < _stepSeconds)
-                return;
+            float deltaTime = Time.deltaTime;
+            _timer += deltaTime;
+            while (_spawnedToday < _customersPerDay && _timer >= _spawnInterval)
+            {
+                _timer -= _spawnInterval;
+                SpawnCustomer();
+            }
 
-            _timer = 0f;
-            StepSimulation();
+            for (int i = _activeCustomers.Count - 1; i >= 0; i--)
+                AdvanceCustomer(i, deltaTime);
+
+            PublishFlow();
+
+            if (_spawnedToday >= _customersPerDay && _activeCustomers.Count == 0)
+                CompleteDaySimulation();
         }
 
         private void HandleGamePhaseChanged(OnGamePhaseChanged e)
@@ -53,7 +63,7 @@ namespace CIGAgamejam
                 _isSimulating = false;
         }
 
-        private void BeginDaySimulation()
+private void BeginDaySimulation()
         {
             _isSimulating = true;
             _timer = 0f;
@@ -63,34 +73,24 @@ namespace CIGAgamejam
             EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("进入白天: 老板先随机破坏一个可破坏陷阱，顾客开始进店。"));
         }
 
-        private void StepSimulation()
+private void CompleteDaySimulation()
         {
-            if (_spawnedToday < _customersPerDay)
-                SpawnCustomer();
-
-            for (int i = _activeCustomers.Count - 1; i >= 0; i--)
-                MoveCustomer(i);
-
-            PublishFlow();
-
-            if (_spawnedToday >= _customersPerDay && _activeCustomers.Count == 0)
-            {
-                _isSimulating = false;
-                _gamePhaseSystem?.CompleteDaySimulation();
-                EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("白天结束: 查看信心变化，准备进入下一夜。"));
-            }
+            _isSimulating = false;
+            _gamePhaseSystem?.CompleteDaySimulation();
+            EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("白天结束: 查看信心变化，准备进入下一夜。"));
         }
 
-        private void SpawnCustomer()
+private void SpawnCustomer()
         {
             GridPosition start = _routeSystem.CustomerRoute[0];
             var customer = new CustomerContext(_nextCustomerId++, start);
-            _activeCustomers.Add(new MovingCustomer(customer, 0));
+            _activeCustomers.Add(new MovingCustomer(customer));
             _spawnedToday++;
-            EventBus<OnPrototypeCustomerMoved>.Publish(new OnPrototypeCustomerMoved(customer.CustomerId, start));
+            EventBus<OnPrototypeCustomerMoved>.Publish(
+                new OnPrototypeCustomerMoved(customer.CustomerId, start, start.X, start.Y));
         }
 
-        private void MoveCustomer(int index)
+private void AdvanceCustomer(int index, float deltaTime)
         {
             MovingCustomer moving = _activeCustomers[index];
             if (moving.Context.HasLeftStore)
@@ -99,33 +99,54 @@ namespace CIGAgamejam
                 return;
             }
 
-            moving.RouteIndex++;
-            if (moving.RouteIndex >= _routeSystem.CustomerRoute.Count)
+            IReadOnlyList<GridPosition> route = _routeSystem.CustomerRoute;
+            int lastRouteIndex = route.Count - 1;
+            moving.Progress = Mathf.Min(lastRouteIndex, moving.Progress + deltaTime * _cellsPerSecond);
+            int reachedRouteIndex = Mathf.FloorToInt(moving.Progress);
+
+            while (moving.RouteIndex < reachedRouteIndex)
             {
-                _economySystem?.RecordCustomerPurchase(moving.Context);
-                RemoveCustomer(index);
-                return;
+                moving.RouteIndex++;
+                ResolveRouteCell(ref moving, route[moving.RouteIndex]);
+                if (moving.Context.HasLeftStore)
+                {
+                    RemoveCustomer(index);
+                    return;
+                }
             }
 
-            moving.Context.Position = _routeSystem.CustomerRoute[moving.RouteIndex];
-            _toolResolutionSystem?.ResolveCustomerEnterCell(moving.Context);
-            _toolResolutionSystem?.ResolveCustomerPassFrontCell(moving.Context);
-
-            if (moving.Context.Position.Equals(_routeSystem.Checkout))
-            {
-                _toolResolutionSystem?.ResolveCustomerPurchase(moving.Context);
-                _economySystem?.RecordCustomerPurchase(moving.Context);
-            }
-
-            if (moving.Context.HasLeftStore)
-            {
-                RemoveCustomer(index);
-                return;
-            }
+            int nextRouteIndex = Mathf.Min(moving.RouteIndex + 1, lastRouteIndex);
+            float segmentProgress = moving.Progress - moving.RouteIndex;
+            GridPosition from = route[moving.RouteIndex];
+            GridPosition to = route[nextRouteIndex];
+            float gridX = Mathf.Lerp(from.X, to.X, segmentProgress);
+            float gridY = Mathf.Lerp(from.Y, to.Y, segmentProgress);
 
             _activeCustomers[index] = moving;
             EventBus<OnPrototypeCustomerMoved>.Publish(
-                new OnPrototypeCustomerMoved(moving.Context.CustomerId, moving.Context.Position));
+                new OnPrototypeCustomerMoved(moving.Context.CustomerId, moving.Context.Position, gridX, gridY));
+
+            if (moving.Progress >= lastRouteIndex)
+            {
+                if (!moving.HasPurchased)
+                    _economySystem?.RecordCustomerPurchase(moving.Context);
+                RemoveCustomer(index);
+            }
+        }
+
+        private void ResolveRouteCell(ref MovingCustomer moving, GridPosition position)
+        {
+            moving.Context.Position = position;
+            _toolResolutionSystem?.ResolveCustomerEnterCell(moving.Context);
+            _toolResolutionSystem?.ResolveCustomerPassFrontCell(moving.Context);
+
+            if (!moving.HasPurchased && position.Equals(_routeSystem.Checkout))
+            {
+                _toolResolutionSystem?.ResolveCustomerPurchase(moving.Context);
+                if (!moving.Context.HasLeftStore)
+                    _economySystem?.RecordCustomerPurchase(moving.Context);
+                moving.HasPurchased = true;
+            }
         }
 
         private void RemoveCustomer(int index)
@@ -145,11 +166,15 @@ namespace CIGAgamejam
         {
             public CustomerContext Context;
             public int RouteIndex;
+            public float Progress;
+            public bool HasPurchased;
 
-            public MovingCustomer(CustomerContext context, int routeIndex)
+            public MovingCustomer(CustomerContext context)
             {
                 Context = context;
-                RouteIndex = routeIndex;
+                RouteIndex = 0;
+                Progress = 0f;
+                HasPurchased = false;
             }
         }
     }

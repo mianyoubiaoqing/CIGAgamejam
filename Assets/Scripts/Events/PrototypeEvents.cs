@@ -78,11 +78,20 @@ namespace CIGAgamejam
     {
         public readonly int CustomerId;
         public readonly GridPosition Position;
+        public readonly float GridX;
+        public readonly float GridY;
 
         public OnPrototypeCustomerMoved(int customerId, GridPosition position)
+            : this(customerId, position, position.X, position.Y)
+        {
+        }
+
+        public OnPrototypeCustomerMoved(int customerId, GridPosition position, float gridX, float gridY)
         {
             CustomerId = customerId;
             Position = position;
+            GridX = gridX;
+            GridY = gridY;
         }
     }
 
