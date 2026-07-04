@@ -114,3 +114,5 @@ ProjectSettings/ProjectVersion.txt
 # Local documentation and fix logs (not part of the project)
 /Docs/LogicFramework.md
 /Docs/*FixLog*.txt
+ProjectSettings/PackageManagerSettings.asset
+ProjectSettings/ProjectVersion.txt
