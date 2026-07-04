@@ -39,3 +39,4 @@ namespace CIGAgamejam
             if (ReplacementTool == tool) ReplacementTool = null;
         }
     }
+}
