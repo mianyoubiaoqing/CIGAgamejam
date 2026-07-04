@@ -58,7 +58,10 @@ namespace CIGAgamejam
         {
             if (_config == null) return;
 
-            _currentRevenueIndex = _config.StartingRevenueIndex;
+            _currentRevenueIndex = Mathf.Clamp(
+                _config.StartingRevenueIndex,
+                0f,
+                _config.MaximumRevenueIndex);
             EventBus<OnRevenueChanged>.Publish(new OnRevenueChanged(_currentRevenueIndex, 0f));
         }
 
@@ -66,8 +69,13 @@ namespace CIGAgamejam
         {
             if (_hasConfigError) return;
 
-            _currentRevenueIndex = Mathf.Max(0f, _currentRevenueIndex + delta);
-            EventBus<OnRevenueChanged>.Publish(new OnRevenueChanged(_currentRevenueIndex, delta));
+            float previous = _currentRevenueIndex;
+            _currentRevenueIndex = Mathf.Clamp(
+                previous + delta,
+                0f,
+                _config.MaximumRevenueIndex);
+            EventBus<OnRevenueChanged>.Publish(
+                new OnRevenueChanged(_currentRevenueIndex, _currentRevenueIndex - previous));
         }
 
         public void RecordCustomerPurchase(CustomerContext customer)

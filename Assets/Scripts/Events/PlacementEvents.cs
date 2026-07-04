@@ -41,6 +41,18 @@ namespace CIGAgamejam
         }
     }
 
+    public readonly struct OnToolRemoved
+    {
+        public readonly PlacedTool Tool;
+        public readonly ToolRemovalReason Reason;
+
+        public OnToolRemoved(PlacedTool tool, ToolRemovalReason reason)
+        {
+            Tool = tool;
+            Reason = reason;
+        }
+    }
+
     public readonly struct OnToolSelected
     {
         public readonly ToolConfig Tool;

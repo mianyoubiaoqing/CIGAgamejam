@@ -310,7 +310,7 @@ MonoBehaviour:
     Count: 1
   - Tool: {fileID: 11400000, guid: a90d8201306340e4fae76503930bde67, type: 2}
     Count: 1
-  _carryUnusedTools: 1
+  _carryUnusedTools: 0
 --- !u!114 &150997779
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4605,6 +4605,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tilemapBridge: {fileID: 835562134}
+  _clearPlacedToolsAtDayEnd: 1
 --- !u!114 &835562132
 MonoBehaviour:
   m_ObjectHideFlags: 0
