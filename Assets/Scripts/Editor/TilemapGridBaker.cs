@@ -85,8 +85,10 @@ namespace CIGAgamejam.Editor
             Transform child = parent.Find(name);
             GameObject go = child != null ? child.gameObject : new GameObject(name);
             if (child == null) go.transform.SetParent(parent, false);
-            Tilemap tilemap = go.GetComponent<Tilemap>() ?? go.AddComponent<Tilemap>();
-            TilemapRenderer renderer = go.GetComponent<TilemapRenderer>() ?? go.AddComponent<TilemapRenderer>();
+            Tilemap tilemap = go.GetComponent<Tilemap>();
+            if (tilemap == null) tilemap = go.AddComponent<Tilemap>();
+            TilemapRenderer renderer = go.GetComponent<TilemapRenderer>();
+            if (renderer == null) renderer = go.AddComponent<TilemapRenderer>();
             renderer.sortingOrder = sortingOrder;
             return tilemap;
         }
