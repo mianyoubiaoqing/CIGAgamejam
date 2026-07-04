@@ -7,7 +7,7 @@ namespace CIGAgamejam
 {
     public static class PrototypeRuntimeBootstrapper
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        // Kept as a reference for prototype sandbox setup, but no longer starts automatically.
         private static void Bootstrap()
         {
             if (UnityEngine.Object.FindObjectOfType<GamePhaseSystem>() != null)
