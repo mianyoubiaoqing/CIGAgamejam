@@ -2907,6 +2907,7 @@ MonoBehaviour:
   _customerMarkerSizeRatio: 0.22
   _securityMarkerSizeRatio: 0.24
   _toolMarkerSizeRatio: 0.26
+  _referenceTilemap: {fileID: 1489044735}
   _warehouseTilemap: {fileID: 392454818}
   _fakeGoodsShelfTile: {fileID: 11400000, guid: 9d5127c0433008a45a4436e0e0ab462f, type: 2}
   _tintFakeGoodsShelf: 1

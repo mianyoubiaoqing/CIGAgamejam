@@ -17,6 +17,7 @@ namespace CIGAgamejam
         [SerializeField, Min(0.02f)] private float _customerMarkerSizeRatio = 0.22f;
         [SerializeField, Min(0.02f)] private float _securityMarkerSizeRatio = 0.24f;
         [SerializeField, Min(0.02f)] private float _toolMarkerSizeRatio = 0.26f;
+        [SerializeField] private Tilemap _referenceTilemap;
         [Header("Tilemap Feedback")]
         [SerializeField] private Tilemap _warehouseTilemap;
         [SerializeField] private TileBase _fakeGoodsShelfTile;
@@ -34,7 +35,7 @@ namespace CIGAgamejam
         private GameObject _placementPreview;
         private SpriteRenderer _placementPreviewRenderer;
 
-        public float CellSize => _cellSize;
+        public float CellSize => ResolveCellSize();
 
         private void Awake()
         {
@@ -73,6 +74,14 @@ namespace CIGAgamejam
                 return _gridSystem != null && _gridSystem.IsInBounds(gridPosition);
             }
 
+            Tilemap coordinateTilemap = CoordinateTilemap;
+            if (coordinateTilemap != null)
+            {
+                Vector3Int cell = coordinateTilemap.WorldToCell(worldPosition);
+                gridPosition = new GridPosition(cell.x, cell.y);
+                return _gridSystem != null && _gridSystem.IsInBounds(gridPosition);
+            }
+
             int x = Mathf.FloorToInt((worldPosition.x - _origin.x) / _cellSize);
             int y = Mathf.FloorToInt((worldPosition.y - _origin.y) / _cellSize);
             gridPosition = new GridPosition(x, y);
@@ -83,6 +92,10 @@ namespace CIGAgamejam
         {
             if (_tilemapBridge != null && _tilemapBridge.IsReady)
                 return _tilemapBridge.CellToWorld(position);
+
+            Tilemap coordinateTilemap = CoordinateTilemap;
+            if (coordinateTilemap != null)
+                return coordinateTilemap.GetCellCenterWorld(new Vector3Int(position.X, position.Y, 0));
 
             return new Vector3(
                 _origin.x + (position.X + 0.5f) * _cellSize,
@@ -230,7 +243,7 @@ namespace CIGAgamejam
             if (_routeSystem == null) return;
 
             IReadOnlyList<GridPosition> route = _routeSystem.CustomerRoute;
-            float markerSize = _cellSize * _routeMarkerSizeRatio;
+            float markerSize = CellSize * _routeMarkerSizeRatio;
             for (int i = 0; i < route.Count; i++)
             {
                 GameObject marker = CreateSquare($"Route {i}", GridToWorld(route[i]) + new Vector3(0f, 0f, -0.08f), markerSize, new Color(0.20f, 0.25f, 0.95f, 0.25f), 5);
@@ -247,7 +260,7 @@ namespace CIGAgamejam
             GameObject marker = CreateSquare(
                 $"Tool {e.Tool.InstanceId}",
                 GridToWorld(e.Tool.Origin) + new Vector3(0f, 0f, -0.14f),
-                _cellSize * _toolMarkerSizeRatio,
+                CellSize * _toolMarkerSizeRatio,
                 new Color(0.95f, 0.28f, 0.18f),
                 8);
             _toolMarkers[e.Tool] = marker;
@@ -271,7 +284,7 @@ namespace CIGAgamejam
 
             _placementPreview.SetActive(true);
             _placementPreview.transform.position = GridToWorld(position) + new Vector3(0f, 0f, -0.21f);
-            _placementPreview.transform.localScale = Vector3.one * (_cellSize * 0.72f);
+            _placementPreview.transform.localScale = Vector3.one * (CellSize * 0.72f);
             _placementPreviewRenderer.sprite = tool.Icon != null ? tool.Icon : _sprite;
             _placementPreviewRenderer.color = isLegal
                 ? new Color(1f, 1f, 1f, _previewAlpha)
@@ -339,12 +352,12 @@ namespace CIGAgamejam
             RebuildRouteMarkers();
         }
 
-private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
+        private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
         {
             Vector3 targetPosition = CustomerWorldPosition(e.GridX, e.GridY, e.CustomerId);
             if (!_customerMarkers.TryGetValue(e.CustomerId, out GameObject marker) || marker == null)
             {
-                marker = CreateSquare($"Customer {e.CustomerId}", targetPosition, _cellSize * _customerMarkerSizeRatio, ResolveCustomerColor(e.State), 10);
+                marker = CreateSquare($"Customer {e.CustomerId}", targetPosition, CellSize * _customerMarkerSizeRatio, ResolveCustomerColor(e.State), 10);
                 _customerMarkers[e.CustomerId] = marker;
             }
 
@@ -374,7 +387,7 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
                 GameObject marker = CreateSquare(
                     $"Destroyed {e.Position.X},{e.Position.Y}",
                     GridToWorld(e.Position) + new Vector3(0f, 0f, -0.12f),
-                    _cellSize * 0.72f,
+                    CellSize * 0.72f,
                     new Color(0.18f, 0.18f, 0.18f, 0.72f),
                     7);
                 _destroyedObjectMarkers[e.Position] = marker;
@@ -388,7 +401,7 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
         {
             if (_securityMarker == null)
             {
-                _securityMarker = CreateSquare("Security", SecurityWorldPosition(position), _cellSize * _securityMarkerSizeRatio, new Color(0.05f, 0.05f, 0.05f), 9);
+                _securityMarker = CreateSquare("Security", SecurityWorldPosition(position), CellSize * _securityMarkerSizeRatio, new Color(0.05f, 0.05f, 0.05f), 9);
                 AddSmoothMover(_securityMarker, SecurityWorldPosition(position));
             }
 
@@ -397,11 +410,26 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
 
         private Vector3 CustomerWorldPosition(float gridX, float gridY, int customerId)
         {
-            Vector3 gridPosition = new(
+            Vector3 gridPosition = GridToWorld(gridX, gridY);
+            return gridPosition + ResolveCustomerOffset(customerId) + new Vector3(0f, 0f, -0.18f);
+        }
+
+        private Vector3 GridToWorld(float gridX, float gridY)
+        {
+            Tilemap coordinateTilemap = CoordinateTilemap;
+            if (coordinateTilemap != null)
+            {
+                int cellX = Mathf.FloorToInt(gridX);
+                int cellY = Mathf.FloorToInt(gridY);
+                Vector3 cellCenter = coordinateTilemap.GetCellCenterWorld(new Vector3Int(cellX, cellY, 0));
+                Vector3 cellSize = coordinateTilemap.layoutGrid != null ? coordinateTilemap.layoutGrid.cellSize : Vector3.one;
+                return cellCenter + new Vector3((gridX - cellX) * cellSize.x, (gridY - cellY) * cellSize.y, 0f);
+            }
+
+            return new Vector3(
                 _origin.x + (gridX + 0.5f) * _cellSize,
                 _origin.y + (gridY + 0.5f) * _cellSize,
                 0f);
-            return gridPosition + ResolveCustomerOffset(customerId) + new Vector3(0f, 0f, -0.18f);
         }
 
         private Vector3 SecurityWorldPosition(GridPosition position)
@@ -412,8 +440,9 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
         private Vector3 ResolveCustomerOffset(int customerId)
         {
             int lane = Mathf.Abs(customerId) % 3;
-            float xOffset = (lane - 1) * _cellSize * 0.10f;
-            return new Vector3(xOffset, _cellSize * 0.06f, 0f);
+            float cellSize = CellSize;
+            float xOffset = (lane - 1) * cellSize * 0.10f;
+            return new Vector3(xOffset, cellSize * 0.06f, 0f);
         }
 
         private void AddSmoothMover(GameObject marker, Vector3 targetPosition)
@@ -472,6 +501,26 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
             renderer.sprite = _sprite;
             renderer.color = color;
             renderer.sortingOrder = sortingOrder;
+        }
+
+        private Tilemap CoordinateTilemap => _tilemapBridge != null && _tilemapBridge.GameplayTilemap != null
+            ? _tilemapBridge.GameplayTilemap
+            : _referenceTilemap != null
+                ? _referenceTilemap
+                : _warehouseTilemap;
+
+        private float ResolveCellSize()
+        {
+            Tilemap coordinateTilemap = CoordinateTilemap;
+            if (coordinateTilemap != null && coordinateTilemap.layoutGrid != null)
+            {
+                Vector3 size = coordinateTilemap.layoutGrid.cellSize;
+                float maxAxis = Mathf.Max(Mathf.Abs(size.x), Mathf.Abs(size.y));
+                if (maxAxis > 0f)
+                    return maxAxis;
+            }
+
+            return _cellSize;
         }
 
         private static Sprite CreateUnitSprite()
