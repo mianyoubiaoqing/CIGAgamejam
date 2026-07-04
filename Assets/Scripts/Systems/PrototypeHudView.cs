@@ -37,9 +37,7 @@ namespace CIGAgamejam
         private RectTransform _dayNightNeedle;
         private RectTransform _toolMenuRoot;
         private RectTransform _actionButtonRoot;
-        private Button _skipButton;
         private Button _startDayButton;
-        private Button _finishDayButton;
         private Button _nextNightButton;
         private GameObject _startScreen;
         private GameObject _resultPanel;
@@ -180,6 +178,10 @@ namespace CIGAgamejam
             if (existing != null && existing.TryGetComponent(out Canvas existingCanvas))
                 return existingCanvas;
 
+            foreach (Canvas sceneCanvas in FindObjectsOfType<Canvas>(true))
+                if (sceneCanvas.gameObject.scene == gameObject.scene && sceneCanvas.name == "Prototype HUD")
+                    return sceneCanvas;
+
             var canvasObject = new GameObject("Prototype HUD");
             canvasObject.transform.SetParent(transform, false);
             Canvas canvas = canvasObject.AddComponent<Canvas>();
@@ -209,13 +211,9 @@ namespace CIGAgamejam
             _dayNightNeedle = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track/Needle");
             _toolMenuRoot = FindRect(canvas.transform, "Bottom Bar/Tool Button Row");
             _actionButtonRoot = FindRect(canvas.transform, "Bottom Bar/Action Button Row");
-            _skipButton = FindButton(_actionButtonRoot, "Skip Button");
-            _startDayButton = FindButton(_actionButtonRoot, "Day Button");
-            _finishDayButton = FindButton(_actionButtonRoot, "Result Button");
-            _nextNightButton = FindButton(_actionButtonRoot, "Next Button");
-            BindActionButton(_skipButton, () => _nightTurnSystem?.SkipTurn());
+            _startDayButton = FindButton(_actionButtonRoot, "Next Day Button");
+            _nextNightButton = FindButton(_actionButtonRoot, "Next Night Button");
             BindActionButton(_startDayButton, () => _gamePhaseSystem?.EndNightAndStartDay());
-            BindActionButton(_finishDayButton, () => _gamePhaseSystem?.CompleteDaySimulation());
             BindActionButton(_nextNightButton, () => _gamePhaseSystem?.StartNextNightOrFail());
 
             return _confidenceText != null
@@ -288,18 +286,12 @@ namespace CIGAgamejam
 
         private void BuildActionButtons(RectTransform bottomBar)
         {
-            RectTransform skip = CreateButton(bottomBar, "Skip Button", "\u8df3\u8fc7", Vector2.zero, new Vector2(86f, 58f), () => _nightTurnSystem?.SkipTurn(), _buttonNightSprite);
-            RectTransform day = CreateButton(bottomBar, "Day Button", "\u5f00\u59cb\u8425\u4e1a", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.EndNightAndStartDay(), _buttonDaylightSprite);
-            RectTransform result = CreateButton(bottomBar, "Result Button", "\u7ed3\u675f\u8425\u4e1a", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.CompleteDaySimulation(), _buttonDaylightSprite);
-            RectTransform next = CreateButton(bottomBar, "Next Button", "\u4e0b\u4e00\u591c", Vector2.zero, new Vector2(100f, 58f), () => _gamePhaseSystem?.StartNextNightOrFail(), _buttonNightSprite);
-            _skipButton = FindButton(skip, string.Empty);
-            _startDayButton = FindButton(day, string.Empty);
-            _finishDayButton = FindButton(result, string.Empty);
-            _nextNightButton = FindButton(next, string.Empty);
-            AddFixedLayout(skip, 86f, 58f);
-            AddFixedLayout(day, 118f, 58f);
-            AddFixedLayout(result, 118f, 58f);
-            AddFixedLayout(next, 100f, 58f);
+            RectTransform nextDay = CreateButton(bottomBar, "Next Day Button", "\u4e0b\u4e00\u65e5", Vector2.zero, new Vector2(118f, 58f), () => _gamePhaseSystem?.EndNightAndStartDay(), _buttonDaylightSprite);
+            RectTransform nextNight = CreateButton(bottomBar, "Next Night Button", "\u4e0b\u4e00\u591c", Vector2.zero, new Vector2(100f, 58f), () => _gamePhaseSystem?.StartNextNightOrFail(), _buttonNightSprite);
+            _startDayButton = FindButton(nextDay, string.Empty);
+            _nextNightButton = FindButton(nextNight, string.Empty);
+            AddFixedLayout(nextDay, 118f, 58f);
+            AddFixedLayout(nextNight, 100f, 58f);
         }
 
         private void BuildResultPanel(Canvas canvas)
@@ -648,14 +640,10 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             ApplySprite(FindImage(transform, "Prototype HUD/Log Panel"), _logPanelSprite, true);
             ApplySprite(FindImage(transform, "Prototype HUD/Top Bar/Day Night Root/Day Night Track"), _phaseBarSprite, true);
             ApplySprite(FindImage(transform, "Prototype HUD/Top Bar/Day Night Root/Day Night Track/Needle"), _phasePointerSprite, true);
-            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Skip Button"), _buttonNightSprite, true);
-            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Day Button"), _buttonDaylightSprite, true);
-            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Result Button"), _buttonDaylightSprite, true);
-            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Button"), _buttonNightSprite, true);
-            ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Skip Button/Label"));
-            ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Day Button/Label"));
-            ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Result Button/Label"));
-            ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Button/Label"));
+            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Day Button"), _buttonDaylightSprite, true);
+            ApplySprite(FindButtonImage(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Night Button"), _buttonNightSprite, true);
+            ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Day Button/Label"));
+            ApplyButtonTextStyle(FindText(transform, "Prototype HUD/Bottom Bar/Action Button Row/Next Night Button/Label"));
 
             ApplyStatusTextStyle(_confidenceText);
             ApplyStatusTextStyle(_flowText);
@@ -669,12 +657,8 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             GamePhase currentPhase = _gamePhaseSystem != null
                 ? _gamePhaseSystem.CurrentPhase
                 : GamePhase.NightPlanning;
-            bool isNight = currentPhase == GamePhase.None
-                || currentPhase == GamePhase.NightPlanning;
 
-            if (_skipButton != null) _skipButton.interactable = isNight;
-            if (_startDayButton != null) _startDayButton.interactable = isNight;
-            if (_finishDayButton != null) _finishDayButton.interactable = currentPhase == GamePhase.DaySimulation;
+            if (_startDayButton != null) _startDayButton.interactable = currentPhase == GamePhase.NightPlanning;
             if (_nextNightButton != null) _nextNightButton.interactable = currentPhase == GamePhase.DayResult;
 
             foreach (KeyValuePair<ToolConfig, Text> pair in _toolCountTexts)
@@ -683,7 +667,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
                     ? boundButton
                     : pair.Value != null ? pair.Value.GetComponentInParent<Button>() : null;
                 if (button != null)
-                    button.interactable = isNight
+                    button.interactable = currentPhase == GamePhase.NightPlanning
                         && _inventorySystem != null
                         && _inventorySystem.GetCount(pair.Key) > 0;
             }
