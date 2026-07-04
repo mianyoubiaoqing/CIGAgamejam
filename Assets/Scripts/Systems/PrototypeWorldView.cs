@@ -15,6 +15,9 @@ namespace CIGAgamejam
         [SerializeField, Min(0.02f)] private float _customerMarkerSizeRatio = 0.22f;
         [SerializeField, Min(0.02f)] private float _securityMarkerSizeRatio = 0.24f;
         [SerializeField, Min(0.02f)] private float _toolMarkerSizeRatio = 0.26f;
+        [Header("Security Patrol Path")]
+        [SerializeField, Min(0.02f)] private float _patrolPathMarkerSizeRatio = 0.06f;
+        [SerializeField] private Color _patrolPathColor = new(0.5f, 0.5f, 0.5f, 0.35f);
         [Header("Tilemap Feedback")]
         [SerializeField] private Tilemap _warehouseTilemap;
         [SerializeField] private TileBase _fakeGoodsShelfTile;
@@ -27,6 +30,7 @@ namespace CIGAgamejam
         private readonly Dictionary<PlacedTool, GameObject> _toolMarkers = new();
         private readonly Dictionary<int, GameObject> _customerMarkers = new();
         private readonly List<GameObject> _routeMarkers = new();
+        private readonly List<GameObject> _patrolPathMarkers = new();
         private Sprite _sprite;
         private GameObject _securityMarker;
         private GameObject _placementPreview;
@@ -38,7 +42,6 @@ namespace CIGAgamejam
         {
             _sprite = CreateUnitSprite();
             RebuildRouteMarkers();
-            MoveSecurityMarker(_securityPatrolSystem != null ? _securityPatrolSystem.CurrentPosition : new GridPosition(0, 0));
         }
 
         private void OnEnable()
@@ -46,6 +49,8 @@ namespace CIGAgamejam
             EventBus<OnToolPlaced>.Subscribe(HandleToolPlaced);
             EventBus<OnToolDisabled>.Subscribe(HandleToolDisabled);
             EventBus<OnSecurityPatrolMoved>.Subscribe(HandleSecurityMoved);
+            EventBus<OnSecurityPatrolPathChanged>.Subscribe(HandlePatrolPathChanged);
+            EventBus<OnSecurityPatrolPathCleared>.Subscribe(HandlePatrolPathCleared);
             EventBus<OnRouteChanged>.Subscribe(HandleRouteChanged);
             EventBus<OnPrototypeCustomerMoved>.Subscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Subscribe(HandleCustomerRemoved);
@@ -57,6 +62,8 @@ namespace CIGAgamejam
             EventBus<OnToolPlaced>.Unsubscribe(HandleToolPlaced);
             EventBus<OnToolDisabled>.Unsubscribe(HandleToolDisabled);
             EventBus<OnSecurityPatrolMoved>.Unsubscribe(HandleSecurityMoved);
+            EventBus<OnSecurityPatrolPathChanged>.Unsubscribe(HandlePatrolPathChanged);
+            EventBus<OnSecurityPatrolPathCleared>.Unsubscribe(HandlePatrolPathCleared);
             EventBus<OnRouteChanged>.Unsubscribe(HandleRouteChanged);
             EventBus<OnPrototypeCustomerMoved>.Unsubscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Unsubscribe(HandleCustomerRemoved);
@@ -324,6 +331,30 @@ namespace CIGAgamejam
             MoveSecurityMarker(e.Position);
         }
 
+        private void HandlePatrolPathChanged(OnSecurityPatrolPathChanged e)
+        {
+            ClearPatrolPathMarkers();
+            if (e.Path == null || e.Path.Count == 0)
+                return;
+
+            float markerSize = CellSize * _patrolPathMarkerSizeRatio;
+            for (int i = 0; i < e.Path.Count; i++)
+            {
+                GameObject marker = CreateSquare(
+                    $"Patrol Path {i}",
+                    GridToWorld(e.Path[i]) + new Vector3(0f, 0f, -0.07f),
+                    markerSize,
+                    _patrolPathColor,
+                    6);
+                _patrolPathMarkers.Add(marker);
+            }
+        }
+
+        private void HandlePatrolPathCleared(OnSecurityPatrolPathCleared e)
+        {
+            ClearPatrolPathMarkers();
+        }
+
         private void HandleRouteChanged(OnRouteChanged e)
         {
             RebuildRouteMarkers();
@@ -376,13 +407,24 @@ namespace CIGAgamejam
 
         private void MoveSecurityMarker(GridPosition position)
         {
+            Vector3 targetPosition = SecurityWorldPosition(position);
             if (_securityMarker == null)
             {
-                _securityMarker = CreateSquare("Security", SecurityWorldPosition(position), CellSize * _securityMarkerSizeRatio, new Color(0.05f, 0.05f, 0.05f), 9);
-                AddSmoothMover(_securityMarker, SecurityWorldPosition(position));
+                _securityMarker = CreateSquare("Security", targetPosition, CellSize * _securityMarkerSizeRatio, new Color(0.05f, 0.05f, 0.05f), 9);
+                AddSmoothMover(_securityMarker, targetPosition);
+                return;
             }
 
-            MoveMarker(_securityMarker, SecurityWorldPosition(position));
+            MoveMarker(_securityMarker, targetPosition);
+        }
+
+        private void ClearPatrolPathMarkers()
+        {
+            for (int i = 0; i < _patrolPathMarkers.Count; i++)
+                if (_patrolPathMarkers[i] != null)
+                    Destroy(_patrolPathMarkers[i]);
+
+            _patrolPathMarkers.Clear();
         }
 
         private Vector3 CustomerWorldPosition(float gridX, float gridY, int customerId)

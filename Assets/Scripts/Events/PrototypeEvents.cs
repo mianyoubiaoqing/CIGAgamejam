@@ -1,5 +1,7 @@
 namespace CIGAgamejam
 {
+    using System.Collections.Generic;
+
     public readonly struct OnNightTurnStarted
     {
         public readonly int Turn;
@@ -44,6 +46,20 @@ namespace CIGAgamejam
             Tool = tool;
             SecurityPosition = securityPosition;
         }
+    }
+
+    public readonly struct OnSecurityPatrolPathChanged
+    {
+        public readonly IReadOnlyList<GridPosition> Path;
+
+        public OnSecurityPatrolPathChanged(IReadOnlyList<GridPosition> path)
+        {
+            Path = path;
+        }
+    }
+
+    public readonly struct OnSecurityPatrolPathCleared
+    {
     }
 
     public readonly struct OnToolInventoryChanged
