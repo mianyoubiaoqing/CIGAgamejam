@@ -152,8 +152,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 029926e6957b2cc42b7f1a9b7f2652a2, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   _blackBossSupport:
   - Tool: {fileID: 11400000, guid: 0b970768d4ff3ba42bc4a0232d8eac6d, type: 2}
     Count: 2
@@ -178,8 +178,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 70d4ff82d28cfe0469d513cd53fc6d8d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   _gridSystem: {fileID: 835562131}
 --- !u!114 &150997780
 MonoBehaviour:
@@ -191,8 +191,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3c01a07646fb26845ae1c137070ea76f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   _gridSystem: {fileID: 835562131}
 --- !u!114 &150997781
 MonoBehaviour:
@@ -3564,6 +3564,7 @@ MonoBehaviour:
   _customersPerDay: 5
   _spawnInterval: 0.85
   _cellsPerSecond: 1.176
+  _routeVariantChance: 0.5
 --- !u!4 &1210059817
 Transform:
   m_ObjectHideFlags: 0
