@@ -1,0 +1,208 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c69aebc1520983468c38972d6234fd7, type: 3}
+  m_Name: Prototype_GridConfig
+  m_EditorClassIdentifier: 
+  _origin: {x: -6, y: 0}
+  _width: 15
+  _height: 11
+  _cellOverrides:
+  - Position: {x: -6, y: 0}
+    CellType: 1
+  - Position: {x: -5, y: 0}
+    CellType: 1
+  - Position: {x: -4, y: 0}
+    CellType: 1
+  - Position: {x: -3, y: 0}
+    CellType: 1
+  - Position: {x: -2, y: 0}
+    CellType: 1
+  - Position: {x: -1, y: 0}
+    CellType: 1
+  - Position: {x: 0, y: 0}
+    CellType: 1
+  - Position: {x: 1, y: 0}
+    CellType: 1
+  - Position: {x: 2, y: 0}
+    CellType: 1
+  - Position: {x: 3, y: 0}
+    CellType: 1
+  - Position: {x: 4, y: 0}
+    CellType: 1
+  - Position: {x: 5, y: 0}
+    CellType: 1
+  - Position: {x: 6, y: 0}
+    CellType: 1
+  - Position: {x: 7, y: 0}
+    CellType: 1
+  - Position: {x: 8, y: 0}
+    CellType: 1
+  - Position: {x: -6, y: 1}
+    CellType: 1
+  - Position: {x: 8, y: 1}
+    CellType: 1
+  - Position: {x: -6, y: 2}
+    CellType: 1
+  - Position: {x: 8, y: 2}
+    CellType: 1
+  - Position: {x: -6, y: 3}
+    CellType: 1
+  - Position: {x: 8, y: 3}
+    CellType: 1
+  - Position: {x: -6, y: 4}
+    CellType: 1
+  - Position: {x: 8, y: 4}
+    CellType: 1
+  - Position: {x: -6, y: 5}
+    CellType: 1
+  - Position: {x: 8, y: 5}
+    CellType: 1
+  - Position: {x: -6, y: 6}
+    CellType: 1
+  - Position: {x: 8, y: 6}
+    CellType: 1
+  - Position: {x: -6, y: 7}
+    CellType: 1
+  - Position: {x: 8, y: 7}
+    CellType: 1
+  - Position: {x: -6, y: 8}
+    CellType: 1
+  - Position: {x: 8, y: 8}
+    CellType: 1
+  - Position: {x: -6, y: 9}
+    CellType: 1
+  - Position: {x: 8, y: 9}
+    CellType: 1
+  - Position: {x: -6, y: 10}
+    CellType: 1
+  - Position: {x: -5, y: 10}
+    CellType: 1
+  - Position: {x: -4, y: 10}
+    CellType: 1
+  - Position: {x: -3, y: 10}
+    CellType: 1
+  - Position: {x: -2, y: 10}
+    CellType: 1
+  - Position: {x: -1, y: 10}
+    CellType: 1
+  - Position: {x: 0, y: 10}
+    CellType: 1
+  - Position: {x: 1, y: 10}
+    CellType: 1
+  - Position: {x: 2, y: 10}
+    CellType: 1
+  - Position: {x: 3, y: 10}
+    CellType: 1
+  - Position: {x: 4, y: 10}
+    CellType: 1
+  - Position: {x: 5, y: 10}
+    CellType: 1
+  - Position: {x: 6, y: 10}
+    CellType: 1
+  - Position: {x: 7, y: 10}
+    CellType: 1
+  - Position: {x: 8, y: 10}
+    CellType: 1
+  - Position: {x: -5, y: 1}
+    CellType: 2
+  - Position: {x: -4, y: 1}
+    CellType: 2
+  - Position: {x: -3, y: 1}
+    CellType: 2
+  - Position: {x: -2, y: 1}
+    CellType: 2
+  - Position: {x: 2, y: 1}
+    CellType: 2
+  - Position: {x: 3, y: 1}
+    CellType: 2
+  - Position: {x: 4, y: 1}
+    CellType: 2
+  - Position: {x: 5, y: 1}
+    CellType: 2
+  - Position: {x: 6, y: 1}
+    CellType: 2
+  - Position: {x: 7, y: 1}
+    CellType: 2
+  - Position: {x: -5, y: 2}
+    CellType: 2
+  - Position: {x: 7, y: 2}
+    CellType: 2
+  - Position: {x: -5, y: 3}
+    CellType: 2
+  - Position: {x: 1, y: 3}
+    CellType: 2
+  - Position: {x: 2, y: 3}
+    CellType: 2
+  - Position: {x: 3, y: 3}
+    CellType: 2
+  - Position: {x: 4, y: 3}
+    CellType: 2
+  - Position: {x: 7, y: 3}
+    CellType: 2
+  - Position: {x: -5, y: 4}
+    CellType: 2
+  - Position: {x: 7, y: 4}
+    CellType: 2
+  - Position: {x: -5, y: 5}
+    CellType: 2
+  - Position: {x: 7, y: 5}
+    CellType: 2
+  - Position: {x: -5, y: 6}
+    CellType: 2
+  - Position: {x: 1, y: 6}
+    CellType: 2
+  - Position: {x: 2, y: 6}
+    CellType: 2
+  - Position: {x: 3, y: 6}
+    CellType: 2
+  - Position: {x: 4, y: 6}
+    CellType: 2
+  - Position: {x: 7, y: 6}
+    CellType: 2
+  - Position: {x: -5, y: 7}
+    CellType: 2
+  - Position: {x: 7, y: 7}
+    CellType: 2
+  - Position: {x: -5, y: 8}
+    CellType: 2
+  - Position: {x: 7, y: 8}
+    CellType: 2
+  - Position: {x: -5, y: 9}
+    CellType: 2
+  - Position: {x: -4, y: 9}
+    CellType: 2
+  - Position: {x: -3, y: 9}
+    CellType: 2
+  - Position: {x: -2, y: 9}
+    CellType: 2
+  - Position: {x: -1, y: 9}
+    CellType: 2
+  - Position: {x: 0, y: 9}
+    CellType: 2
+  - Position: {x: 1, y: 9}
+    CellType: 2
+  - Position: {x: 2, y: 9}
+    CellType: 6
+  - Position: {x: 3, y: 9}
+    CellType: 2
+  - Position: {x: 4, y: 9}
+    CellType: 2
+  - Position: {x: 5, y: 9}
+    CellType: 2
+  - Position: {x: 6, y: 9}
+    CellType: 2
+  - Position: {x: 7, y: 9}
+    CellType: 2
+  - Position: {x: 5, y: 8}
+    CellType: 5
+  - Position: {x: 0, y: 1}
+    CellType: 4

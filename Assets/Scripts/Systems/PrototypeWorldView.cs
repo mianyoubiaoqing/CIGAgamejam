@@ -17,6 +17,7 @@ namespace CIGAgamejam
         [SerializeField, Min(0.02f)] private float _toolMarkerSizeRatio = 0.26f;
 
         private readonly Dictionary<GridPosition, SpriteRenderer> _cellRenderers = new();
+        private readonly Dictionary<GridPosition, GameObject> _destroyedObjectMarkers = new();
         private readonly Dictionary<PlacedTool, GameObject> _toolMarkers = new();
         private readonly Dictionary<int, GameObject> _customerMarkers = new();
         private readonly List<GameObject> _routeMarkers = new();
@@ -28,7 +29,6 @@ namespace CIGAgamejam
         private void Awake()
         {
             _sprite = CreateUnitSprite();
-            BuildGrid();
             RebuildRouteMarkers();
             MoveSecurityMarker(_securityPatrolSystem != null ? _securityPatrolSystem.CurrentPosition : new GridPosition(0, 0));
         }
@@ -57,15 +57,18 @@ namespace CIGAgamejam
 
         public bool TryWorldToGrid(Vector3 worldPosition, out GridPosition gridPosition)
         {
-            int x = Mathf.FloorToInt((worldPosition.x - _origin.x) / _cellSize + 0.5f);
-            int y = Mathf.FloorToInt((worldPosition.y - _origin.y) / _cellSize + 0.5f);
+            int x = Mathf.FloorToInt((worldPosition.x - _origin.x) / _cellSize);
+            int y = Mathf.FloorToInt((worldPosition.y - _origin.y) / _cellSize);
             gridPosition = new GridPosition(x, y);
             return _gridSystem != null && _gridSystem.IsInBounds(gridPosition);
         }
 
         public Vector3 GridToWorld(GridPosition position)
         {
-            return new Vector3(_origin.x + position.X * _cellSize, _origin.y + position.Y * _cellSize, 0f);
+            return new Vector3(
+                _origin.x + (position.X + 0.5f) * _cellSize,
+                _origin.y + (position.Y + 0.5f) * _cellSize,
+                0f);
         }
 
         private void BuildGrid()
@@ -275,7 +278,19 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
         private void HandleWorldObjectDestroyed(OnWorldObjectDestroyed e)
         {
             if (!_cellRenderers.TryGetValue(e.Position, out SpriteRenderer renderer) || renderer == null)
+            {
+                if (_destroyedObjectMarkers.ContainsKey(e.Position))
+                    return;
+
+                GameObject marker = CreateSquare(
+                    $"Destroyed {e.Position.X},{e.Position.Y}",
+                    GridToWorld(e.Position) + new Vector3(0f, 0f, -0.12f),
+                    _cellSize * 0.72f,
+                    new Color(0.18f, 0.18f, 0.18f, 0.72f),
+                    7);
+                _destroyedObjectMarkers[e.Position] = marker;
                 return;
+            }
 
             renderer.color = new Color(0.28f, 0.28f, 0.28f);
         }
@@ -291,11 +306,11 @@ private void HandleCustomerMoved(OnPrototypeCustomerMoved e)
             MoveMarker(_securityMarker, SecurityWorldPosition(position));
         }
 
-private Vector3 CustomerWorldPosition(float gridX, float gridY, int customerId)
+        private Vector3 CustomerWorldPosition(float gridX, float gridY, int customerId)
         {
             Vector3 gridPosition = new(
-                _origin.x + gridX * _cellSize,
-                _origin.y + gridY * _cellSize,
+                _origin.x + (gridX + 0.5f) * _cellSize,
+                _origin.y + (gridY + 0.5f) * _cellSize,
                 0f);
             return gridPosition + ResolveCustomerOffset(customerId) + new Vector3(0f, 0f, -0.18f);
         }
