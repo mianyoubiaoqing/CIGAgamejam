@@ -52,6 +52,17 @@ namespace CIGAgamejam
             return _gridSystem.TryPlaceTool(tool, origin, out placedTool);
         }
 
+        public PlacementResult CanPlaceTool(ToolConfig tool, GridPosition origin)
+        {
+            if (_hasConfigError)
+                return PlacementResult.OutOfBounds;
+
+            if (_currentPhase != GamePhase.NightPlanning)
+                return PlacementResult.NotNightPlanning;
+
+            return _gridSystem.CanPlaceTool(tool, origin);
+        }
+
         private void HandleGamePhaseChanged(OnGamePhaseChanged e)
         {
             _currentPhase = e.NewPhase;

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace CIGAgamejam
 {
@@ -15,6 +16,12 @@ namespace CIGAgamejam
         [SerializeField, Min(0.02f)] private float _customerMarkerSizeRatio = 0.22f;
         [SerializeField, Min(0.02f)] private float _securityMarkerSizeRatio = 0.24f;
         [SerializeField, Min(0.02f)] private float _toolMarkerSizeRatio = 0.26f;
+        [Header("Tilemap Feedback")]
+        [SerializeField] private Tilemap _warehouseTilemap;
+        [SerializeField] private TileBase _fakeGoodsShelfTile;
+        [SerializeField] private bool _tintFakeGoodsShelf = true;
+        [Header("Placement Preview")]
+        [SerializeField, Range(0.05f, 1f)] private float _previewAlpha = 0.45f;
 
         private readonly Dictionary<GridPosition, SpriteRenderer> _cellRenderers = new();
         private readonly Dictionary<GridPosition, GameObject> _destroyedObjectMarkers = new();
@@ -23,6 +30,8 @@ namespace CIGAgamejam
         private readonly List<GameObject> _routeMarkers = new();
         private Sprite _sprite;
         private GameObject _securityMarker;
+        private GameObject _placementPreview;
+        private SpriteRenderer _placementPreviewRenderer;
 
         public float CellSize => _cellSize;
 
@@ -222,6 +231,8 @@ namespace CIGAgamejam
         {
             if (e.Tool == null || e.Tool.Config == null) return;
 
+            ApplyToolTileFeedback(e.Tool);
+
             GameObject marker = CreateSquare(
                 $"Tool {e.Tool.InstanceId}",
                 GridToWorld(e.Tool.Origin) + new Vector3(0f, 0f, -0.14f),
@@ -229,6 +240,73 @@ namespace CIGAgamejam
                 new Color(0.95f, 0.28f, 0.18f),
                 8);
             _toolMarkers[e.Tool] = marker;
+        }
+
+        public void ShowPlacementPreview(ToolConfig tool, GridPosition position, bool isLegal)
+        {
+            if (tool == null)
+            {
+                HidePlacementPreview();
+                return;
+            }
+
+            if (_placementPreview == null)
+            {
+                _placementPreview = new GameObject("Placement Preview");
+                _placementPreview.transform.SetParent(transform, false);
+                _placementPreviewRenderer = _placementPreview.AddComponent<SpriteRenderer>();
+                _placementPreviewRenderer.sortingOrder = 47;
+            }
+
+            _placementPreview.SetActive(true);
+            _placementPreview.transform.position = GridToWorld(position) + new Vector3(0f, 0f, -0.21f);
+            _placementPreview.transform.localScale = Vector3.one * (_cellSize * 0.72f);
+            _placementPreviewRenderer.sprite = tool.Icon != null ? tool.Icon : _sprite;
+            _placementPreviewRenderer.color = isLegal
+                ? new Color(1f, 1f, 1f, _previewAlpha)
+                : new Color(1f, 0.12f, 0.08f, _previewAlpha + 0.18f);
+        }
+
+        public void HidePlacementPreview()
+        {
+            if (_placementPreview != null)
+                _placementPreview.SetActive(false);
+        }
+
+        private void ApplyToolTileFeedback(PlacedTool tool)
+        {
+            if (tool.Config == null || tool.Config.Id != "fake_goods")
+                return;
+
+            GridPosition[] cells = tool.OccupiedCells;
+            for (int i = 0; i < cells.Length; i++)
+                ApplyFakeGoodsShelfFeedback(cells[i]);
+        }
+
+        private void ApplyFakeGoodsShelfFeedback(GridPosition position)
+        {
+            if (_warehouseTilemap != null)
+            {
+                var cell = new Vector3Int(position.X, position.Y, 0);
+                if (_warehouseTilemap.HasTile(cell))
+                {
+                    if (_fakeGoodsShelfTile != null)
+                    {
+                        _warehouseTilemap.SetTile(cell, _fakeGoodsShelfTile);
+                        return;
+                    }
+
+                    if (_tintFakeGoodsShelf)
+                    {
+                        _warehouseTilemap.SetTileFlags(cell, TileFlags.None);
+                        _warehouseTilemap.SetColor(cell, Color.Lerp(Color.white, Color.gray, 0.5f));
+                        return;
+                    }
+                }
+            }
+
+            if (_cellRenderers.TryGetValue(position, out SpriteRenderer renderer) && renderer != null)
+                renderer.color = Color.Lerp(renderer.color, Color.gray, 0.5f);
         }
 
         private void HandleToolDisabled(OnToolDisabled e)
