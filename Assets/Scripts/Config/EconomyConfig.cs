@@ -7,11 +7,16 @@ namespace CIGAgamejam
     {
         [SerializeField, Min(0f)] private float _startingRevenueIndex = 100f;
         [SerializeField, Min(0f)] private float _bankruptcyThreshold = 20f;
-        [SerializeField, Min(0f)] private float _baseCustomerRevenue = 10f;
+        [Header("Favorability Formula")]
+        [SerializeField] private float _successfulPurchaseFavorabilityDelta = 3f;
+        [SerializeField, Min(0f)] private float _scaredCustomerFavorabilityPenalty = 10f;
+        [SerializeField, Min(0f)] private float _angryCustomerFavorabilityPenalty = 5f;
 
         public float StartingRevenueIndex => _startingRevenueIndex;
         public float BankruptcyThreshold => _bankruptcyThreshold;
-        public float BaseCustomerRevenue => _baseCustomerRevenue;
+        public float SuccessfulPurchaseFavorabilityDelta => _successfulPurchaseFavorabilityDelta;
+        public float ScaredCustomerFavorabilityPenalty => _scaredCustomerFavorabilityPenalty;
+        public float AngryCustomerFavorabilityPenalty => _angryCustomerFavorabilityPenalty;
 
         private void OnValidate() => Validate();
 

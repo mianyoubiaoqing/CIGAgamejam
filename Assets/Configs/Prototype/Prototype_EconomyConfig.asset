@@ -14,4 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _startingRevenueIndex: 100
   _bankruptcyThreshold: 20
-  _baseCustomerRevenue: 5
+  _successfulPurchaseFavorabilityDelta: 3
+  _scaredCustomerFavorabilityPenalty: 10
+  _angryCustomerFavorabilityPenalty: 5

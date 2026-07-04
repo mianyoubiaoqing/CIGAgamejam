@@ -165,7 +165,9 @@ namespace CIGAgamejam
             config.hideFlags = HideFlags.DontSave;
             SetField(config, "_startingRevenueIndex", 100f);
             SetField(config, "_bankruptcyThreshold", 20f);
-            SetField(config, "_baseCustomerRevenue", 8f);
+            SetField(config, "_successfulPurchaseFavorabilityDelta", 3f);
+            SetField(config, "_scaredCustomerFavorabilityPenalty", 10f);
+            SetField(config, "_angryCustomerFavorabilityPenalty", 5f);
             config.Validate();
             return config;
         }
