@@ -12,6 +12,7 @@ namespace CIGAgamejam
         [SerializeField, Min(1)] private int _customersPerDay = 5;
         [SerializeField, Min(0.1f)] private float _spawnInterval = 0.85f;
         [SerializeField, Min(0.1f)] private float _cellsPerSecond = 1.176f;
+        [SerializeField, Range(0f, 1f)] private float _routeVariantChance = 0.5f;
 
         private readonly List<MovingCustomer> _activeCustomers = new();
         private readonly List<GridPosition> _scratchEscapeRoute = new();
@@ -94,7 +95,8 @@ private void CompleteDaySimulation()
 
 private void SpawnCustomer()
         {
-            GridPosition start = _routeSystem.CustomerRoute[0];
+            List<GridPosition> personalRoute = BuildPersonalRoute();
+            GridPosition start = personalRoute[0];
             var customer = new CustomerContext(_nextCustomerId++, start);
             if (_dayStartScareQuota > 0)
             {
@@ -105,10 +107,38 @@ private void SpawnCustomer()
                 EventBus<OnCustomerLeftStore>.Publish(
                     new OnCustomerLeftStore(customer.CustomerId, ToolEffectType.ScareCustomerGroup, CustomerState.Scared));
             }
-            _activeCustomers.Add(new MovingCustomer(customer));
+            _activeCustomers.Add(new MovingCustomer(customer, personalRoute));
             _spawnedToday++;
             EventBus<OnPrototypeCustomerMoved>.Publish(
                 new OnPrototypeCustomerMoved(customer.CustomerId, start, start.X, start.Y, customer.State));
+        }
+
+        private List<GridPosition> BuildPersonalRoute()
+        {
+            IReadOnlyList<GridPosition> mainRoute = _routeSystem.CustomerRoute;
+            IReadOnlyList<RouteSystem.RouteVariant> variants = _routeSystem.AvailableVariants;
+
+            for (int i = 0; i < variants.Count; i++)
+            {
+                RouteSystem.RouteVariant variant = variants[i];
+                if (variant.ForkIndex < 0
+                    || variant.ForkIndex >= mainRoute.Count
+                    || variant.Tail == null
+                    || variant.Tail.Count == 0
+                    || Random.value >= _routeVariantChance)
+                {
+                    continue;
+                }
+
+                var route = new List<GridPosition>(variant.ForkIndex + 1 + variant.Tail.Count);
+                for (int routeIndex = 0; routeIndex <= variant.ForkIndex; routeIndex++)
+                    route.Add(mainRoute[routeIndex]);
+                for (int tailIndex = 0; tailIndex < variant.Tail.Count; tailIndex++)
+                    route.Add(variant.Tail[tailIndex]);
+                return route;
+            }
+
+            return new List<GridPosition>(mainRoute);
         }
 
 private void AdvanceCustomer(int index, float deltaTime)
@@ -120,7 +150,7 @@ private void AdvanceCustomer(int index, float deltaTime)
                 return;
             }
 
-            IReadOnlyList<GridPosition> route = _routeSystem.CustomerRoute;
+            IReadOnlyList<GridPosition> route = moving.PersonalRoute;
             int lastRouteIndex = route.Count - 1;
             moving.Progress = Mathf.Min(lastRouteIndex, moving.Progress + deltaTime * _cellsPerSecond);
             int reachedRouteIndex = Mathf.FloorToInt(moving.Progress);
@@ -313,6 +343,7 @@ private void AdvanceCustomer(int index, float deltaTime)
         private struct MovingCustomer
         {
             public CustomerContext Context;
+            public List<GridPosition> PersonalRoute;
             public int RouteIndex;
             public float Progress;
             public bool HasPurchased;
@@ -321,9 +352,10 @@ private void AdvanceCustomer(int index, float deltaTime)
             public float EscapeProgress;
             public List<GridPosition> EscapeRoute;
 
-            public MovingCustomer(CustomerContext context)
+            public MovingCustomer(CustomerContext context, List<GridPosition> personalRoute)
             {
                 Context = context;
+                PersonalRoute = personalRoute;
                 RouteIndex = 0;
                 Progress = 0f;
                 HasPurchased = false;

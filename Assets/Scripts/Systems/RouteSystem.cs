@@ -5,6 +5,18 @@ namespace CIGAgamejam
 {
     public sealed class RouteSystem : MonoBehaviour
     {
+        public readonly struct RouteVariant
+        {
+            public int ForkIndex { get; }
+            public IReadOnlyList<GridPosition> Tail { get; }
+
+            public RouteVariant(int forkIndex, List<GridPosition> tail)
+            {
+                ForkIndex = forkIndex;
+                Tail = tail;
+            }
+        }
+
         [SerializeField] private GridSystem _gridSystem;
         [SerializeField] private Vector2Int _entrance = new(0, 2);
         [SerializeField] private Vector2Int _checkout = new(5, 2);
@@ -12,10 +24,12 @@ namespace CIGAgamejam
         [SerializeField] private Vector2Int[] _routeOverride;
 
         private readonly List<GridPosition> _customerRoute = new();
+        private readonly List<RouteVariant> _routeVariants = new();
         private readonly HashSet<GridPosition> _reservedRouteBlocks = new();
         private bool _hasConfigError;
 
         public IReadOnlyList<GridPosition> CustomerRoute => _customerRoute;
+        public IReadOnlyList<RouteVariant> AvailableVariants => _routeVariants;
         public GridPosition Entrance => new(_entrance);
         public GridPosition Checkout => new(_checkout);
         public GridPosition Exit => new(_exit);
@@ -37,8 +51,10 @@ namespace CIGAgamejam
             if (_hasConfigError) return false;
 
             _customerRoute.Clear();
+            _routeVariants.Clear();
             if (TryBuildRouteOverride())
             {
+                GenerateRouteVariants();
                 EventBus<OnRouteChanged>.Publish(new OnRouteChanged(true, _customerRoute.Count));
                 return true;
             }
@@ -54,6 +70,7 @@ namespace CIGAgamejam
             for (int i = 1; i < toExit.Count; i++)
                 _customerRoute.Add(toExit[i]);
 
+            GenerateRouteVariants();
             EventBus<OnRouteChanged>.Publish(new OnRouteChanged(true, _customerRoute.Count));
             return true;
         }
@@ -141,6 +158,73 @@ namespace CIGAgamejam
             route.Add(start);
             route.Reverse();
             return true;
+        }
+
+        private void GenerateRouteVariants()
+        {
+            _routeVariants.Clear();
+            if (_customerRoute.Count < 3)
+                return;
+
+            int checkoutIndex = _customerRoute.IndexOf(Checkout);
+            if (checkoutIndex < 0)
+                return;
+
+            for (int i = 1; i < _customerRoute.Count - 1; i++)
+            {
+                GridPosition previous = _customerRoute[i - 1];
+                GridPosition corner = _customerRoute[i];
+                GridPosition next = _customerRoute[i + 1];
+                int previousDeltaX = corner.X - previous.X;
+                int previousDeltaY = corner.Y - previous.Y;
+                int nextDeltaX = next.X - corner.X;
+                int nextDeltaY = next.Y - corner.Y;
+                if (previousDeltaX == nextDeltaX && previousDeltaY == nextDeltaY)
+                    continue;
+
+                foreach (GridPosition neighbor in GetNeighbors(corner))
+                {
+                    if (neighbor.Equals(previous) || neighbor.Equals(next))
+                        continue;
+                    if (!_gridSystem.IsRouteWalkable(neighbor) || _reservedRouteBlocks.Contains(neighbor))
+                        continue;
+
+                    List<GridPosition> tail = TryBuildAlternativeTail(neighbor, corner, i, checkoutIndex);
+                    if (tail == null || tail.Count == 0)
+                        continue;
+
+                    _routeVariants.Add(new RouteVariant(i, tail));
+                    break;
+                }
+            }
+        }
+
+        private List<GridPosition> TryBuildAlternativeTail(
+            GridPosition start,
+            GridPosition blockedCorner,
+            int forkIndex,
+            int checkoutIndex)
+        {
+            var blockedCells = new HashSet<GridPosition>(_reservedRouteBlocks)
+            {
+                blockedCorner
+            };
+
+            if (forkIndex < checkoutIndex)
+            {
+                if (!TryFindRoute(start, Checkout, blockedCells, out List<GridPosition> toCheckout))
+                    return null;
+
+                var tail = new List<GridPosition>(toCheckout.Count + _customerRoute.Count - checkoutIndex - 1);
+                tail.AddRange(toCheckout);
+                for (int i = checkoutIndex + 1; i < _customerRoute.Count; i++)
+                    tail.Add(_customerRoute[i]);
+                return tail;
+            }
+
+            return TryFindRoute(start, Exit, blockedCells, out List<GridPosition> toExit)
+                ? toExit
+                : null;
         }
 
         private IEnumerable<GridPosition> GetNeighbors(GridPosition position)
