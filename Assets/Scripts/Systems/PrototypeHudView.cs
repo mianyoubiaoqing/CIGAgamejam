@@ -37,6 +37,12 @@ namespace CIGAgamejam
             RefreshAll();
         }
 
+        private void Start()
+        {
+            EnsureToolButtonsForInventory();
+            RefreshAll();
+        }
+
         private void OnEnable()
         {
             EventBus<OnDayStarted>.Subscribe(HandleDayStarted);
@@ -141,14 +147,8 @@ namespace CIGAgamejam
 
         private void BuildToolButtons(RectTransform bottomBar)
         {
-            if (_inventorySystem == null) return;
-
-            int index = 0;
-            foreach (KeyValuePair<ToolConfig, ToolStockState> pair in _inventorySystem.Stocks)
-            {
-                CreateToolButton(bottomBar, pair.Key, index);
-                index++;
-            }
+            _toolMenuRoot = bottomBar;
+            EnsureToolButtonsForInventory();
         }
 
         private void CreateToolButton(RectTransform parent, ToolConfig tool, int index)
@@ -311,6 +311,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
         {
             _currentDay = e.CurrentDay;
             _maxDays = e.MaxDays;
+            EnsureToolButtonsForInventory();
             RebuildToolButtonCounts();
             RefreshAll();
         }
@@ -339,13 +340,14 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
         {
             if (e.Tool == null) return;
 
-            if (!_toolCountTexts.ContainsKey(e.Tool))
+            if (!_toolCountTexts.TryGetValue(e.Tool, out Text countText) || countText == null)
             {
                 CreateToolButton(_toolMenuRoot, e.Tool, _toolCountTexts.Count);
+                RebuildToolButtonCounts();
                 return;
             }
 
-            _toolCountTexts[e.Tool].text = $"{e.Tool.DisplayName}\nx{e.Count}";
+            countText.text = $"{e.Tool.DisplayName}\nx{e.Count}";
         }
 
         private void HandleToolSelected(OnToolSelected e)
@@ -360,9 +362,21 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
         private void RebuildToolButtonCounts()
         {
+            EnsureToolButtonsForInventory();
+            if (_inventorySystem == null) return;
+
             foreach (KeyValuePair<ToolConfig, Text> pair in _toolCountTexts)
                 if (pair.Key != null && pair.Value != null)
                     pair.Value.text = $"{pair.Key.DisplayName}\nx{_inventorySystem.GetCount(pair.Key)}";
+        }
+
+        private void EnsureToolButtonsForInventory()
+        {
+            if (_inventorySystem == null || _toolMenuRoot == null) return;
+
+            foreach (KeyValuePair<ToolConfig, ToolStockState> pair in _inventorySystem.Stocks)
+                if (pair.Key != null && (!_toolCountTexts.TryGetValue(pair.Key, out Text countText) || countText == null))
+                    CreateToolButton(_toolMenuRoot, pair.Key, _toolCountTexts.Count);
         }
 
         private static string ResolvePhaseLabel(GamePhase phase)
