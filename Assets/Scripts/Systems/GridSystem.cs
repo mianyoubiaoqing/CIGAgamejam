@@ -295,15 +295,7 @@ namespace CIGAgamejam
             if (tool.AllowsCellType(cellType))
                 return true;
 
-            // The prototype art layer uses semantic cell types for shelves, cashier tiles,
-            // doors, and patrol marks. Keep those visual tiles usable as trap placement
-            // surfaces unless they are hard blockers.
-            return cellType == GridCellType.Floor
-                || cellType == GridCellType.Warehouse
-                || cellType == GridCellType.Security
-                || cellType == GridCellType.Entrance
-                || cellType == GridCellType.Checkout
-                || cellType == GridCellType.Exit;
+            return false;
         }
 
         private static bool TriggerAreaContains(PlacedTool tool, GridPosition position)
