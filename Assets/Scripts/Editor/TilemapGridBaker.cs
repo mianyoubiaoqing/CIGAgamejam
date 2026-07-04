@@ -11,44 +11,40 @@ namespace CIGAgamejam.Editor
     {
         private const string TileFolder = "Assets/Configs/GameplayTiles";
 
-        [MenuItem("CIGAgamejam/Tilemap/Migrate GridConfig To Gameplay Logic")]
+        [MenuItem("CIGAgamejam/Tilemap/Configure Visual Tilemap Bridge")]
         public static void Migrate()
         {
             GridSystem gridSystem = Object.FindObjectOfType<GridSystem>();
             PrototypeWorldView worldView = Object.FindObjectOfType<PrototypeWorldView>();
-            GridConfig config = GetReference<GridConfig>(gridSystem, "_config");
-            if (gridSystem == null || config == null)
+            if (gridSystem == null)
             {
-                Debug.LogError("[TilemapGridBaker] Scene GridSystem or GridConfig is missing.");
+                Debug.LogError("[TilemapGridBaker] Scene GridSystem is missing.");
                 return;
             }
 
             GameObject root = GameObject.Find("Shop Tilemaps");
             if (root == null)
             {
-                root = new GameObject("Shop Tilemaps");
-                root.AddComponent<Grid>();
+                Debug.LogError("[TilemapGridBaker] Shop Tilemaps root is missing.");
+                return;
             }
 
-            Tilemap logic = EnsureTilemap(root.transform, "Gameplay Logic", -100);
+            Tilemap ground = FindTilemap(root.transform, "ground");
+            Tilemap wall = FindTilemap(root.transform, "wall");
+            Tilemap shelf = FindTilemap(root.transform, "shelf");
+            if (ground == null || wall == null || shelf == null)
+            {
+                Debug.LogError("[TilemapGridBaker] Required visual Tilemaps are missing. Expected ground, wall, and shelf.");
+                return;
+            }
+
             Tilemap toolOverlay = EnsureTilemap(root.transform, "Tool Overlay", 30);
             Tilemap stateOverlay = EnsureTilemap(root.transform, "State Overlay", 20);
             EnsureTilemap(root.transform, "Editor Preview", 100);
 
-            Dictionary<GridCellType, GameplayTile> tiles = EnsureGameplayTiles();
-            logic.ClearAllTiles();
-            for (int y = config.MinY; y < config.MaxYExclusive; y++)
-            for (int x = config.MinX; x < config.MaxXExclusive; x++)
-                logic.SetTile(new Vector3Int(x, y, 0), tiles[GridCellType.Floor]);
-
-            foreach (GridCellDefinition cell in config.CellOverrides)
-                logic.SetTile(
-                    new Vector3Int(cell.Position.x, cell.Position.y, 0),
-                    tiles[cell.CellType]);
-
             TilemapGridBridge bridge = gridSystem.GetComponent<TilemapGridBridge>();
             if (bridge == null) bridge = Undo.AddComponent<TilemapGridBridge>(gridSystem.gameObject);
-            SetReference(bridge, "_gameplayTilemap", logic);
+            SetVisualLayers(bridge, ground, wall, shelf);
             SetReference(gridSystem, "_tilemapBridge", bridge);
             if (worldView != null) SetReference(worldView, "_tilemapBridge", bridge);
             TilemapOverlayController overlay = gridSystem.GetComponent<TilemapOverlayController>();
@@ -56,20 +52,18 @@ namespace CIGAgamejam.Editor
             SetReference(overlay, "_toolOverlay", toolOverlay);
             SetReference(overlay, "_stateOverlay", stateOverlay);
 
-            logic.GetComponent<TilemapRenderer>().enabled = false;
-            EditorUtility.SetDirty(logic);
             EditorSceneManager.MarkSceneDirty(gridSystem.gameObject.scene);
             AssetDatabase.SaveAssets();
-            Debug.Log($"[TilemapGridBaker] Migrated {config.Width * config.Height} cells to Gameplay Logic.");
+            Debug.Log("[TilemapGridBaker] Visual Tilemap Bridge configured from ground, wall, and shelf layers.");
         }
 
-        [MenuItem("CIGAgamejam/Tilemap/Validate Gameplay Logic")]
+        [MenuItem("CIGAgamejam/Tilemap/Validate Visual Tilemap Logic")]
         public static void Validate()
         {
             TilemapGridBridge bridge = Object.FindObjectOfType<TilemapGridBridge>();
             if (bridge == null || !bridge.TryReadCells(out var cells, out BoundsInt bounds))
             {
-                Debug.LogError("[TilemapGridBaker] Gameplay Logic is missing or empty.");
+                Debug.LogError("[TilemapGridBaker] Visual Tilemap logic is missing or empty.");
                 return;
             }
 
@@ -78,6 +72,12 @@ namespace CIGAgamejam.Editor
                 Debug.LogError($"[TilemapGridBaker] Logic map has holes: {cells.Count}/{expected} cells.");
             else
                 Debug.Log($"[TilemapGridBaker] Logic map valid: {cells.Count} cells, bounds {bounds}.");
+        }
+
+        private static Tilemap FindTilemap(Transform parent, string name)
+        {
+            Transform child = parent.Find(name);
+            return child != null ? child.GetComponent<Tilemap>() : null;
         }
 
         private static Tilemap EnsureTilemap(Transform parent, string name, int sortingOrder)
@@ -144,6 +144,24 @@ namespace CIGAgamejam.Editor
             serialized.FindProperty(property).objectReferenceValue = value;
             serialized.ApplyModifiedProperties();
             EditorUtility.SetDirty(target);
+        }
+
+        private static void SetVisualLayers(TilemapGridBridge bridge, Tilemap ground, Tilemap wall, Tilemap shelf)
+        {
+            var serialized = new SerializedObject(bridge);
+            SerializedProperty layers = serialized.FindProperty("_visualLayers");
+            layers.arraySize = 3;
+            SetVisualLayer(layers.GetArrayElementAtIndex(0), ground, GridCellType.Floor);
+            SetVisualLayer(layers.GetArrayElementAtIndex(1), wall, GridCellType.Wall);
+            SetVisualLayer(layers.GetArrayElementAtIndex(2), shelf, GridCellType.Warehouse);
+            serialized.ApplyModifiedProperties();
+            EditorUtility.SetDirty(bridge);
+        }
+
+        private static void SetVisualLayer(SerializedProperty layer, Tilemap tilemap, GridCellType cellType)
+        {
+            layer.FindPropertyRelative("Tilemap").objectReferenceValue = tilemap;
+            layer.FindPropertyRelative("CellType").enumValueIndex = (int)cellType;
         }
     }
 }

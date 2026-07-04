@@ -19,7 +19,6 @@ namespace CIGAgamejam
             Camera camera = EnsureCamera();
             EnsureEventSystem();
 
-            GridConfig gridConfig = CreateGridConfig();
             CampaignConfig campaignConfig = CreateCampaignConfig();
             EconomyConfig economyConfig = CreateEconomyConfig();
             ToolConfig[] tools = CreateDefaultTools();
@@ -40,7 +39,6 @@ namespace CIGAgamejam
             PrototypeInputController inputController = root.AddComponent<PrototypeInputController>();
             PrototypeHudView hudView = root.AddComponent<PrototypeHudView>();
 
-            SetField(gridSystem, "_config", gridConfig);
             SetField(campaignProgressSystem, "_config", campaignConfig);
             SetField(gamePhaseSystem, "_campaignProgressSystem", campaignProgressSystem);
             SetField(placementSystem, "_gridSystem", gridSystem);
@@ -87,8 +85,6 @@ namespace CIGAgamejam
             SetField(worldView, "_gridSystem", gridSystem);
             SetField(worldView, "_routeSystem", routeSystem);
             SetField(worldView, "_securityPatrolSystem", securityPatrolSystem);
-            SetField(worldView, "_cellSize", 0.82f);
-            SetField(worldView, "_origin", new Vector2(-3.7f, -4.8f));
             SetField(worldView, "_actorMoveSpeed", 5f);
             SetField(worldView, "_routeMarkerSizeRatio", 0.08f);
             SetField(worldView, "_customerMarkerSizeRatio", 0.22f);
@@ -138,17 +134,6 @@ namespace CIGAgamejam
             eventSystem.AddComponent<StandaloneInputModule>();
         }
 
-        private static GridConfig CreateGridConfig()
-        {
-            GridConfig config = ScriptableObject.CreateInstance<GridConfig>();
-            config.hideFlags = HideFlags.DontSave;
-            SetField(config, "_width", 10);
-            SetField(config, "_height", 12);
-            SetField(config, "_cellOverrides", BuildStoreLayout());
-            config.Validate();
-            return config;
-        }
-
         private static CampaignConfig CreateCampaignConfig()
         {
             CampaignConfig config = ScriptableObject.CreateInstance<CampaignConfig>();
@@ -165,7 +150,9 @@ namespace CIGAgamejam
             config.hideFlags = HideFlags.DontSave;
             SetField(config, "_startingRevenueIndex", 100f);
             SetField(config, "_bankruptcyThreshold", 20f);
-            SetField(config, "_baseCustomerRevenue", 8f);
+            SetField(config, "_successfulPurchaseFavorabilityDelta", 3f);
+            SetField(config, "_scaredCustomerFavorabilityPenalty", 10f);
+            SetField(config, "_angryCustomerFavorabilityPenalty", 5f);
             config.Validate();
             return config;
         }
@@ -179,39 +166,6 @@ namespace CIGAgamejam
                 CreateTool("bribe_envelope", "\u4fe1\u5c01", ToolCategory.Bribe, ToolTriggerTiming.OnCustomerEnterCell, new[] { GridCellType.Security, GridCellType.Floor }, ToolEffectType.BribeSecurity, 10f, 0.4f),
                 CreateTool("boiling_water", "\u5f00\u6c34", ToolCategory.Destroy, ToolTriggerTiming.OnManualResolve, new[] { GridCellType.Floor, GridCellType.Warehouse }, ToolEffectType.DestroyObject, 5f, 0f, false)
             };
-        }
-
-        private static GridCellDefinition[] BuildStoreLayout()
-        {
-            var cells = new System.Collections.Generic.List<GridCellDefinition>();
-
-            for (int x = 0; x < 10; x++)
-            {
-                AddCell(cells, x, 0, GridCellType.Wall);
-                AddCell(cells, x, 11, GridCellType.Wall);
-            }
-
-            for (int y = 1; y < 11; y++)
-            {
-                AddCell(cells, 0, y, y == 6 ? GridCellType.Entrance : GridCellType.Wall);
-                AddCell(cells, 9, y, GridCellType.Wall);
-            }
-
-            AddWarehouseLine(cells, 2, 2, 3, true);
-            AddCell(cells, 5, 2, GridCellType.Restroom);
-            AddWarehouseLine(cells, 6, 2, 2, true);
-            AddWarehouseLine(cells, 2, 4, 3, false);
-            AddWarehouseLine(cells, 7, 4, 2, false);
-            AddWarehouseLine(cells, 4, 9, 3, true);
-            AddCell(cells, 5, 1, GridCellType.Floor);
-            AddWarehouseBlock(cells, 4, 3, 2, 2);
-            AddWarehouseBlock(cells, 4, 7, 2, 2);
-            AddCell(cells, 1, 5, GridCellType.Checkout);
-            AddCell(cells, 4, 5, GridCellType.Checkout);
-            AddCell(cells, 4, 6, GridCellType.Checkout);
-            AddCell(cells, 6, 6, GridCellType.Security);
-
-            return cells.ToArray();
         }
 
         private static Vector2Int[] BuildCustomerLoopRoute()
@@ -254,24 +208,6 @@ namespace CIGAgamejam
                 new Vector2Int(1, 6),
                 new Vector2Int(0, 6)
             };
-        }
-
-        private static void AddWarehouseLine(System.Collections.Generic.List<GridCellDefinition> cells, int startX, int startY, int length, bool horizontal)
-        {
-            for (int i = 0; i < length; i++)
-                AddCell(cells, startX + (horizontal ? i : 0), startY + (horizontal ? 0 : i), GridCellType.Warehouse);
-        }
-
-        private static void AddWarehouseBlock(System.Collections.Generic.List<GridCellDefinition> cells, int startX, int startY, int width, int height)
-        {
-            for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++)
-                AddCell(cells, startX + x, startY + y, GridCellType.Warehouse);
-        }
-
-        private static void AddCell(System.Collections.Generic.List<GridCellDefinition> cells, int x, int y, GridCellType cellType)
-        {
-            cells.Add(new GridCellDefinition { Position = new Vector2Int(x, y), CellType = cellType });
         }
 
         private static ToolConfig CreateTool(

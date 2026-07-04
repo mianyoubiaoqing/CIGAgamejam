@@ -208,8 +208,6 @@ namespace CIGAgamejam
                 if (!triggered.Add(destroyedPosition)) continue;
 
                 customer.State = CustomerState.Angry;
-                EventBus<OnFavorabilityDeltaRequested>.Publish(
-                    new OnFavorabilityDeltaRequested(-5f, customer.CustomerId, "DestroyedObjectAnger"));
                 EventBus<OnCustomerAngered>.Publish(
                     new OnCustomerAngered(customer.CustomerId, ToolEffectType.DestroyObject, null));
             }
@@ -308,8 +306,6 @@ namespace CIGAgamejam
             context.Customer.State = CustomerState.Angry;
             context.Customer.BoughtFakeGoods = true;
             ToolResolutionSystem.DisableAngerSource(context.Tool);
-            EventBus<OnFavorabilityDeltaRequested>.Publish(
-                new OnFavorabilityDeltaRequested(-5f, context.Customer.CustomerId, "FakeGoodsAnger"));
             EventBus<OnCustomerAngered>.Publish(
                 new OnCustomerAngered(context.Customer.CustomerId, ToolEffectType.ReplaceGoodsWithFake, context.Tool));
         }
@@ -349,9 +345,7 @@ namespace CIGAgamejam
             if (context.Customer == null) return;
 
             context.Customer.State = CustomerState.Angry;
-            float penalty = context.Effect.Amount > 0f ? -context.Effect.Amount : -2f;
-            EventBus<OnFavorabilityDeltaRequested>.Publish(
-                new OnFavorabilityDeltaRequested(penalty, context.Customer.CustomerId, "ToolAnger"));
+            ToolResolutionSystem.DisableAngerSource(context.Tool);
             EventBus<OnCustomerAngered>.Publish(
                 new OnCustomerAngered(context.Customer.CustomerId, ToolEffectType.ReduceFavorability, context.Tool));
         }
