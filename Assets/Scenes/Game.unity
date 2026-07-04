@@ -3009,9 +3009,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _gridSystem: {fileID: 835562131}
-  _entrance: {x: 5, y: 0}
-  _checkout: {x: 1, y: 5}
-  _exit: {x: 5, y: 0}
+  _entrance: {x: 0, y: 1}
+  _checkout: {x: 5, y: 8}
+  _exit: {x: 0, y: 1}
   _routeOverride: []
 --- !u!4 &835562133
 Transform:
