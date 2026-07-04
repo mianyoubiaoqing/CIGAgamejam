@@ -23,7 +23,7 @@ MonoBehaviour:
   _footprint:
   - {x: 0, y: 0}
   _uniquePerBoard: 0
-  _triggerTiming: 1
+  _triggerTiming: 0
   _triggerOffsets:
   - {x: 0, y: 0}
   _useLimit: 3
@@ -32,5 +32,5 @@ MonoBehaviour:
   _effects:
   - EffectType: 6
     Amount: 3
-    Chance: 0.5
+    Chance: 0
     TargetCellType: 2

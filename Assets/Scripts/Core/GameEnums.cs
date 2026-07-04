@@ -26,7 +26,8 @@ namespace CIGAgamejam
         Checkout,
         Restroom,
         Exit,
-        Blocked
+        Blocked,
+        FortuneTree
     }
 
     public enum ToolCategory

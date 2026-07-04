@@ -163,6 +163,10 @@ MonoBehaviour:
     Count: 1
   - Tool: {fileID: 11400000, guid: f4bc73b4213810244a70437d79f82560, type: 2}
     Count: 1
+  - Tool: {fileID: 11400000, guid: 4a92d54cf0944e449ad1242bd8d11926, type: 2}
+    Count: 1
+  - Tool: {fileID: 11400000, guid: a90d8201306340e4fae76503930bde67, type: 2}
+    Count: 1
   _carryUnusedTools: 1
 --- !u!114 &150997779
 MonoBehaviour:
@@ -3364,6 +3368,7 @@ GameObject:
   - component: {fileID: 1210059817}
   - component: {fileID: 1210059815}
   - component: {fileID: 1210059816}
+  - component: {fileID: 1210059818}
   m_Layer: 5
   m_Name: Economy And Flow
   m_TagString: Untagged
@@ -3403,6 +3408,20 @@ MonoBehaviour:
   _customersPerDay: 5
   _spawnInterval: 0.85
   _cellsPerSecond: 1.176
+--- !u!114 &1210059818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210059814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e53fb869e90d640b4cddb5ed52cf7b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _economySystem: {fileID: 1210059815}
+  _gamePhaseSystem: {fileID: 990416147}
 --- !u!4 &1210059817
 Transform:
   m_ObjectHideFlags: 0

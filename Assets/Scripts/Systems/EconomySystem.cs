@@ -8,21 +8,36 @@ namespace CIGAgamejam
 
         private float _currentRevenueIndex;
         private bool _hasConfigError;
+        private bool _initialized;
 
         public float CurrentRevenueIndex => _currentRevenueIndex;
         public float BankruptcyThreshold => _hasConfigError ? 0f : _config.BankruptcyThreshold;
 
         private void Awake()
         {
-            if (_config == null)
+            TryInitialize(false);
+        }
+
+        private void Start()
+        {
+            TryInitialize(true);
+        }
+
+        private void TryInitialize(bool logMissing)
+        {
+            _hasConfigError = _config == null;
+            if (_hasConfigError)
             {
-                Debug.LogError("[EconomySystem] EconomyConfig is not assigned.");
-                _hasConfigError = true;
+                _initialized = false;
+                if (logMissing)
+                    Debug.LogError("[EconomySystem] EconomyConfig is not assigned.");
                 return;
             }
 
+            if (_initialized) return;
             _config.Validate();
             ResetEconomy();
+            _initialized = true;
         }
 
         private void OnEnable()

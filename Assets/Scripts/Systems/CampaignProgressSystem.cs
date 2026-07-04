@@ -15,10 +15,21 @@ namespace CIGAgamejam
 
         private void Awake()
         {
-            if (_config == null)
+            TryInitialize(false);
+        }
+
+        private void Start()
+        {
+            TryInitialize(true);
+        }
+
+        private void TryInitialize(bool logMissing)
+        {
+            _hasConfigError = _config == null;
+            if (_hasConfigError)
             {
-                Debug.LogError("[CampaignProgressSystem] CampaignConfig is not assigned.");
-                _hasConfigError = true;
+                if (logMissing)
+                    Debug.LogError("[CampaignProgressSystem] CampaignConfig is not assigned.");
                 return;
             }
 

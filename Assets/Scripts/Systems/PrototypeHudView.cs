@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace CIGAgamejam
@@ -34,18 +35,24 @@ namespace CIGAgamejam
         private Button _startDayButton;
         private Button _finishDayButton;
         private Button _nextNightButton;
+        private GameObject _resultPanel;
+        private Text _resultText;
         private int _currentDay = 1;
         private int _maxDays = 1;
         private int _inStoreCount;
         private int _todayTotal;
         private float _flowTrend;
         private float _confidence = 100f;
+        private int _normalCustomerCount;
+        private int _angryCustomerCount;
+        private int _scaredCustomerCount;
 
         private void Awake()
         {
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             BuildHud();
             ApplyBoundHudArt();
+            BuildResultPanel(CreateCanvas());
             RefreshAll();
         }
 
@@ -66,6 +73,8 @@ namespace CIGAgamejam
             EventBus<OnToolInventoryChanged>.Subscribe(HandleToolInventoryChanged);
             EventBus<OnToolSelected>.Subscribe(HandleToolSelected);
             EventBus<OnPrototypeLogMessage>.Subscribe(HandlePrototypeLogMessage);
+            EventBus<OnCustomerFinalized>.Subscribe(HandleCustomerFinalized);
+            EventBus<OnGameEnded>.Subscribe(HandleGameEnded);
         }
 
         private void OnDestroy()
@@ -79,6 +88,8 @@ namespace CIGAgamejam
             EventBus<OnToolInventoryChanged>.Unsubscribe(HandleToolInventoryChanged);
             EventBus<OnToolSelected>.Unsubscribe(HandleToolSelected);
             EventBus<OnPrototypeLogMessage>.Unsubscribe(HandlePrototypeLogMessage);
+            EventBus<OnCustomerFinalized>.Unsubscribe(HandleCustomerFinalized);
+            EventBus<OnGameEnded>.Unsubscribe(HandleGameEnded);
         }
 
         private void BuildHud()
@@ -255,6 +266,43 @@ namespace CIGAgamejam
             AddFixedLayout(day, 118f, 58f);
             AddFixedLayout(result, 118f, 58f);
             AddFixedLayout(next, 100f, 58f);
+        }
+
+        private void BuildResultPanel(Canvas canvas)
+        {
+            if (canvas == null || _resultPanel != null) return;
+
+            RectTransform panel = CreatePanel(
+                canvas.transform,
+                "Game Result Panel",
+                new RectSpec(Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero),
+                new Color(0.03f, 0.03f, 0.04f, 0.94f));
+            _resultPanel = panel.gameObject;
+
+            _resultText = CreateText(
+                panel,
+                "Result Text",
+                string.Empty,
+                24,
+                TextAnchor.MiddleCenter,
+                new Vector2(0f, 45f),
+                new Vector2(620f, 330f));
+            RectTransform textRect = _resultText.rectTransform;
+            textRect.anchorMin = new Vector2(0.5f, 0.5f);
+            textRect.anchorMax = textRect.anchorMin;
+            textRect.pivot = new Vector2(0.5f, 0.5f);
+
+            RectTransform restart = CreateButton(
+                panel,
+                "Restart Button",
+                "重新开始",
+                new Vector2(0f, -175f),
+                new Vector2(180f, 58f),
+                ReloadCurrentScene);
+            restart.anchorMin = new Vector2(0.5f, 0.5f);
+            restart.anchorMax = restart.anchorMin;
+            restart.pivot = new Vector2(0.5f, 0.5f);
+            _resultPanel.SetActive(false);
         }
 
         private RectTransform CreateButton(RectTransform parent, string name, string label, Vector2 anchoredPosition, Vector2 size, UnityEngine.Events.UnityAction action, Sprite backgroundSprite = null)
@@ -472,7 +520,8 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             GamePhase currentPhase = _gamePhaseSystem != null
                 ? _gamePhaseSystem.CurrentPhase
                 : GamePhase.NightPlanning;
-            bool isNight = currentPhase == GamePhase.NightPlanning;
+            bool isNight = currentPhase == GamePhase.None
+                || currentPhase == GamePhase.NightPlanning;
 
             if (_skipButton != null) _skipButton.interactable = isNight;
             if (_startDayButton != null) _startDayButton.interactable = isNight;
@@ -541,6 +590,45 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
         private void HandlePrototypeLogMessage(OnPrototypeLogMessage e)
         {
             _logText.text = e.Message;
+        }
+
+        private void HandleCustomerFinalized(OnCustomerFinalized e)
+        {
+            switch (e.State)
+            {
+                case CustomerState.Angry:
+                    _angryCustomerCount++;
+                    break;
+                case CustomerState.Scared:
+                    _scaredCustomerCount++;
+                    break;
+                default:
+                    _normalCustomerCount++;
+                    break;
+            }
+        }
+
+        private void HandleGameEnded(OnGameEnded e)
+        {
+            if (_resultPanel == null || _resultText == null) return;
+
+            string outcome = e.Outcome == GameOutcome.ShopBankrupted ? "店铺破产" : "经营结束";
+            _resultText.text =
+                $"{outcome}\n\n" +
+                $"最终好感度：{_confidence:0}\n" +
+                $"经营天数：{_currentDay}\n\n" +
+                $"正常顾客：{_normalCustomerCount}\n" +
+                $"愤怒顾客：{_angryCustomerCount}\n" +
+                $"受惊顾客：{_scaredCustomerCount}";
+            _resultPanel.SetActive(true);
+            if (_toolMenuRoot != null) _toolMenuRoot.gameObject.SetActive(false);
+            if (_actionButtonRoot != null) _actionButtonRoot.gameObject.SetActive(false);
+        }
+
+        private static void ReloadCurrentScene()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            SceneManager.LoadScene(activeScene.buildIndex);
         }
 
         private void RebuildToolButtonCounts()

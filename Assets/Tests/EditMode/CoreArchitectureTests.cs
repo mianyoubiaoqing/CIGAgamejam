@@ -98,6 +98,73 @@ namespace CIGAgamejam
         }
 
         [Test]
+        public void BoilingWaterCanBePlacedOnFortuneTree()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 1);
+            SetPrivateField(gridConfig, "_height", 1);
+            SetPrivateField(gridConfig, "_cellOverrides", new[]
+            {
+                new GridCellDefinition { Position = Vector2Int.zero, CellType = GridCellType.FortuneTree }
+            });
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            ToolConfig tool = CreateTool("boiling_water", GridCellType.FortuneTree);
+            SetPrivateField(tool, "_placementKind", ToolPlacementKind.ModifyPuzzle);
+
+            Assert.AreEqual(PlacementResult.Success, gridSystem.CanPlaceTool(tool, new GridPosition(0, 0)));
+            Assert.IsFalse(gridSystem.IsRouteWalkable(new GridPosition(0, 0)));
+        }
+
+        [Test]
+        public void DayStartSmithAgentPublishesScareQuota()
+        {
+            GridConfig gridConfig = CreateAsset<GridConfig>();
+            SetPrivateField(gridConfig, "_width", 1);
+            SetPrivateField(gridConfig, "_height", 1);
+            SetPrivateField(gridConfig, "_cellOverrides", new[]
+            {
+                new GridCellDefinition { Position = Vector2Int.zero, CellType = GridCellType.Warehouse }
+            });
+
+            GridSystem gridSystem = CreateComponent<GridSystem>("GridSystem");
+            SetPrivateField(gridSystem, "_config", gridConfig);
+            gridSystem.InitializeGrid();
+
+            ToolConfig tool = CreateTool("smith_agent", GridCellType.Warehouse);
+            SetPrivateField(tool, "_triggerTiming", ToolTriggerTiming.OnDayStart);
+            SetPrivateField(tool, "_effects", new[]
+            {
+                new ToolEffectDefinition { EffectType = ToolEffectType.ScareCustomerGroup, Chance = 0f }
+            });
+            tool.Validate();
+            Assert.IsTrue(gridSystem.TryPlaceTool(tool, new GridPosition(0, 0), out _));
+
+            GameObject resolutionObject = CreateInactiveObject("ToolResolutionSystem");
+            ToolResolutionSystem resolutionSystem = resolutionObject.AddComponent<ToolResolutionSystem>();
+            SetPrivateField(resolutionSystem, "_gridSystem", gridSystem);
+            resolutionObject.SetActive(true);
+            SetPrivateField(resolutionSystem, "_hasConfigError", false);
+            InvokePrivateMethod(resolutionSystem, "RegisterDefaultHandlers");
+
+            int quota = 0;
+            void CaptureQuota(OnDayStartScareQuotaRequested e) => quota += e.Count;
+            EventBus<OnDayStartScareQuotaRequested>.Subscribe(CaptureQuota);
+            try
+            {
+                resolutionSystem.ResolveDayStartTools();
+                Assert.That(quota, Is.InRange(1, 3));
+            }
+            finally
+            {
+                EventBus<OnDayStartScareQuotaRequested>.Unsubscribe(CaptureQuota);
+            }
+        }
+
+        [Test]
         public void CampaignConfigClampsMaxDaysToStartingDay()
         {
             CampaignConfig config = CreateAsset<CampaignConfig>();
@@ -109,6 +176,35 @@ namespace CIGAgamejam
 
             Assert.AreEqual(5, config.StartingDay);
             Assert.AreEqual(5, config.MaxDays);
+        }
+
+        [Test]
+        public void BankruptcyEndsGameAtThreshold()
+        {
+            EconomySystem economySystem = CreateEconomySystem(20f, 20f);
+
+            CampaignConfig campaignConfig = CreateAsset<CampaignConfig>();
+            SetPrivateField(campaignConfig, "_startingDay", 1);
+            SetPrivateField(campaignConfig, "_maxDays", 3);
+            GameObject campaignObject = CreateInactiveObject("Campaign");
+            CampaignProgressSystem campaign = campaignObject.AddComponent<CampaignProgressSystem>();
+            SetPrivateField(campaign, "_config", campaignConfig);
+            campaignObject.SetActive(true);
+
+            GamePhaseSystem phaseSystem = CreateComponent<GamePhaseSystem>("GamePhase");
+            SetPrivateField(phaseSystem, "_campaignProgressSystem", campaign);
+            SetPrivateField(phaseSystem, "_beginOnStart", false);
+            phaseSystem.BeginGame();
+
+            GameObject bankruptcyObject = CreateInactiveObject("Bankruptcy");
+            BankruptcySystem bankruptcy = bankruptcyObject.AddComponent<BankruptcySystem>();
+            SetPrivateField(bankruptcy, "_economySystem", economySystem);
+            SetPrivateField(bankruptcy, "_gamePhaseSystem", phaseSystem);
+            bankruptcyObject.SetActive(true);
+
+            economySystem.ApplyRevenueDelta(0f);
+
+            Assert.AreEqual(GamePhase.GameOver, phaseSystem.CurrentPhase);
         }
 
         [Test]
@@ -476,6 +572,7 @@ namespace CIGAgamejam
         private T CreateComponent<T>(string name) where T : Component
         {
             var gameObject = new GameObject(name);
+            gameObject.SetActive(false);
             _createdObjects.Add(gameObject);
             return gameObject.AddComponent<T>();
         }

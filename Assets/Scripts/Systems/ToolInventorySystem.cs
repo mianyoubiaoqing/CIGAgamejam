@@ -19,6 +19,12 @@ namespace CIGAgamejam
             EventBus<OnDayStarted>.Subscribe(HandleDayStarted);
         }
 
+        private void Start()
+        {
+            if (!_hasStarted)
+                RebuildForNewDay();
+        }
+
         private void OnDestroy()
         {
             EventBus<OnDayStarted>.Unsubscribe(HandleDayStarted);

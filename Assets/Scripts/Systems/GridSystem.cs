@@ -6,24 +6,45 @@ namespace CIGAgamejam
     public sealed class GridSystem : MonoBehaviour
     {
         [SerializeField] private GridConfig _config;
+        [SerializeField] private TilemapGridBridge _tilemapBridge;
 
         private readonly Dictionary<GridPosition, GridCellType> _cellTypes = new();
         private readonly Dictionary<GridPosition, PuzzleTileState> _tileStates = new();
         private readonly List<PlacedTool> _placedTools = new();
         private int _nextToolInstanceId = 1;
         private bool _hasConfigError;
+        private int _minX;
+        private int _minY;
+        private int _maxXExclusive;
+        private int _maxYExclusive;
 
         public IReadOnlyList<PlacedTool> PlacedTools => _placedTools;
-        public int Width => _hasConfigError ? 0 : _config.Width;
-        public int Height => _hasConfigError ? 0 : _config.Height;
-        public int MinX => _hasConfigError ? 0 : _config.MinX;
-        public int MinY => _hasConfigError ? 0 : _config.MinY;
-        public int MaxXExclusive => _hasConfigError ? 0 : _config.MaxXExclusive;
-        public int MaxYExclusive => _hasConfigError ? 0 : _config.MaxYExclusive;
+        public int Width => _hasConfigError ? 0 : _maxXExclusive - _minX;
+        public int Height => _hasConfigError ? 0 : _maxYExclusive - _minY;
+        public int MinX => _hasConfigError ? 0 : _minX;
+        public int MinY => _hasConfigError ? 0 : _minY;
+        public int MaxXExclusive => _hasConfigError ? 0 : _maxXExclusive;
+        public int MaxYExclusive => _hasConfigError ? 0 : _maxYExclusive;
 
         private void Awake()
         {
-            InitializeGrid();
+            if ((_tilemapBridge != null && _tilemapBridge.IsReady) || _config != null)
+                InitializeGrid();
+            else
+                _hasConfigError = true;
+        }
+
+        private void Start()
+        {
+            if ((_tilemapBridge == null || !_tilemapBridge.IsReady) && _config == null)
+            {
+                Debug.LogError("[GridSystem] GridConfig is not assigned.");
+                _hasConfigError = true;
+                return;
+            }
+
+            if (_hasConfigError)
+                InitializeGrid();
         }
 
         public void InitializeGrid()
@@ -34,6 +55,21 @@ namespace CIGAgamejam
             _nextToolInstanceId = 1;
             _hasConfigError = false;
 
+            if (_tilemapBridge != null
+                && _tilemapBridge.TryReadCells(out Dictionary<GridPosition, GameplayTile> tileCells, out BoundsInt bounds))
+            {
+                _minX = bounds.xMin;
+                _minY = bounds.yMin;
+                _maxXExclusive = bounds.xMax;
+                _maxYExclusive = bounds.yMax;
+                foreach (KeyValuePair<GridPosition, GameplayTile> pair in tileCells)
+                {
+                    _cellTypes[pair.Key] = pair.Value.CellType;
+                    _tileStates[pair.Key] = new PuzzleTileState(pair.Value.CellType);
+                }
+                return;
+            }
+
             if (_config == null)
             {
                 Debug.LogError("[GridSystem] GridConfig is not assigned.");
@@ -42,6 +78,10 @@ namespace CIGAgamejam
             }
 
             _config.Validate();
+            _minX = _config.MinX;
+            _minY = _config.MinY;
+            _maxXExclusive = _config.MaxXExclusive;
+            _maxYExclusive = _config.MaxYExclusive;
 
             for (int y = _config.MinY; y < _config.MaxYExclusive; y++)
             for (int x = _config.MinX; x < _config.MaxXExclusive; x++)
@@ -68,10 +108,11 @@ namespace CIGAgamejam
         public bool IsInBounds(GridPosition position)
         {
             return !_hasConfigError
-                && position.X >= _config.MinX
-                && position.Y >= _config.MinY
-                && position.X < _config.MaxXExclusive
-                && position.Y < _config.MaxYExclusive;
+                && position.X >= _minX
+                && position.Y >= _minY
+                && position.X < _maxXExclusive
+                && position.Y < _maxYExclusive
+                && _cellTypes.ContainsKey(position);
         }
 
         public bool TryGetCellType(GridPosition position, out GridCellType cellType)
@@ -105,6 +146,7 @@ namespace CIGAgamejam
             return cellType != GridCellType.Wall
                 && cellType != GridCellType.Warehouse
                 && cellType != GridCellType.Restroom
+                && cellType != GridCellType.FortuneTree
                 && cellType != GridCellType.Blocked;
         }
 

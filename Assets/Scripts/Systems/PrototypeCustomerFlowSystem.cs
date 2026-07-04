@@ -19,6 +19,7 @@ namespace CIGAgamejam
         private int _nextCustomerId = 1;
         private int _spawnedToday;
         private int _customersPerDayForCurrentDay;
+        private int _dayStartScareQuota;
         private bool _isSimulating;
 
         private void OnEnable()
@@ -26,6 +27,7 @@ namespace CIGAgamejam
             EventBus<OnGamePhaseChanged>.Subscribe(HandleGamePhaseChanged);
             EventBus<OnRevenueChanged>.Subscribe(HandleRevenueChanged);
             EventBus<OnGroupScareRequested>.Subscribe(HandleGroupScareRequested);
+            EventBus<OnDayStartScareQuotaRequested>.Subscribe(HandleDayStartScareQuotaRequested);
         }
 
         private void OnDestroy()
@@ -33,6 +35,7 @@ namespace CIGAgamejam
             EventBus<OnGamePhaseChanged>.Unsubscribe(HandleGamePhaseChanged);
             EventBus<OnRevenueChanged>.Unsubscribe(HandleRevenueChanged);
             EventBus<OnGroupScareRequested>.Unsubscribe(HandleGroupScareRequested);
+            EventBus<OnDayStartScareQuotaRequested>.Unsubscribe(HandleDayStartScareQuotaRequested);
         }
 
 private void Update()
@@ -74,8 +77,10 @@ private void BeginDaySimulation()
             _isSimulating = true;
             _timer = 0f;
             _spawnedToday = 0;
+            _dayStartScareQuota = 0;
             _activeCustomers.Clear();
             _customersPerDayForCurrentDay = Mathf.Max(1, ResolveCustomersForCurrentFavorability());
+            _toolResolutionSystem?.ResolveDayStartTools();
             PublishFlow();
             EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("进入白天: 老板先随机破坏一个可破坏陷阱，顾客开始进店。"));
         }
@@ -91,6 +96,15 @@ private void SpawnCustomer()
         {
             GridPosition start = _routeSystem.CustomerRoute[0];
             var customer = new CustomerContext(_nextCustomerId++, start);
+            if (_dayStartScareQuota > 0)
+            {
+                _dayStartScareQuota--;
+                customer.HasLeftStore = true;
+                customer.WasScaredAway = true;
+                customer.State = CustomerState.Scared;
+                EventBus<OnCustomerLeftStore>.Publish(
+                    new OnCustomerLeftStore(customer.CustomerId, ToolEffectType.ScareCustomerGroup, CustomerState.Scared));
+            }
             _activeCustomers.Add(new MovingCustomer(customer));
             _spawnedToday++;
             EventBus<OnPrototypeCustomerMoved>.Publish(
@@ -219,7 +233,10 @@ private void AdvanceCustomer(int index, float deltaTime)
 
         private void RemoveCustomer(int index)
         {
-            int customerId = _activeCustomers[index].Context.CustomerId;
+            MovingCustomer moving = _activeCustomers[index];
+            int customerId = moving.Context.CustomerId;
+            EventBus<OnCustomerFinalized>.Publish(
+                new OnCustomerFinalized(customerId, moving.Context.State, moving.HasPurchased));
             _activeCustomers.RemoveAt(index);
             EventBus<OnPrototypeCustomerRemoved>.Publish(new OnPrototypeCustomerRemoved(customerId));
         }
@@ -281,6 +298,11 @@ private void AdvanceCustomer(int index, float deltaTime)
                 _activeCustomers[i] = moving;
                 remaining--;
             }
+        }
+
+        private void HandleDayStartScareQuotaRequested(OnDayStartScareQuotaRequested e)
+        {
+            _dayStartScareQuota += Mathf.Max(0, e.Count);
         }
 
         private static int Distance(GridPosition a, GridPosition b)

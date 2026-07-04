@@ -21,6 +21,7 @@ MonoBehaviour:
   _allowedCellTypes:
   - 0
   - 2
+  - 9
   _footprint:
   - {x: 0, y: 0}
   _uniquePerBoard: 0

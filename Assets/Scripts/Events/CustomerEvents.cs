@@ -61,6 +61,30 @@ namespace CIGAgamejam
         }
     }
 
+    public readonly struct OnDayStartScareQuotaRequested
+    {
+        public readonly int Count;
+
+        public OnDayStartScareQuotaRequested(int count)
+        {
+            Count = count;
+        }
+    }
+
+    public readonly struct OnCustomerFinalized
+    {
+        public readonly int CustomerId;
+        public readonly CustomerState State;
+        public readonly bool Purchased;
+
+        public OnCustomerFinalized(int customerId, CustomerState state, bool purchased)
+        {
+            CustomerId = customerId;
+            State = state;
+            Purchased = purchased;
+        }
+    }
+
     public readonly struct OnWorldObjectDestroyed
     {
         public readonly GridPosition Position;

@@ -9,6 +9,7 @@ namespace CIGAgamejam
         [SerializeField] private GridSystem _gridSystem;
         [SerializeField] private RouteSystem _routeSystem;
         [SerializeField] private SecurityPatrolSystem _securityPatrolSystem;
+        [SerializeField] private TilemapGridBridge _tilemapBridge;
         [SerializeField] private float _cellSize = 1f;
         [SerializeField] private Vector2 _origin = new(-3.5f, -2.5f);
         [SerializeField, Min(0.1f)] private float _actorMoveSpeed = 5f;
@@ -66,6 +67,12 @@ namespace CIGAgamejam
 
         public bool TryWorldToGrid(Vector3 worldPosition, out GridPosition gridPosition)
         {
+            if (_tilemapBridge != null && _tilemapBridge.IsReady)
+            {
+                gridPosition = _tilemapBridge.WorldToCell(worldPosition);
+                return _gridSystem != null && _gridSystem.IsInBounds(gridPosition);
+            }
+
             int x = Mathf.FloorToInt((worldPosition.x - _origin.x) / _cellSize);
             int y = Mathf.FloorToInt((worldPosition.y - _origin.y) / _cellSize);
             gridPosition = new GridPosition(x, y);
@@ -74,6 +81,9 @@ namespace CIGAgamejam
 
         public Vector3 GridToWorld(GridPosition position)
         {
+            if (_tilemapBridge != null && _tilemapBridge.IsReady)
+                return _tilemapBridge.CellToWorld(position);
+
             return new Vector3(
                 _origin.x + (position.X + 0.5f) * _cellSize,
                 _origin.y + (position.Y + 0.5f) * _cellSize,
@@ -84,8 +94,8 @@ namespace CIGAgamejam
         {
             if (_gridSystem == null) return;
 
-            for (int y = 0; y < _gridSystem.Height; y++)
-            for (int x = 0; x < _gridSystem.Width; x++)
+            for (int y = _gridSystem.MinY; y < _gridSystem.MaxYExclusive; y++)
+            for (int x = _gridSystem.MinX; x < _gridSystem.MaxXExclusive; x++)
             {
                 var position = new GridPosition(x, y);
                 GridCellType cellType = GridCellType.Floor;
@@ -107,6 +117,7 @@ namespace CIGAgamejam
                 GridCellType.Entrance => new Color(0.84f, 0.78f, 0.66f),
                 GridCellType.Checkout => new Color(0.86f, 0.78f, 0.62f),
                 GridCellType.Restroom => new Color(0.45f, 0.36f, 0.24f),
+                GridCellType.FortuneTree => new Color(0.18f, 0.55f, 0.22f),
                 GridCellType.Exit => new Color(0.84f, 0.78f, 0.66f),
                 GridCellType.Blocked => new Color(0.05f, 0.05f, 0.05f),
                 _ => new Color(0.72f, 0.69f, 0.58f)
