@@ -29,16 +29,12 @@ namespace CIGAgamejam
         [SerializeField] private Sprite _guideSprite;
         [SerializeField, Min(0f)] private float _initialGuideLockSeconds = 3f;
         [Header("Day Night Arc")]
-        [SerializeField] private Vector2 _dayNightArcCenter = Vector2.zero;
-        [SerializeField] private Vector2 _dayNightArcRadius = new(58f, 38f);
-        [SerializeField] private float _nightAngle = 155f;
-        [SerializeField] private float _dayAngle = 25f;
+        [SerializeField] private RectTransform _nightPointerEndpoint;
+        [SerializeField] private RectTransform _midPointerEndpoint;
+        [SerializeField] private RectTransform _dayPointerEndpoint;
         [SerializeField, Min(0.01f)] private float _pointerMoveDuration = 1f;
-        [SerializeField] private float _pointerRotationOffset = 90f;
         [SerializeField] private Vector2 _dayNightTrackSize = new(150f, 150f);
         [SerializeField] private Vector2 _dayNightPointerSize = new(34f, 56f);
-        [Tooltip("night_bar.png is a downward U-shaped arc. Mirror the configured endpoint angles onto the lower ellipse.")]
-        [SerializeField] private bool _useLowerDayNightArc = true;
 
         private readonly Dictionary<ToolConfig, Text> _toolCountTexts = new();
         private readonly Dictionary<ToolConfig, Button> _toolButtons = new();
@@ -65,7 +61,8 @@ namespace CIGAgamejam
         private Canvas _canvas;
         private Coroutine _dayNightPointerAnimation;
         private Coroutine _guideDismissRoutine;
-        private float _currentDayNightAngle;
+        private float _currentDayNightProgress;
+        private bool _loggedMissingDayNightEndpoints;
         private Button _startDayButton;
         private Button _nextNightButton;
         private GameObject _startScreen;
@@ -255,6 +252,9 @@ namespace CIGAgamejam
             _logText = FindText(canvas.transform, "Log Panel/Log Text");
             _dayNightTrack = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track");
             _dayNightNeedle = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track/Needle");
+            _nightPointerEndpoint = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track/Night Endpoint");
+            _midPointerEndpoint = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track/Mid Endpoint");
+            _dayPointerEndpoint = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track/Day Endpoint");
             _toolMenuRoot = FindRect(canvas.transform, "Bottom Bar/Tool Button Row");
             _actionButtonRoot = FindRect(canvas.transform, "Bottom Bar/Action Button Row");
             _startDayButton = FindButton(_actionButtonRoot, "Next Day Button");
@@ -273,6 +273,9 @@ namespace CIGAgamejam
                 && _logPanelRoot != null
                 && _dayNightTrack != null
                 && _dayNightNeedle != null
+                && _nightPointerEndpoint != null
+                && _midPointerEndpoint != null
+                && _dayPointerEndpoint != null
                 && _toolMenuRoot != null
                 && _actionButtonRoot != null;
         }
@@ -291,6 +294,9 @@ namespace CIGAgamejam
             CreateText(trackRoot, "Day Label", "Day", 14, TextAnchor.MiddleCenter, new Vector2(118f, 16f), new Vector2(48f, 20f));
             _dayNightNeedle = CreatePanel(_dayNightTrack, "Needle", new RectSpec(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, _dayNightPointerSize), new Color(0.95f, 0.78f, 0.2f, 1f));
             ApplySprite(_dayNightNeedle.GetComponent<Image>(), _phasePointerSprite, true);
+            _nightPointerEndpoint = CreatePointerEndpoint(_dayNightTrack, "Night Endpoint", new Vector2(-132.32f, -6.97f), 295f);
+            _midPointerEndpoint = CreatePointerEndpoint(_dayNightTrack, "Mid Endpoint", new Vector2(0f, -44f), 180f);
+            _dayPointerEndpoint = CreatePointerEndpoint(_dayNightTrack, "Day Endpoint", new Vector2(132.32f, -6.97f), 65f);
         }
 
         private void ConfigureDayNightTrack()
@@ -367,6 +373,20 @@ namespace CIGAgamejam
             _toolCountTexts[tool] = label;
             _toolButtons[tool] = FindButton(buttonTransform, string.Empty);
             BindTooltip(buttonTransform, tool);
+        }
+
+        private static RectTransform CreatePointerEndpoint(RectTransform parent, string name, Vector2 position, float rotationZ)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            RectTransform rect = go.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = rect.anchorMin;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = new Vector2(12f, 12f);
+            rect.localRotation = Quaternion.Euler(0f, 0f, rotationZ);
+            return rect;
         }
 
         private void BuildGuideEntryButton(Canvas canvas)
@@ -1004,8 +1024,8 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
                 return;
 
             StopDayNightPointerAnimation();
-            _currentDayNightAngle = GetDayNightAngle(phase);
-            ApplyDayNightPointerPose(_currentDayNightAngle);
+            _currentDayNightProgress = GetDayNightProgress(phase);
+            ApplyDayNightPointerPose(_currentDayNightProgress);
         }
 
         private void AnimateDayNightPointer(GamePhase previousPhase, GamePhase newPhase)
@@ -1013,22 +1033,22 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             if (_dayNightNeedle == null)
                 return;
 
-            float previousAngle = GetDayNightAngle(previousPhase);
-            float targetAngle = GetDayNightAngle(newPhase);
-            if (Mathf.Approximately(previousAngle, targetAngle))
+            float previousProgress = GetDayNightProgress(previousPhase);
+            float targetProgress = GetDayNightProgress(newPhase);
+            if (Mathf.Approximately(previousProgress, targetProgress))
             {
                 SetDayNightPointerImmediate(newPhase);
                 return;
             }
 
             StopDayNightPointerAnimation();
-            _currentDayNightAngle = previousAngle;
-            ApplyDayNightPointerPose(_currentDayNightAngle);
+            _currentDayNightProgress = previousProgress;
+            ApplyDayNightPointerPose(_currentDayNightProgress);
             _dayNightPointerAnimation = StartCoroutine(
-                AnimateDayNightPointerRoutine(previousAngle, targetAngle));
+                AnimateDayNightPointerRoutine(previousProgress, targetProgress));
         }
 
-        private IEnumerator AnimateDayNightPointerRoutine(float startAngle, float targetAngle)
+        private IEnumerator AnimateDayNightPointerRoutine(float startProgress, float targetProgress)
         {
             float elapsed = 0f;
             float duration = Mathf.Max(0.01f, _pointerMoveDuration);
@@ -1038,13 +1058,13 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
                 elapsed += Time.unscaledDeltaTime;
                 float progress = Mathf.Clamp01(elapsed / duration);
                 float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
-                _currentDayNightAngle = Mathf.Lerp(startAngle, targetAngle, easedProgress);
-                ApplyDayNightPointerPose(_currentDayNightAngle);
+                _currentDayNightProgress = Mathf.Lerp(startProgress, targetProgress, easedProgress);
+                ApplyDayNightPointerPose(_currentDayNightProgress);
                 yield return null;
             }
 
-            _currentDayNightAngle = targetAngle;
-            ApplyDayNightPointerPose(_currentDayNightAngle);
+            _currentDayNightProgress = targetProgress;
+            ApplyDayNightPointerPose(_currentDayNightProgress);
             _dayNightPointerAnimation = null;
         }
 
@@ -1057,27 +1077,54 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             _dayNightPointerAnimation = null;
         }
 
-        private float GetDayNightAngle(GamePhase phase)
+        private static float GetDayNightProgress(GamePhase phase)
         {
-            float configuredAngle = phase == GamePhase.NightPlanning || phase == GamePhase.None
-                ? _nightAngle
-                : _dayAngle;
-            return _useLowerDayNightArc ? 360f - configuredAngle : configuredAngle;
+            return phase == GamePhase.NightPlanning || phase == GamePhase.None
+                ? 0f
+                : 1f;
         }
 
-        private void ApplyDayNightPointerPose(float angle)
+        private void ApplyDayNightPointerPose(float progress)
         {
-            if (_dayNightNeedle == null)
+            if (_dayNightNeedle == null || !HasDayNightEndpoints())
                 return;
 
-            float radians = angle * Mathf.Deg2Rad;
-            float x = _dayNightArcCenter.x + Mathf.Cos(radians) * _dayNightArcRadius.x;
-            float y = _dayNightArcCenter.y + Mathf.Sin(radians) * _dayNightArcRadius.y;
-            _dayNightNeedle.anchoredPosition = new Vector2(x, y);
-            _dayNightNeedle.localRotation = Quaternion.Euler(
-                0f,
-                0f,
-                angle + _pointerRotationOffset);
+            float clampedProgress = Mathf.Clamp01(progress);
+            Vector2 start = _nightPointerEndpoint.anchoredPosition;
+            Vector2 middle = _midPointerEndpoint.anchoredPosition;
+            Vector2 end = _dayPointerEndpoint.anchoredPosition;
+            Vector2 control = 2f * middle - 0.5f * (start + end);
+            _dayNightNeedle.anchoredPosition = QuadraticBezier(
+                start,
+                control,
+                end,
+                clampedProgress);
+            _dayNightNeedle.localRotation = Quaternion.Lerp(
+                _nightPointerEndpoint.localRotation,
+                _dayPointerEndpoint.localRotation,
+                clampedProgress);
+        }
+
+        private bool HasDayNightEndpoints()
+        {
+            if (_nightPointerEndpoint != null && _midPointerEndpoint != null && _dayPointerEndpoint != null)
+                return true;
+
+            if (!_loggedMissingDayNightEndpoints)
+            {
+                Debug.LogError("[PrototypeHudView] Day Night Track requires Night Endpoint, Mid Endpoint, and Day Endpoint RectTransforms.");
+                _loggedMissingDayNightEndpoints = true;
+            }
+
+            return false;
+        }
+
+        private static Vector2 QuadraticBezier(Vector2 start, Vector2 control, Vector2 end, float progress)
+        {
+            float inverse = 1f - progress;
+            return inverse * inverse * start
+                + 2f * inverse * progress * control
+                + progress * progress * end;
         }
 
         private void SetHudVisible(bool visible)
