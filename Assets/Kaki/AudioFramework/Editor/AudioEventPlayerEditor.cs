@@ -30,7 +30,16 @@ namespace Kaki
                 int newIndex = groupsProp.arraySize;
                 groupsProp.InsertArrayElementAtIndex(newIndex);
                 var groupProp = groupsProp.GetArrayElementAtIndex(newIndex);
+                groupProp.FindPropertyRelative("groupName").stringValue = $"Audio Group {newIndex + 1}";
                 groupProp.FindPropertyRelative("audioType").enumValueIndex = (int)AudioType.SFX;
+                groupProp.FindPropertyRelative("triggerMode").enumValueIndex = (int)AudioPlayer.AudioGroupTriggerMode.Single;
+                groupProp.FindPropertyRelative("playMode").enumValueIndex = (int)AudioPlayMode.Default;
+                groupProp.FindPropertyRelative("eventSource").objectReferenceValue = null;
+                groupProp.FindPropertyRelative("eventName").stringValue = string.Empty;
+                groupProp.FindPropertyRelative("eventComponent").objectReferenceValue = null;
+                groupProp.FindPropertyRelative("stopEventSource").objectReferenceValue = null;
+                groupProp.FindPropertyRelative("stopEventName").stringValue = string.Empty;
+                groupProp.FindPropertyRelative("stopEventComponent").objectReferenceValue = null;
                 var entriesProp = groupProp.FindPropertyRelative("entries");
                 if (entriesProp != null)
                 {
@@ -51,21 +60,61 @@ namespace Kaki
             var groupProp = groupsProp.GetArrayElementAtIndex(index);
             var list = GetEntriesList(groupProp);
             float line = EditorGUIUtility.singleLineHeight + 4f;
-            return line * 1 + list.GetHeight() + 6f;
+            int groupLines = GetGroupTriggerMode(groupProp) == AudioPlayer.AudioGroupTriggerMode.Single ? 3 : 6;
+            if (GetGroupTriggerMode(groupProp) != AudioPlayer.AudioGroupTriggerMode.Single &&
+                RequiresStopEvent(GetPlayMode(groupProp.FindPropertyRelative("playMode"))))
+            {
+                groupLines += 2;
+            }
+            return line * groupLines + list.GetHeight() + 6f;
         }
 
         private void DrawGroupElement(Rect rect, int index, bool isActive, bool isFocused)
         {
             var groupProp = groupsProp.GetArrayElementAtIndex(index);
+            var nameProp = groupProp.FindPropertyRelative("groupName");
             var typeProp = groupProp.FindPropertyRelative("audioType");
+            var triggerModeProp = groupProp.FindPropertyRelative("triggerMode");
+            var groupPlayModeProp = groupProp.FindPropertyRelative("playMode");
+            var eventSourceProp = groupProp.FindPropertyRelative("eventSource");
+            var eventNameProp = groupProp.FindPropertyRelative("eventName");
+            var eventComponentProp = groupProp.FindPropertyRelative("eventComponent");
+            var stopEventSourceProp = groupProp.FindPropertyRelative("stopEventSource");
+            var stopEventNameProp = groupProp.FindPropertyRelative("stopEventName");
+            var stopEventComponentProp = groupProp.FindPropertyRelative("stopEventComponent");
 
             float lineHeight = EditorGUIUtility.singleLineHeight;
             rect.y += 2f;
 
             var line = new Rect(rect.x, rect.y, rect.width, lineHeight);
-            EditorGUI.BeginChangeCheck();
+            EditorGUI.PropertyField(line, nameProp, new GUIContent("Group Name"));
+
+            line.y += lineHeight + 4f;
             EditorGUI.PropertyField(line, typeProp, new GUIContent("Audio Type"));
-            EditorGUI.EndChangeCheck();
+
+            line.y += lineHeight + 4f;
+            EditorGUI.PropertyField(line, triggerModeProp, new GUIContent("Trigger Mode"));
+
+            if (GetGroupTriggerMode(groupProp) != AudioPlayer.AudioGroupTriggerMode.Single)
+            {
+                line.y += lineHeight + 4f;
+                EditorGUI.PropertyField(line, groupPlayModeProp, new GUIContent("Group Play Mode"));
+
+                line.y += lineHeight + 4f;
+                DrawEventSourceField(line, eventSourceProp, eventNameProp, eventComponentProp, "Group Event Source");
+
+                line.y += lineHeight + 4f;
+                DrawEventPopup(line, eventSourceProp, eventNameProp, eventComponentProp, "Group Event");
+
+                if (RequiresStopEvent(GetPlayMode(groupPlayModeProp)))
+                {
+                    line.y += lineHeight + 4f;
+                    DrawEventSourceField(line, stopEventSourceProp, stopEventNameProp, stopEventComponentProp, "Group Stop Event Source");
+
+                    line.y += lineHeight + 4f;
+                    DrawEventPopup(line, stopEventSourceProp, stopEventNameProp, stopEventComponentProp, "Group Stop Event");
+                }
+            }
 
             line.y += lineHeight + 4f;
             var listRect = new Rect(rect.x, line.y, rect.width, rect.height - (lineHeight + 4f));
@@ -83,8 +132,14 @@ namespace Kaki
             }
 
             list = new ReorderableList(serializedObject, entriesProp, true, true, true, true);
-            list.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "Audio Entries");
-            list.elementHeightCallback = index => GetEntryHeight(entriesProp.GetArrayElementAtIndex(index));
+            list.drawHeaderCallback = rect =>
+            {
+                string label = GetGroupTriggerMode(groupProp) == AudioPlayer.AudioGroupTriggerMode.Single
+                    ? "Audio Entries"
+                    : "Audio Entries (Playback Pool)";
+                EditorGUI.LabelField(rect, label);
+            };
+            list.elementHeightCallback = index => GetEntryHeight(entriesProp.GetArrayElementAtIndex(index), groupProp);
             list.drawElementCallback = (rect, index, isActive, isFocused) =>
             {
                 var element = entriesProp.GetArrayElementAtIndex(index);
@@ -99,11 +154,14 @@ namespace Kaki
                 element.FindPropertyRelative("name").stringValue = string.Empty;
                 element.FindPropertyRelative("clip").objectReferenceValue = null;
                 element.FindPropertyRelative("loopClip").objectReferenceValue = null;
-                element.FindPropertyRelative("playMode").enumValueIndex = (int)AudioPlayMode.Default;
+                element.FindPropertyRelative("playMode").enumValueIndex = groupProp.FindPropertyRelative("playMode").enumValueIndex;
                 element.FindPropertyRelative("volume").floatValue = 1f;
                 element.FindPropertyRelative("eventSource").objectReferenceValue = null;
                 element.FindPropertyRelative("eventName").stringValue = string.Empty;
                 element.FindPropertyRelative("eventComponent").objectReferenceValue = null;
+                element.FindPropertyRelative("stopEventSource").objectReferenceValue = null;
+                element.FindPropertyRelative("stopEventName").stringValue = string.Empty;
+                element.FindPropertyRelative("stopEventComponent").objectReferenceValue = null;
 
             };
 
@@ -121,15 +179,21 @@ namespace Kaki
             return list;
         }
 
-        private float GetEntryHeight(SerializedProperty element)
+        private float GetEntryHeight(SerializedProperty element, SerializedProperty groupProp)
         {
             var playModeProp = element.FindPropertyRelative("playMode");
-            var playMode = GetPlayMode(playModeProp);
+            bool showEntryBinding = GetGroupTriggerMode(groupProp) == AudioPlayer.AudioGroupTriggerMode.Single;
+            bool showEntryPlayMode = showEntryBinding;
+            var playMode = GetEffectiveEntryPlayMode(groupProp, playModeProp);
 
-            int lines = 6; // Name + Clip + PlayMode + Volume + EventSource + Event
+            int lines = showEntryBinding ? 6 : 3; // Name + Clip + PlayMode + Volume (+ EventSource + Event)
             if (playMode == AudioPlayMode.LoopWithIntro)
             {
                 lines += 1; // LoopClip
+            }
+            if (showEntryBinding && RequiresStopEvent(playMode))
+            {
+                lines += 2;
             }
 
             return (EditorGUIUtility.singleLineHeight + 4f) * lines + 4f;
@@ -145,6 +209,11 @@ namespace Kaki
             var eventSourceProp = element.FindPropertyRelative("eventSource");
             var eventNameProp = element.FindPropertyRelative("eventName");
             var eventComponentProp = element.FindPropertyRelative("eventComponent");
+            var stopEventSourceProp = element.FindPropertyRelative("stopEventSource");
+            var stopEventNameProp = element.FindPropertyRelative("stopEventName");
+            var stopEventComponentProp = element.FindPropertyRelative("stopEventComponent");
+            bool showEntryBinding = GetGroupTriggerMode(groupProp) == AudioPlayer.AudioGroupTriggerMode.Single;
+            bool showEntryPlayMode = showEntryBinding;
 
             float lineHeight = EditorGUIUtility.singleLineHeight;
             rect.y += 2f;
@@ -155,7 +224,7 @@ namespace Kaki
             EditorGUI.EndDisabledGroup();
 
             line.y += lineHeight + 4f;
-            var playMode = GetPlayMode(playModeProp);
+            var playMode = GetEffectiveEntryPlayMode(groupProp, playModeProp);
             string clipLabel = playMode == AudioPlayMode.LoopWithIntro ? "Intro Clip" : "Clip";
 
             EditorGUI.BeginChangeCheck();
@@ -173,13 +242,29 @@ namespace Kaki
                 line.y += lineHeight + 4f;
             }
 
-            EditorGUI.PropertyField(line, playModeProp, new GUIContent("Play Mode"));
-            line.y += lineHeight + 4f;
+            if (showEntryPlayMode)
+            {
+                EditorGUI.PropertyField(line, playModeProp, new GUIContent("Play Mode"));
+                line.y += lineHeight + 4f;
+            }
+
             EditorGUI.PropertyField(line, volumeProp, new GUIContent("Volume"));
-            line.y += lineHeight + 4f;
-            DrawEventSourceField(line, eventSourceProp, eventNameProp, eventComponentProp);
-            line.y += lineHeight + 4f;
-            DrawEventPopup(line, eventSourceProp, eventNameProp, eventComponentProp);
+
+            if (showEntryBinding)
+            {
+                line.y += lineHeight + 4f;
+                DrawEventSourceField(line, eventSourceProp, eventNameProp, eventComponentProp, "Event Source");
+                line.y += lineHeight + 4f;
+                DrawEventPopup(line, eventSourceProp, eventNameProp, eventComponentProp, "Event");
+
+                if (RequiresStopEvent(playMode))
+                {
+                    line.y += lineHeight + 4f;
+                    DrawEventSourceField(line, stopEventSourceProp, stopEventNameProp, stopEventComponentProp, "Stop Event Source");
+                    line.y += lineHeight + 4f;
+                    DrawEventPopup(line, stopEventSourceProp, stopEventNameProp, stopEventComponentProp, "Stop Event");
+                }
+            }
 
         }
 
@@ -195,10 +280,38 @@ namespace Kaki
             return (AudioPlayMode)Enum.Parse(typeof(AudioPlayMode), names[index]);
         }
 
-        private static void DrawEventSourceField(Rect rect, SerializedProperty sourceProp, SerializedProperty eventNameProp, SerializedProperty eventComponentProp)
+        private static AudioPlayMode GetEffectiveEntryPlayMode(SerializedProperty groupProp, SerializedProperty playModeProp)
+        {
+            if (GetGroupTriggerMode(groupProp) != AudioPlayer.AudioGroupTriggerMode.Single)
+            {
+                return GetPlayMode(groupProp.FindPropertyRelative("playMode"));
+            }
+
+            return GetPlayMode(playModeProp);
+        }
+
+        private static bool RequiresStopEvent(AudioPlayMode playMode)
+        {
+            return playMode == AudioPlayMode.Loop || playMode == AudioPlayMode.LoopWithIntro;
+        }
+
+        private static AudioPlayer.AudioGroupTriggerMode GetGroupTriggerMode(SerializedProperty groupProp)
+        {
+            var triggerModeProp = groupProp.FindPropertyRelative("triggerMode");
+            var names = triggerModeProp.enumNames;
+            if (names == null || names.Length == 0)
+            {
+                return AudioPlayer.AudioGroupTriggerMode.Single;
+            }
+
+            int index = Mathf.Clamp(triggerModeProp.enumValueIndex, 0, names.Length - 1);
+            return (AudioPlayer.AudioGroupTriggerMode)Enum.Parse(typeof(AudioPlayer.AudioGroupTriggerMode), names[index]);
+        }
+
+        private static void DrawEventSourceField(Rect rect, SerializedProperty sourceProp, SerializedProperty eventNameProp, SerializedProperty eventComponentProp, string label)
         {
             EditorGUI.BeginChangeCheck();
-            var newSource = EditorGUI.ObjectField(rect, "Event Source", sourceProp.objectReferenceValue, typeof(UnityEngine.Object), true);
+            var newSource = EditorGUI.ObjectField(rect, label, sourceProp.objectReferenceValue, typeof(UnityEngine.Object), true);
             if (newSource != null && !(newSource is GameObject) && !(newSource is Component))
             {
                 newSource = null;
@@ -212,19 +325,19 @@ namespace Kaki
             }
         }
 
-        private void DrawEventPopup(Rect rect, SerializedProperty sourceProp, SerializedProperty eventNameProp, SerializedProperty eventComponentProp)
+        private void DrawEventPopup(Rect rect, SerializedProperty sourceProp, SerializedProperty eventNameProp, SerializedProperty eventComponentProp, string label)
         {
             var sourceObj = sourceProp.objectReferenceValue;
             if (sourceObj == null)
             {
-                EditorGUI.PropertyField(rect, eventNameProp, new GUIContent("Event"));
+                EditorGUI.PropertyField(rect, eventNameProp, new GUIContent(label));
                 return;
             }
 
             var candidates = GetEventCandidates(sourceObj);
             if (candidates.Count == 0)
             {
-                EditorGUI.PropertyField(rect, eventNameProp, new GUIContent("Event"));
+                EditorGUI.PropertyField(rect, eventNameProp, new GUIContent(label));
                 return;
             }
 
@@ -245,7 +358,7 @@ namespace Kaki
                 display[i] = candidates[i].Display;
             }
 
-            int newIndex = EditorGUI.Popup(rect, "Event", selectedIndex, display);
+            int newIndex = EditorGUI.Popup(rect, label, selectedIndex, display);
             eventNameProp.stringValue = candidates[newIndex].Name;
             eventComponentProp.objectReferenceValue = candidates[newIndex].Source;
         }

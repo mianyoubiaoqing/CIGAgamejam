@@ -23,7 +23,7 @@ namespace Kaki
         public void DisableBGMHighPass(float duration = 1f)
         {
             StartHighPassTransition(disabledCutoff, duration);
-        }
+        }   
 
         private void OnDisable()
         {
