@@ -2981,10 +2981,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _camera: {fileID: 519420031}
+  _movementMin: {x: -20, y: -20}
+  _movementMax: {x: 20, y: 20}
+  _dragMouseButton: 2
   _zoomSpeed: 1
   _minSize: 3
   _maxSize: 10
-  _dragMouseButton: 2
 --- !u!1 &588504902
 GameObject:
   m_ObjectHideFlags: 0
