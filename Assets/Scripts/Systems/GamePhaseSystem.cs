@@ -11,6 +11,7 @@ namespace CIGAgamejam
         private bool _gameEnded;
 
         public GamePhase CurrentPhase => _currentPhase;
+        public bool BeginOnStart => _beginOnStart;
 
         private void Start()
         {

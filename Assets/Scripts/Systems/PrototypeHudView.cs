@@ -375,12 +375,16 @@ namespace CIGAgamejam
                     existingStartUI.Configure(_gamePhaseSystem, existingButton);
                 else
                     BindActionButton(existingButton, OnStartClicked);
-                _startScreen.SetActive(_gamePhaseSystem == null || _gamePhaseSystem.CurrentPhase == GamePhase.None);
+                _startScreen.SetActive(_gamePhaseSystem == null
+                    || (!_gamePhaseSystem.BeginOnStart && _gamePhaseSystem.CurrentPhase == GamePhase.None));
                 return;
             }
 
             if (!_allowRuntimeHudGeneration)
             {
+                if (_gamePhaseSystem != null && _gamePhaseSystem.BeginOnStart)
+                    return;
+
                 Debug.LogError("PrototypeHudView missing Start Screen in scene HUD.");
                 return;
             }
@@ -756,19 +760,8 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
         private void HandleGameEnded(OnGameEnded e)
         {
-            if (_resultPanel == null || _resultText == null) return;
-
-            string outcome = e.Outcome == GameOutcome.ShopBankrupted ? "店铺破产" : "经营结束";
-            _resultText.text =
-                $"{outcome}\n\n" +
-                $"最终好感度：{_confidence:0}\n" +
-                $"经营天数：{_currentDay}\n\n" +
-                $"正常顾客：{_normalCustomerCount}\n" +
-                $"愤怒顾客：{_angryCustomerCount}\n" +
-                $"受惊顾客：{_scaredCustomerCount}";
-            _resultPanel.SetActive(true);
-            if (_toolMenuRoot != null) _toolMenuRoot.gameObject.SetActive(false);
-            if (_actionButtonRoot != null) _actionButtonRoot.gameObject.SetActive(false);
+            GameResultState.LastOutcome = e.Outcome;
+            SceneManager.LoadScene("game over");
         }
 
         private static void ReloadCurrentScene()

@@ -6,9 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
+    path: Assets/Scenes/main menu.unity
+    guid: c9a3d70b7ffe89e4eaa8dab88a9e2660
   - enabled: 1
-    path: Assets/Kaki/SoundsTestTool/AudioTestScene.unity
-    guid: feac78e5279f40e58aa44fb2617c0b27
+    path: Assets/Scenes/Game.unity
+    guid: 66cd682027a629a4198c34ff303ee3b5
+  - enabled: 1
+    path: Assets/Scenes/game over.unity
+    guid: 1997e6ba0617cba4b86b110206be47ef
   m_configObjects: {}
