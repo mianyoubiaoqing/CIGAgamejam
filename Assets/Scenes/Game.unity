@@ -4517,6 +4517,7 @@ MonoBehaviour:
   _inventorySystem: {fileID: 150997778}
   _nightTurnSystem: {fileID: 990416145}
   _worldView: {fileID: 853436404}
+  _roomView: {fileID: 1966084946}
   _mouseIdle: {fileID: 2800000, guid: dab1998e8ce5ac54881c6a217ff562f3, type: 3}
   _mouseClick: {fileID: 2800000, guid: 3eb73c69ed76e6340808dfb0344e7903, type: 3}
   _cursorHotspot: {x: 0, y: 0}

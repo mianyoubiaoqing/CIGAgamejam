@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace CIGAgamejam
 {
@@ -10,6 +11,7 @@ namespace CIGAgamejam
         [SerializeField] private ToolInventorySystem _inventorySystem;
         [SerializeField] private NightTurnSystem _nightTurnSystem;
         [SerializeField] private PrototypeWorldView _worldView;
+        [SerializeField] private RawImage _roomView;
         [Header("Cursor")]
         [SerializeField] private Texture2D _mouseIdle;
         [SerializeField] private Texture2D _mouseClick;
@@ -20,6 +22,16 @@ namespace CIGAgamejam
         private float _clickCursorTimer;
 
         public ToolConfig SelectedTool => _selectedTool;
+
+        private void Awake()
+        {
+            if (_roomView == null)
+            {
+                GameObject roomView = GameObject.Find("Room View");
+                if (roomView != null)
+                    _roomView = roomView.GetComponent<RawImage>();
+            }
+        }
 
         private void OnEnable()
         {
@@ -63,7 +75,12 @@ namespace CIGAgamejam
                 return;
             }
 
-            Vector3 worldPosition = _camera.ScreenToWorldPoint(Input.mousePosition);
+            if (!TryScreenToRoomWorld(Input.mousePosition, out Vector3 worldPosition))
+            {
+                _worldView.HidePlacementPreview();
+                return;
+            }
+
             if (!_worldView.TryWorldToGrid(worldPosition, out GridPosition gridPosition))
             {
                 _worldView.HidePlacementPreview();
@@ -77,6 +94,43 @@ namespace CIGAgamejam
 
             FlashClickCursor();
             TryPlaceSelectedTool(gridPosition);
+        }
+
+        private bool TryScreenToRoomWorld(Vector2 screenPosition, out Vector3 worldPosition)
+        {
+            worldPosition = default;
+            if (_camera == null || _roomView == null)
+                return false;
+
+            RectTransform roomRect = _roomView.rectTransform;
+            Canvas canvas = _roomView.canvas;
+            Camera uiCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? canvas.worldCamera
+                : null;
+
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    roomRect,
+                    screenPosition,
+                    uiCamera,
+                    out Vector2 localPoint))
+            {
+                return false;
+            }
+
+            Rect rect = roomRect.rect;
+            if (!rect.Contains(localPoint))
+                return false;
+
+            float normalizedX = Mathf.InverseLerp(rect.xMin, rect.xMax, localPoint.x);
+            float normalizedY = Mathf.InverseLerp(rect.yMin, rect.yMax, localPoint.y);
+            Rect uvRect = _roomView.uvRect;
+            float viewportX = uvRect.x + normalizedX * uvRect.width;
+            float viewportY = uvRect.y + normalizedY * uvRect.height;
+            float distanceToGridPlane = Mathf.Abs(_camera.transform.position.z);
+
+            worldPosition = _camera.ViewportToWorldPoint(
+                new Vector3(viewportX, viewportY, distanceToGridPlane));
+            return true;
         }
 
         public void SelectTool(ToolConfig tool)
