@@ -4543,6 +4543,13 @@ MonoBehaviour:
   _customerMarkerSizeRatio: 0.22
   _securityMarkerSizeRatio: 0.24
   _toolMarkerSizeRatio: 0.26
+  _customerPrefabs:
+  - {fileID: 3442215512862685025, guid: 4fb8877d5546d8a45afdeff8fedb3a0d, type: 3}
+  - {fileID: 7404359968199720063, guid: 1a1514de2bec28941aa468e0d48c456a, type: 3}
+  - {fileID: 2276606670627846334, guid: 30435ecfe4489d04195c5847fbc73703, type: 3}
+  _securityPrefab: {fileID: 8478204302627899022, guid: 914dda16fbc71b74f962911bc1e5d50f, type: 3}
+  _customerHeightInCells: 0.82
+  _securityHeightInCells: 0.9
   _patrolPathMarkerSizeRatio: 0.06
   _patrolPathColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.35}
   _warehouseTilemap: {fileID: 392454818}

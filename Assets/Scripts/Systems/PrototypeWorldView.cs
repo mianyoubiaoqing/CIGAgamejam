@@ -15,6 +15,11 @@ namespace CIGAgamejam
         [SerializeField, Min(0.02f)] private float _customerMarkerSizeRatio = 0.22f;
         [SerializeField, Min(0.02f)] private float _securityMarkerSizeRatio = 0.24f;
         [SerializeField, Min(0.02f)] private float _toolMarkerSizeRatio = 0.26f;
+        [Header("Actor Art")]
+        [SerializeField] private GameObject[] _customerPrefabs;
+        [SerializeField] private GameObject _securityPrefab;
+        [SerializeField, Min(0.1f)] private float _customerHeightInCells = 0.82f;
+        [SerializeField, Min(0.1f)] private float _securityHeightInCells = 0.9f;
         [Header("Security Patrol Path")]
         [SerializeField, Min(0.02f)] private float _patrolPathMarkerSizeRatio = 0.06f;
         [SerializeField] private Color _patrolPathColor = new(0.5f, 0.5f, 0.5f, 0.35f);
@@ -423,13 +428,18 @@ namespace CIGAgamejam
             Vector3 targetPosition = CustomerWorldPosition(e.GridX, e.GridY, e.CustomerId);
             if (!_customerMarkers.TryGetValue(e.CustomerId, out GameObject marker) || marker == null)
             {
-                marker = CreateSquare($"Customer {e.CustomerId}", targetPosition, CellSize * _customerMarkerSizeRatio, ResolveCustomerColor(e.State), 10);
+                GameObject prefab = ResolveCustomerPrefab(e.CustomerId);
+                marker = prefab != null
+                    ? CreateActor(prefab, $"Customer {e.CustomerId}", targetPosition, CellSize * _customerHeightInCells, 10)
+                    : CreateSquare($"Customer {e.CustomerId}", targetPosition, CellSize * _customerMarkerSizeRatio, ResolveCustomerColor(e.State), 10);
                 _customerMarkers[e.CustomerId] = marker;
             }
 
-            SpriteRenderer renderer = marker.GetComponent<SpriteRenderer>();
+            SpriteRenderer renderer = marker.GetComponentInChildren<SpriteRenderer>();
             if (renderer != null)
-                renderer.color = ResolveCustomerColor(e.State);
+                renderer.color = marker.GetComponent<ActorArtMarker>() != null
+                    ? ResolveCustomerArtColor(e.State)
+                    : ResolveCustomerColor(e.State);
             marker.transform.position = targetPosition;
         }
 
@@ -468,7 +478,9 @@ namespace CIGAgamejam
             Vector3 targetPosition = SecurityWorldPosition(position);
             if (_securityMarker == null)
             {
-                _securityMarker = CreateSquare("Security", targetPosition, CellSize * _securityMarkerSizeRatio, new Color(0.05f, 0.05f, 0.05f), 9);
+                _securityMarker = _securityPrefab != null
+                    ? CreateActor(_securityPrefab, "Security", targetPosition, CellSize * _securityHeightInCells, 9)
+                    : CreateSquare("Security", targetPosition, CellSize * _securityMarkerSizeRatio, new Color(0.05f, 0.05f, 0.05f), 9);
                 AddSmoothMover(_securityMarker, targetPosition);
                 return;
             }
@@ -522,6 +534,49 @@ namespace CIGAgamejam
             return new Vector3(xOffset, cellSize * 0.06f, 0f);
         }
 
+        private GameObject ResolveCustomerPrefab(int customerId)
+        {
+            if (_customerPrefabs == null || _customerPrefabs.Length == 0)
+                return null;
+
+            int startIndex = Mathf.Abs(customerId) % _customerPrefabs.Length;
+            for (int i = 0; i < _customerPrefabs.Length; i++)
+            {
+                GameObject prefab = _customerPrefabs[(startIndex + i) % _customerPrefabs.Length];
+                if (prefab != null)
+                    return prefab;
+            }
+
+            return null;
+        }
+
+        private GameObject CreateActor(
+            GameObject prefab,
+            string objectName,
+            Vector3 position,
+            float targetHeight,
+            int sortingOrder)
+        {
+            GameObject actor = Instantiate(prefab, transform);
+            actor.name = objectName;
+            actor.transform.position = position;
+            actor.AddComponent<ActorArtMarker>();
+
+            SpriteRenderer renderer = actor.GetComponentInChildren<SpriteRenderer>();
+            if (renderer != null)
+            {
+                renderer.sortingOrder = sortingOrder;
+                renderer.color = Color.white;
+                if (renderer.sprite != null && renderer.sprite.bounds.size.y > 0f)
+                {
+                    float scale = targetHeight / renderer.sprite.bounds.size.y;
+                    actor.transform.localScale = Vector3.one * scale;
+                }
+            }
+
+            return actor;
+        }
+
         private void AddSmoothMover(GameObject marker, Vector3 targetPosition)
         {
             PrototypeSmoothMover mover = marker.AddComponent<PrototypeSmoothMover>();
@@ -548,6 +603,16 @@ namespace CIGAgamejam
                 CustomerState.Angry => new Color(1f, 0.35f, 0.08f),
                 CustomerState.Scared => new Color(0.82f, 0.22f, 0.95f),
                 _ => new Color(0.1f, 0.45f, 1f)
+            };
+        }
+
+        private static Color ResolveCustomerArtColor(CustomerState state)
+        {
+            return state switch
+            {
+                CustomerState.Angry => new Color(1f, 0.72f, 0.58f),
+                CustomerState.Scared => new Color(0.88f, 0.72f, 1f),
+                _ => Color.white
             };
         }
 
