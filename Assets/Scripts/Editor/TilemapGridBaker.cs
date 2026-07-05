@@ -32,6 +32,7 @@ namespace CIGAgamejam.Editor
             Tilemap ground = FindTilemap(root.transform, "ground");
             Tilemap wall = FindTilemap(root.transform, "wall");
             Tilemap shelf = FindTilemap(root.transform, "shelf");
+            Tilemap bathroomDoor = FindTilemapWithTag("BATH_door");
             if (ground == null || wall == null || shelf == null)
             {
                 Debug.LogError("[TilemapGridBaker] Required visual Tilemaps are missing. Expected ground, wall, and shelf.");
@@ -45,7 +46,7 @@ namespace CIGAgamejam.Editor
             TilemapGridBridge bridge = gridSystem.GetComponent<TilemapGridBridge>();
             if (bridge == null) bridge = Undo.AddComponent<TilemapGridBridge>(gridSystem.gameObject);
             SetReference(bridge, "_groundTilemap", ground);
-            SetVisualLayers(bridge, ground, wall, shelf);
+            SetVisualLayers(bridge, ground, wall, shelf, bathroomDoor);
             SetReference(gridSystem, "_tilemapBridge", bridge);
             if (worldView != null) SetReference(worldView, "_tilemapBridge", bridge);
             TilemapOverlayController overlay = gridSystem.GetComponent<TilemapOverlayController>();
@@ -55,7 +56,9 @@ namespace CIGAgamejam.Editor
 
             EditorSceneManager.MarkSceneDirty(gridSystem.gameObject.scene);
             AssetDatabase.SaveAssets();
-            Debug.Log("[TilemapGridBaker] Visual Tilemap Bridge configured from ground, wall, and shelf layers.");
+            Debug.Log(bathroomDoor != null
+                ? "[TilemapGridBaker] Visual Tilemap Bridge configured with bathroom door logic."
+                : "[TilemapGridBaker] Visual Tilemap Bridge configured. No bathroom door Tilemap was found.");
         }
 
         [MenuItem("CIGAgamejam/Tilemap/Validate Visual Tilemap Logic")]
@@ -79,6 +82,15 @@ namespace CIGAgamejam.Editor
         {
             Transform child = parent.Find(name);
             return child != null ? child.GetComponent<Tilemap>() : null;
+        }
+
+        private static Tilemap FindTilemapWithTag(string tag)
+        {
+            foreach (Tilemap tilemap in Object.FindObjectsOfType<Tilemap>(true))
+                if (tilemap.gameObject.tag == tag)
+                    return tilemap;
+
+            return null;
         }
 
         private static Tilemap EnsureTilemap(Transform parent, string name, int sortingOrder)
@@ -147,14 +159,21 @@ namespace CIGAgamejam.Editor
             EditorUtility.SetDirty(target);
         }
 
-        private static void SetVisualLayers(TilemapGridBridge bridge, Tilemap ground, Tilemap wall, Tilemap shelf)
+        private static void SetVisualLayers(
+            TilemapGridBridge bridge,
+            Tilemap ground,
+            Tilemap wall,
+            Tilemap shelf,
+            Tilemap bathroomDoor)
         {
             var serialized = new SerializedObject(bridge);
             SerializedProperty layers = serialized.FindProperty("_visualLayers");
-            layers.arraySize = 3;
+            layers.arraySize = bathroomDoor != null ? 4 : 3;
             SetVisualLayer(layers.GetArrayElementAtIndex(0), ground, GridCellType.Floor);
             SetVisualLayer(layers.GetArrayElementAtIndex(1), wall, GridCellType.Wall);
             SetVisualLayer(layers.GetArrayElementAtIndex(2), shelf, GridCellType.Warehouse);
+            if (bathroomDoor != null)
+                SetVisualLayer(layers.GetArrayElementAtIndex(3), bathroomDoor, GridCellType.Restroom);
             serialized.ApplyModifiedProperties();
             EditorUtility.SetDirty(bridge);
         }
@@ -164,5 +183,6 @@ namespace CIGAgamejam.Editor
             layer.FindPropertyRelative("Tilemap").objectReferenceValue = tilemap;
             layer.FindPropertyRelative("CellType").enumValueIndex = (int)cellType;
         }
+
     }
 }
