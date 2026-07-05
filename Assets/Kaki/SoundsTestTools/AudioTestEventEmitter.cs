@@ -48,7 +48,10 @@ namespace Kaki
                 for (int i = 0; i < playableEntries.Count; i++)
                 {
                     var entry = playableEntries[i];
-                    string buttonLabel = $"{entry.AudioType} {entry.PlayMode} - {entry.Label}";
+                    string groupLabel = string.IsNullOrWhiteSpace(entry.GroupName) ? "Audio Group" : entry.GroupName;
+                    string buttonLabel = entry.TriggerMode == AudioPlayer.AudioGroupTriggerMode.Single
+                        ? $"{groupLabel} | {entry.AudioType} {entry.PlayMode} - {entry.Label}"
+                        : $"{groupLabel} | {entry.AudioType} {entry.TriggerMode}";
                     if (GUILayout.Button(buttonLabel))
                     {
                         PlayEntry(entry);
@@ -103,7 +106,9 @@ namespace Kaki
 
             bool played = audioPlayer.PlayEntryAt(entry.GroupIndex, entry.EntryIndex);
             status = played
-                ? $"Played {entry.AudioType} {entry.PlayMode} - {entry.Label}."
+                ? entry.TriggerMode == AudioPlayer.AudioGroupTriggerMode.Single
+                    ? $"Played {entry.AudioType} {entry.PlayMode} - {entry.Label}."
+                    : $"Triggered {entry.AudioType} {entry.TriggerMode} group - {entry.GroupName}."
                 : $"Failed to play {entry.Label}.";
         }
 
