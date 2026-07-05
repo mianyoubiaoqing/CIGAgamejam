@@ -22,6 +22,7 @@ namespace CIGAgamejam
         [SerializeField] private GameObject _securityPrefab;
         [SerializeField, Min(0.1f)] private float _customerHeightInCells = 0.82f;
         [SerializeField, Min(0.1f)] private float _securityHeightInCells = 0.9f;
+        [SerializeField, Min(0f)] private float _customerReactionSeconds = 0.75f;
         [Header("Security Patrol Path")]
         [SerializeField, Min(0.02f)] private float _patrolPathMarkerSizeRatio = 0.06f;
         [SerializeField] private Color _patrolPathColor = new(0.5f, 0.5f, 0.5f, 0.35f);
@@ -38,8 +39,10 @@ namespace CIGAgamejam
         private readonly Dictionary<GridPosition, TileBase> _originalWarehouseTiles = new();
         private readonly Dictionary<GridPosition, Color> _originalWarehouseColors = new();
         private readonly Dictionary<int, GameObject> _customerMarkers = new();
+        private readonly Dictionary<int, CustomerVisualState> _customerVisualStates = new();
         private readonly List<GameObject> _routeMarkers = new();
         private readonly List<GameObject> _patrolPathMarkers = new();
+        private readonly List<int> _pendingCustomerTintIds = new();
         private Sprite _sprite;
         private GameObject _securityMarker;
         private GameObject _placementPreview;
@@ -52,6 +55,11 @@ namespace CIGAgamejam
         {
             _sprite = CreateUnitSprite();
             RebuildRouteMarkers();
+        }
+
+        private void Update()
+        {
+            ApplyPendingCustomerTints();
         }
 
         private void OnEnable()
@@ -482,11 +490,7 @@ namespace CIGAgamejam
                 _customerMarkers[e.CustomerId] = marker;
             }
 
-            SpriteRenderer renderer = marker.GetComponentInChildren<SpriteRenderer>();
-            if (renderer != null)
-                renderer.color = marker.GetComponent<ActorArtMarker>() != null
-                    ? ResolveCustomerArtColor(e.State)
-                    : ResolveCustomerColor(e.State);
+            ApplyCustomerState(e.CustomerId, marker, e.State);
             marker.transform.position = targetPosition;
         }
 
@@ -498,6 +502,7 @@ namespace CIGAgamejam
             if (marker != null)
                 Destroy(marker);
             _customerMarkers.Remove(e.CustomerId);
+            _customerVisualStates.Remove(e.CustomerId);
         }
 
         private void HandleWorldObjectDestroyed(OnWorldObjectDestroyed e)
@@ -662,6 +667,119 @@ namespace CIGAgamejam
             marker.transform.position = targetPosition;
         }
 
+        private void ApplyCustomerState(int customerId, GameObject marker, CustomerState state)
+        {
+            bool hasVisualState = _customerVisualStates.TryGetValue(customerId, out CustomerVisualState visualState);
+            CustomerState previousState = hasVisualState ? visualState.LastState : CustomerState.Normal;
+            bool stateChanged = !hasVisualState || previousState != state;
+
+            if (stateChanged && state != CustomerState.Normal)
+            {
+                StartCustomerReaction(marker, state, ref visualState);
+                visualState.LastState = state;
+                _customerVisualStates[customerId] = visualState;
+                return;
+            }
+
+            visualState.LastState = state;
+            _customerVisualStates[customerId] = visualState;
+
+            if (!visualState.HasPendingTint)
+                ApplyCustomerTint(marker, state);
+        }
+
+        private void StartCustomerReaction(GameObject marker, CustomerState state, ref CustomerVisualState visualState)
+        {
+            SetCustomerAnimatorState(marker, ResolveCustomerAnimatorState(state));
+            ApplyCustomerTint(marker, CustomerState.Normal);
+
+            if (_customerReactionSeconds <= 0f)
+            {
+                SetCustomerAnimatorState(marker, 0);
+                ApplyCustomerTint(marker, state);
+                visualState.HasPendingTint = false;
+                return;
+            }
+
+            visualState.HasPendingTint = true;
+            visualState.PendingTintState = state;
+            visualState.TintTime = Time.time + _customerReactionSeconds;
+        }
+
+        private void ApplyPendingCustomerTints()
+        {
+            _pendingCustomerTintIds.Clear();
+            foreach (KeyValuePair<int, CustomerVisualState> pair in _customerVisualStates)
+            {
+                if (pair.Value.HasPendingTint && Time.time >= pair.Value.TintTime)
+                    _pendingCustomerTintIds.Add(pair.Key);
+            }
+
+            for (int i = 0; i < _pendingCustomerTintIds.Count; i++)
+            {
+                int customerId = _pendingCustomerTintIds[i];
+                if (!_customerVisualStates.TryGetValue(customerId, out CustomerVisualState visualState))
+                    continue;
+
+                if (_customerMarkers.TryGetValue(customerId, out GameObject marker) && marker != null)
+                {
+                    SetCustomerAnimatorState(marker, 0);
+                    ApplyCustomerTint(marker, visualState.PendingTintState);
+                }
+
+                visualState.HasPendingTint = false;
+                _customerVisualStates[customerId] = visualState;
+            }
+        }
+
+        private static void ApplyCustomerTint(GameObject marker, CustomerState state)
+        {
+            SpriteRenderer renderer = marker.GetComponentInChildren<SpriteRenderer>();
+            if (renderer == null)
+                return;
+
+            renderer.color = marker.GetComponent<ActorArtMarker>() != null
+                ? ResolveCustomerArtColor(state)
+                : ResolveCustomerColor(state);
+        }
+
+        private static void SetCustomerAnimatorState(GameObject marker, int state)
+        {
+            Animator animator = marker.GetComponentInChildren<Animator>();
+            if (animator == null)
+                return;
+
+            if (!HasAnimatorParameter(animator, "State"))
+            {
+                Debug.LogError($"[PrototypeWorldView] Customer animator on '{marker.name}' is missing Int parameter 'State'.");
+                return;
+            }
+
+            animator.SetInteger("State", state);
+        }
+
+        private static bool HasAnimatorParameter(Animator animator, string parameterName)
+        {
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].name == parameterName && parameters[i].type == AnimatorControllerParameterType.Int)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static int ResolveCustomerAnimatorState(CustomerState state)
+        {
+            return state switch
+            {
+                CustomerState.Angry => 1,
+                CustomerState.Scared => 2,
+                _ => 0
+            };
+        }
+
         private static Color ResolveCustomerColor(CustomerState state)
         {
             return state switch
@@ -680,6 +798,14 @@ namespace CIGAgamejam
                 CustomerState.Scared => new Color(0.88f, 0.72f, 1f),
                 _ => Color.white
             };
+        }
+
+        private struct CustomerVisualState
+        {
+            public CustomerState LastState;
+            public bool HasPendingTint;
+            public CustomerState PendingTintState;
+            public float TintTime;
         }
 
         private GameObject CreateSquare(string objectName, Vector3 position, float size, Color color, int sortingOrder)

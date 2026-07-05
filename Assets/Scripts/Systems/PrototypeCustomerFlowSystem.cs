@@ -13,6 +13,8 @@ namespace CIGAgamejam
         [SerializeField, Min(1)] private int _maxCustomersPerDay = 10;
         [SerializeField, Min(0.1f)] private float _spawnInterval = 0.85f;
         [SerializeField, Min(0.1f)] private float _cellsPerSecond = 1.176f;
+        [SerializeField, Min(0f)] private float _customerReactionSeconds = 0.75f;
+        [SerializeField, Min(1f)] private float _escapeSpeedMultiplier = 2.4f;
         [SerializeField, Range(0f, 1f)] private float _smallLoopRouteChance = 0.15f;
         [SerializeField, Min(0)] private int _minRandomWaypoints = 2;
         [SerializeField, Min(0)] private int _maxRandomWaypoints = 5;
@@ -125,7 +127,11 @@ namespace CIGAgamejam
                 EventBus<OnCustomerLeftStore>.Publish(
                     new OnCustomerLeftStore(customer.CustomerId, ToolEffectType.ScareCustomerGroup, CustomerState.Scared));
             }
-            _activeCustomers.Add(new MovingCustomer(customer, personalRoute));
+            MovingCustomer moving = new(customer, personalRoute);
+            if (customer.State != CustomerState.Normal)
+                StartReaction(ref moving);
+
+            _activeCustomers.Add(moving);
             _spawnedToday++;
             EventBus<OnPrototypeCustomerMoved>.Publish(
                 new OnPrototypeCustomerMoved(customer.CustomerId, start, start.X, start.Y, customer.State));
@@ -153,6 +159,12 @@ namespace CIGAgamejam
         private void AdvanceCustomer(int index, float deltaTime)
         {
             MovingCustomer moving = _activeCustomers[index];
+            if (moving.IsReacting)
+            {
+                AdvanceReaction(index, ref moving, deltaTime);
+                return;
+            }
+
             if (moving.Context.HasLeftStore)
             {
                 AdvanceEscapingCustomer(index, ref moving, deltaTime);
@@ -167,7 +179,21 @@ namespace CIGAgamejam
             while (moving.RouteIndex < reachedRouteIndex)
             {
                 moving.RouteIndex++;
+                CustomerState previousState = moving.Context.State;
                 ResolveRouteCell(ref moving, route[moving.RouteIndex]);
+                if (TryStartReaction(ref moving, previousState))
+                {
+                    _activeCustomers[index] = moving;
+                    EventBus<OnPrototypeCustomerMoved>.Publish(
+                        new OnPrototypeCustomerMoved(
+                            moving.Context.CustomerId,
+                            moving.Context.Position,
+                            moving.Context.Position.X,
+                            moving.Context.Position.Y,
+                            moving.Context.State));
+                    return;
+                }
+
                 if (moving.Context.HasLeftStore)
                 {
                     _activeCustomers[index] = moving;
@@ -209,6 +235,25 @@ namespace CIGAgamejam
             }
         }
 
+        private void AdvanceReaction(int index, ref MovingCustomer moving, float deltaTime)
+        {
+            moving.ReactionTimer -= deltaTime;
+            if (moving.ReactionTimer <= 0f)
+            {
+                moving.IsReacting = false;
+                moving.ReactionTimer = 0f;
+            }
+
+            _activeCustomers[index] = moving;
+            EventBus<OnPrototypeCustomerMoved>.Publish(
+                new OnPrototypeCustomerMoved(
+                    moving.Context.CustomerId,
+                    moving.Context.Position,
+                    moving.Context.Position.X,
+                    moving.Context.Position.Y,
+                    moving.Context.State));
+        }
+
         private void ResolveRouteCell(ref MovingCustomer moving, GridPosition position)
         {
             moving.Context.Position = position;
@@ -241,7 +286,9 @@ namespace CIGAgamejam
             }
 
             int lastRouteIndex = moving.EscapeRoute.Count - 1;
-            moving.EscapeProgress = Mathf.Min(lastRouteIndex, moving.EscapeProgress + deltaTime * _cellsPerSecond * 1.35f);
+            moving.EscapeProgress = Mathf.Min(
+                lastRouteIndex,
+                moving.EscapeProgress + deltaTime * _cellsPerSecond * _escapeSpeedMultiplier);
             int reachedRouteIndex = Mathf.FloorToInt(moving.EscapeProgress);
             moving.EscapeRouteIndex = Mathf.Min(reachedRouteIndex, lastRouteIndex);
             moving.Context.Position = moving.EscapeRoute[moving.EscapeRouteIndex];
@@ -357,6 +404,7 @@ namespace CIGAgamejam
                 moving.Context.HasLeftStore = true;
                 moving.Context.WasScaredAway = true;
                 moving.Context.State = CustomerState.Scared;
+                StartReaction(ref moving);
                 EventBus<OnCustomerLeftStore>.Publish(
                     new OnCustomerLeftStore(moving.Context.CustomerId, ToolEffectType.ScareCustomerGroup, CustomerState.Scared));
                 _activeCustomers[i] = moving;
@@ -374,6 +422,24 @@ namespace CIGAgamejam
             return Mathf.Abs(a.X - b.X) + Mathf.Abs(a.Y - b.Y);
         }
 
+        private bool TryStartReaction(ref MovingCustomer moving, CustomerState previousState)
+        {
+            if (moving.Context.State == previousState || moving.Context.State == CustomerState.Normal)
+                return false;
+
+            StartReaction(ref moving);
+            return moving.IsReacting;
+        }
+
+        private void StartReaction(ref MovingCustomer moving)
+        {
+            if (_customerReactionSeconds <= 0f)
+                return;
+
+            moving.IsReacting = true;
+            moving.ReactionTimer = _customerReactionSeconds;
+        }
+
         private struct MovingCustomer
         {
             public CustomerContext Context;
@@ -385,6 +451,8 @@ namespace CIGAgamejam
             public int EscapeRouteIndex;
             public float EscapeProgress;
             public List<GridPosition> EscapeRoute;
+            public bool IsReacting;
+            public float ReactionTimer;
 
             public MovingCustomer(CustomerContext context, List<GridPosition> personalRoute)
             {
@@ -397,6 +465,8 @@ namespace CIGAgamejam
                 EscapeRouteIndex = 0;
                 EscapeProgress = 0f;
                 EscapeRoute = null;
+                IsReacting = false;
+                ReactionTimer = 0f;
             }
         }
     }
