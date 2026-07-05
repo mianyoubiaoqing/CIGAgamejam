@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -22,10 +24,22 @@ namespace CIGAgamejam
         [SerializeField] private Sprite _phaseBarSprite;
         [SerializeField] private Sprite _phasePointerSprite;
         [SerializeField] private Sprite _logPanelSprite;
+        [Header("Day Night Arc")]
+        [SerializeField] private Vector2 _dayNightArcCenter = Vector2.zero;
+        [SerializeField] private Vector2 _dayNightArcRadius = new(58f, 38f);
+        [SerializeField] private float _nightAngle = 155f;
+        [SerializeField] private float _dayAngle = 25f;
+        [SerializeField, Min(0.01f)] private float _pointerMoveDuration = 1f;
+        [SerializeField] private float _pointerRotationOffset = 90f;
+        [SerializeField] private Vector2 _dayNightTrackSize = new(150f, 150f);
+        [SerializeField] private Vector2 _dayNightPointerSize = new(34f, 56f);
+        [Tooltip("night_bar.png is a downward U-shaped arc. Mirror the configured endpoint angles onto the lower ellipse.")]
+        [SerializeField] private bool _useLowerDayNightArc = true;
 
         private readonly Dictionary<ToolConfig, Text> _toolCountTexts = new();
         private readonly Dictionary<ToolConfig, Button> _toolButtons = new();
         private readonly Dictionary<ToolConfig, Image> _toolIcons = new();
+        private readonly HashSet<Transform> _tooltipBoundButtons = new();
         private Font _font;
         private Text _confidenceText;
         private Text _flowText;
@@ -35,9 +49,15 @@ namespace CIGAgamejam
         private RectTransform _topBarRoot;
         private RectTransform _bottomBarRoot;
         private RectTransform _logPanelRoot;
+        private RectTransform _dayNightTrack;
         private RectTransform _dayNightNeedle;
         private RectTransform _toolMenuRoot;
         private RectTransform _actionButtonRoot;
+        private RectTransform _tooltipRoot;
+        private Text _tooltipText;
+        private Canvas _canvas;
+        private Coroutine _dayNightPointerAnimation;
+        private float _currentDayNightAngle;
         private Button _startDayButton;
         private Button _nextNightButton;
         private GameObject _startScreen;
@@ -63,7 +83,10 @@ namespace CIGAgamejam
             if (canvas == null)
                 return;
 
+            _canvas = canvas;
             BuildHud(canvas);
+            ConfigureDayNightTrack();
+            BuildTooltip(canvas);
             BuildResultPanel(canvas);
             BuildStartScreen(canvas);
             _hasGameStarted = _gamePhaseSystem != null && _gamePhaseSystem.CurrentPhase != GamePhase.None;
@@ -215,6 +238,7 @@ namespace CIGAgamejam
             _phaseText = FindText(canvas.transform, "Top Bar/Phase");
             _turnText = FindText(canvas.transform, "Top Bar/Turn");
             _logText = FindText(canvas.transform, "Log Panel/Log Text");
+            _dayNightTrack = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track");
             _dayNightNeedle = FindRect(canvas.transform, "Top Bar/Day Night Root/Day Night Track/Needle");
             _toolMenuRoot = FindRect(canvas.transform, "Bottom Bar/Tool Button Row");
             _actionButtonRoot = FindRect(canvas.transform, "Bottom Bar/Action Button Row");
@@ -231,6 +255,7 @@ namespace CIGAgamejam
                 && _topBarRoot != null
                 && _bottomBarRoot != null
                 && _logPanelRoot != null
+                && _dayNightTrack != null
                 && _dayNightNeedle != null
                 && _toolMenuRoot != null
                 && _actionButtonRoot != null;
@@ -244,12 +269,42 @@ namespace CIGAgamejam
             rootLayout.minWidth = 230f;
             rootLayout.preferredHeight = 56f;
 
-            RectTransform track = CreatePanel(trackRoot, "Day Night Track", new RectSpec(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -5f), new Vector2(270f, 16f)), new Color(0.2f, 0.2f, 0.22f, 1f));
-            ApplySprite(track.GetComponent<Image>(), _phaseBarSprite, true);
+            _dayNightTrack = CreatePanel(trackRoot, "Day Night Track", new RectSpec(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -5f), _dayNightTrackSize), new Color(0.2f, 0.2f, 0.22f, 1f));
+            ApplySprite(_dayNightTrack.GetComponent<Image>(), _phaseBarSprite, true);
             CreateText(trackRoot, "Night Label", "\u591c", 14, TextAnchor.MiddleCenter, new Vector2(-118f, 16f), new Vector2(36f, 20f));
             CreateText(trackRoot, "Day Label", "\u663c", 14, TextAnchor.MiddleCenter, new Vector2(118f, 16f), new Vector2(36f, 20f));
-            _dayNightNeedle = CreatePanel(track, "Needle", new RectSpec(new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(10f, 28f)), new Color(0.95f, 0.78f, 0.2f, 1f));
+            _dayNightNeedle = CreatePanel(_dayNightTrack, "Needle", new RectSpec(new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, _dayNightPointerSize), new Color(0.95f, 0.78f, 0.2f, 1f));
             ApplySprite(_dayNightNeedle.GetComponent<Image>(), _phasePointerSprite, true);
+        }
+
+        private void ConfigureDayNightTrack()
+        {
+            if (_dayNightTrack == null || _dayNightNeedle == null)
+                return;
+
+            _dayNightTrack.anchorMin = new Vector2(0.5f, 0.5f);
+            _dayNightTrack.anchorMax = new Vector2(0.5f, 0.5f);
+            _dayNightTrack.pivot = new Vector2(0.5f, 0.5f);
+            _dayNightTrack.sizeDelta = _dayNightTrackSize;
+
+            _dayNightNeedle.anchorMin = new Vector2(0.5f, 0.5f);
+            _dayNightNeedle.anchorMax = new Vector2(0.5f, 0.5f);
+            _dayNightNeedle.pivot = new Vector2(0.5f, 0.5f);
+            _dayNightNeedle.SetAsLastSibling();
+
+            Image trackImage = _dayNightTrack.GetComponent<Image>();
+            if (trackImage != null)
+            {
+                trackImage.raycastTarget = false;
+                trackImage.preserveAspect = true;
+            }
+
+            Image pointerImage = _dayNightNeedle.GetComponent<Image>();
+            if (pointerImage != null)
+            {
+                pointerImage.raycastTarget = false;
+                pointerImage.preserveAspect = true;
+            }
         }
 
         private void BuildToolButtons(RectTransform bottomBar)
@@ -289,6 +344,141 @@ namespace CIGAgamejam
 
             _toolCountTexts[tool] = label;
             _toolButtons[tool] = FindButton(buttonTransform, string.Empty);
+            BindTooltip(buttonTransform, tool);
+        }
+
+        private void BuildTooltip(Canvas canvas)
+        {
+            if (canvas == null || _tooltipRoot != null) return;
+
+            Transform existing = canvas.transform.Find("Tool Tooltip");
+            if (existing != null)
+            {
+                _tooltipRoot = existing as RectTransform;
+                _tooltipText = existing.GetComponentInChildren<Text>(true);
+            }
+
+            if (_tooltipRoot == null)
+            {
+                _tooltipRoot = CreatePanel(
+                    canvas.transform,
+                    "Tool Tooltip",
+                    new RectSpec(
+                        new Vector2(0.5f, 0.5f),
+                        new Vector2(0.5f, 0.5f),
+                        Vector2.zero,
+                        new Vector2(240f, 100f),
+                        new Vector2(0.5f, 0f)),
+                    new Color(0.08f, 0.08f, 0.08f, 0.95f));
+
+                Image background = _tooltipRoot.GetComponent<Image>();
+                background.raycastTarget = false;
+
+                Outline outline = _tooltipRoot.gameObject.AddComponent<Outline>();
+                outline.effectColor = new Color(0.98f, 0.92f, 0.78f, 0.8f);
+                outline.effectDistance = new Vector2(1f, -1f);
+
+                _tooltipText = CreateText(
+                    _tooltipRoot,
+                    "Tooltip Text",
+                    string.Empty,
+                    13,
+                    TextAnchor.UpperLeft,
+                    Vector2.zero,
+                    Vector2.zero);
+                RectTransform textRect = _tooltipText.rectTransform;
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.pivot = new Vector2(0.5f, 0.5f);
+                textRect.offsetMin = new Vector2(10f, 8f);
+                textRect.offsetMax = new Vector2(-10f, -8f);
+                _tooltipText.supportRichText = true;
+                _tooltipText.horizontalOverflow = HorizontalWrapMode.Wrap;
+                _tooltipText.verticalOverflow = VerticalWrapMode.Overflow;
+                _tooltipText.raycastTarget = false;
+            }
+
+            _tooltipRoot.gameObject.SetActive(false);
+        }
+
+        private void BindTooltip(RectTransform buttonTransform, ToolConfig tool)
+        {
+            if (buttonTransform == null || tool == null || !_tooltipBoundButtons.Add(buttonTransform))
+                return;
+
+            EventTrigger trigger = buttonTransform.GetComponent<EventTrigger>();
+            if (trigger == null)
+                trigger = buttonTransform.gameObject.AddComponent<EventTrigger>();
+
+            trigger.triggers ??= new List<EventTrigger.Entry>();
+            AddTooltipTrigger(trigger, EventTriggerType.PointerEnter, _ => ShowTooltip(tool, buttonTransform));
+            AddTooltipTrigger(trigger, EventTriggerType.PointerExit, _ => HideTooltip());
+        }
+
+        private static void AddTooltipTrigger(
+            EventTrigger trigger,
+            EventTriggerType eventType,
+            UnityEngine.Events.UnityAction<BaseEventData> callback)
+        {
+            var entry = new EventTrigger.Entry { eventID = eventType };
+            entry.callback.AddListener(callback);
+            trigger.triggers.Add(entry);
+        }
+
+        private void ShowTooltip(ToolConfig tool, RectTransform buttonTransform)
+        {
+            if (_tooltipRoot == null || _tooltipText == null || tool == null || buttonTransform == null)
+                return;
+
+            string description = string.IsNullOrWhiteSpace(tool.Description)
+                ? "No description available."
+                : tool.Description;
+            _tooltipText.text =
+                $"<size=15><b><color=#FAEBC7>{tool.DisplayName}</color></b></size>\n{description}";
+
+            _tooltipRoot.gameObject.SetActive(true);
+            _tooltipRoot.SetAsLastSibling();
+            PositionTooltipAbove(buttonTransform);
+        }
+
+        private void PositionTooltipAbove(RectTransform buttonTransform)
+        {
+            RectTransform canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
+            if (canvasRect == null) return;
+
+            var corners = new Vector3[4];
+            buttonTransform.GetWorldCorners(corners);
+            Vector3 worldTopCenter = (corners[1] + corners[2]) * 0.5f;
+            Camera eventCamera = _canvas.renderMode == RenderMode.ScreenSpaceOverlay
+                ? null
+                : _canvas.worldCamera;
+            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(eventCamera, worldTopCenter);
+
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRect,
+                    screenPoint,
+                    eventCamera,
+                    out Vector2 localPoint))
+                return;
+
+            localPoint.y += 10f;
+            Rect canvasBounds = canvasRect.rect;
+            Vector2 tooltipSize = _tooltipRoot.rect.size;
+            localPoint.x = Mathf.Clamp(
+                localPoint.x,
+                canvasBounds.xMin + tooltipSize.x * 0.5f,
+                canvasBounds.xMax - tooltipSize.x * 0.5f);
+            localPoint.y = Mathf.Clamp(
+                localPoint.y,
+                canvasBounds.yMin,
+                canvasBounds.yMax - tooltipSize.y);
+            _tooltipRoot.anchoredPosition = localPoint;
+        }
+
+        private void HideTooltip()
+        {
+            if (_tooltipRoot != null)
+                _tooltipRoot.gameObject.SetActive(false);
         }
 
         private void BuildActionButtons(RectTransform bottomBar)
@@ -634,19 +824,104 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             layoutElement.preferredHeight = height;
         }
 
-        private void RefreshAll()
+        private void RefreshAll(bool refreshDayNightPointer = true)
         {
             if (_confidenceText == null || _flowText == null || _phaseText == null || _turnText == null)
                 return;
 
             _confidenceText.text = $"\u597d\u611f\u5ea6 {_confidence:0}%";
             _flowText.text = $"\u5ba2\u6d41 \u5e97\u5185{_inStoreCount} \u4eca\u65e5{_todayTotal}";
-            string phase = _gamePhaseSystem != null ? ResolvePhaseLabel(_gamePhaseSystem.CurrentPhase) : "\u591c\u665a";
+            GamePhase currentPhase = _gamePhaseSystem != null
+                ? _gamePhaseSystem.CurrentPhase
+                : GamePhase.NightPlanning;
+            string phase = ResolvePhaseLabel(currentPhase);
             _phaseText.text = $"\u7b2c{_currentDay}/{_maxDays}\u5929 {phase}";
             _turnText.text = $"\u56de\u5408 {(_nightTurnSystem != null ? _nightTurnSystem.CurrentTurn : 1)}";
-            if (_dayNightNeedle != null)
-                _dayNightNeedle.anchoredPosition = new Vector2(phase == "\u591c\u665a" ? 0f : 270f, 0f);
+            if (refreshDayNightPointer && _dayNightPointerAnimation == null)
+                SetDayNightPointerImmediate(currentPhase);
             RefreshButtonStates();
+        }
+
+        private void SetDayNightPointerImmediate(GamePhase phase)
+        {
+            if (_dayNightNeedle == null)
+                return;
+
+            StopDayNightPointerAnimation();
+            _currentDayNightAngle = GetDayNightAngle(phase);
+            ApplyDayNightPointerPose(_currentDayNightAngle);
+        }
+
+        private void AnimateDayNightPointer(GamePhase previousPhase, GamePhase newPhase)
+        {
+            if (_dayNightNeedle == null)
+                return;
+
+            float previousAngle = GetDayNightAngle(previousPhase);
+            float targetAngle = GetDayNightAngle(newPhase);
+            if (Mathf.Approximately(previousAngle, targetAngle))
+            {
+                SetDayNightPointerImmediate(newPhase);
+                return;
+            }
+
+            StopDayNightPointerAnimation();
+            _currentDayNightAngle = previousAngle;
+            ApplyDayNightPointerPose(_currentDayNightAngle);
+            _dayNightPointerAnimation = StartCoroutine(
+                AnimateDayNightPointerRoutine(previousAngle, targetAngle));
+        }
+
+        private IEnumerator AnimateDayNightPointerRoutine(float startAngle, float targetAngle)
+        {
+            float elapsed = 0f;
+            float duration = Mathf.Max(0.01f, _pointerMoveDuration);
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float progress = Mathf.Clamp01(elapsed / duration);
+                float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
+                _currentDayNightAngle = Mathf.Lerp(startAngle, targetAngle, easedProgress);
+                ApplyDayNightPointerPose(_currentDayNightAngle);
+                yield return null;
+            }
+
+            _currentDayNightAngle = targetAngle;
+            ApplyDayNightPointerPose(_currentDayNightAngle);
+            _dayNightPointerAnimation = null;
+        }
+
+        private void StopDayNightPointerAnimation()
+        {
+            if (_dayNightPointerAnimation == null)
+                return;
+
+            StopCoroutine(_dayNightPointerAnimation);
+            _dayNightPointerAnimation = null;
+        }
+
+        private float GetDayNightAngle(GamePhase phase)
+        {
+            float configuredAngle = phase == GamePhase.NightPlanning || phase == GamePhase.None
+                ? _nightAngle
+                : _dayAngle;
+            return _useLowerDayNightArc ? 360f - configuredAngle : configuredAngle;
+        }
+
+        private void ApplyDayNightPointerPose(float angle)
+        {
+            if (_dayNightNeedle == null)
+                return;
+
+            float radians = angle * Mathf.Deg2Rad;
+            float x = _dayNightArcCenter.x + Mathf.Cos(radians) * _dayNightArcRadius.x;
+            float y = _dayNightArcCenter.y + Mathf.Sin(radians) * _dayNightArcRadius.y;
+            _dayNightNeedle.anchoredPosition = new Vector2(x, y);
+            _dayNightNeedle.localRotation = Quaternion.Euler(
+                0f,
+                0f,
+                angle + _pointerRotationOffset);
         }
 
         private void SetHudVisible(bool visible)
@@ -694,7 +969,8 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
                 SetHudVisible(true);
             }
 
-            RefreshAll();
+            RefreshAll(false);
+            AnimateDayNightPointer(e.PreviousPhase, e.NewPhase);
         }
 
         private void HandleNightTurnStarted(OnNightTurnStarted e) => RefreshAll();
@@ -824,6 +1100,8 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
                 button.onClick.AddListener(() => _inputController?.SelectTool(selectedTool));
                 _toolButtons[tool] = button;
             }
+
+            BindTooltip(root as RectTransform, tool);
 
             if (label != null)
             {

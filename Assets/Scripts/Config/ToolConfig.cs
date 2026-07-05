@@ -9,6 +9,7 @@ namespace CIGAgamejam
         [Header("Identity")]
         [SerializeField] private string _id = "tool_id";
         [SerializeField] private string _displayName = "Tool";
+        [SerializeField, TextArea] private string _description = string.Empty;
         [SerializeField] private ToolCategory _category = ToolCategory.Utility;
         [SerializeField] private Sprite _icon;
         [SerializeField] private GameObject _prefab;
@@ -35,6 +36,7 @@ namespace CIGAgamejam
 
         public string Id => _id;
         public string DisplayName => _displayName;
+        public string Description => _description;
         public ToolCategory Category => _category;
         public Sprite Icon => _icon;
         public GameObject Prefab => _prefab;

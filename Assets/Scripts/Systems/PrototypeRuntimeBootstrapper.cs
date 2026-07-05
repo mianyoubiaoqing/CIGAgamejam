@@ -161,10 +161,10 @@ namespace CIGAgamejam
         {
             return new[]
             {
-                CreateTool("clown_box", "\u5c0f\u4e11\u76d2", ToolCategory.Scare, ToolTriggerTiming.OnCustomerPassFrontCell, ToolTriggerAreaMode.ExactOffsets, true, true, new[] { GridCellType.Wall, GridCellType.Floor }, ToolEffectType.ScareCustomerAway, 10f, 0.35f),
-                CreateTool("fake_goods", "\u5047\u8d27", ToolCategory.FakeGoods, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Warehouse }, ToolEffectType.ReplaceGoodsWithFake, 8f, 0.2f),
-                CreateTool("bribe_envelope", "\u4fe1\u5c01", ToolCategory.Bribe, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Security, GridCellType.Floor }, ToolEffectType.BribeSecurity, 10f, 0.4f),
-                CreateTool("boiling_water", "\u5f00\u6c34", ToolCategory.Destroy, ToolTriggerTiming.OnManualResolve, ToolTriggerAreaMode.ExactOffsets, true, false, new[] { GridCellType.Floor, GridCellType.Warehouse }, ToolEffectType.DestroyObject, 5f, 0f, false)
+                CreateTool("clown_box", "\u5c0f\u4e11\u76d2", "Spooks one customer into leaving. Place near aisles for maximum effect.", ToolCategory.Scare, ToolTriggerTiming.OnCustomerPassFrontCell, ToolTriggerAreaMode.ExactOffsets, true, true, new[] { GridCellType.Wall, GridCellType.Floor }, ToolEffectType.ScareCustomerAway, 10f, 0.35f),
+                CreateTool("fake_goods", "\u5047\u8d27", "Replaces a customer's purchase with defective goods. Works in warehouse areas.", ToolCategory.FakeGoods, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Warehouse }, ToolEffectType.ReplaceGoodsWithFake, 8f, 0.2f),
+                CreateTool("bribe_envelope", "\u4fe1\u5c01", "Bribes a security guard to look the other way. Place along patrol routes.", ToolCategory.Bribe, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Security, GridCellType.Floor }, ToolEffectType.BribeSecurity, 10f, 0.4f),
+                CreateTool("boiling_water", "\u5f00\u6c34", "Destroys a nearby object on command. Manual trigger - use with precision.", ToolCategory.Destroy, ToolTriggerTiming.OnManualResolve, ToolTriggerAreaMode.ExactOffsets, true, false, new[] { GridCellType.Floor, GridCellType.Warehouse }, ToolEffectType.DestroyObject, 5f, 0f, false)
             };
         }
 
@@ -213,6 +213,7 @@ namespace CIGAgamejam
         private static ToolConfig CreateTool(
             string id,
             string displayName,
+            string description,
             ToolCategory category,
             ToolTriggerTiming timing,
             ToolTriggerAreaMode triggerAreaMode,
@@ -228,6 +229,7 @@ namespace CIGAgamejam
             config.hideFlags = HideFlags.DontSave;
             SetField(config, "_id", id);
             SetField(config, "_displayName", displayName);
+            SetField(config, "_description", description);
             SetField(config, "_category", category);
             SetField(config, "_allowedCellTypes", allowedCells);
             SetField(config, "_footprint", new[] { Vector2Int.zero });
