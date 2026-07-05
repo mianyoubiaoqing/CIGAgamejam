@@ -112,10 +112,14 @@ namespace CIGAgamejam
         private float ResolveCellSize()
         {
             Tilemap tilemap = CoordinateTilemap;
-            if (tilemap != null && tilemap.layoutGrid != null)
+            if (tilemap != null)
             {
-                Vector3 size = tilemap.layoutGrid.cellSize;
-                float maxAxis = Mathf.Max(Mathf.Abs(size.x), Mathf.Abs(size.y));
+                Vector3 center = tilemap.GetCellCenterWorld(Vector3Int.zero);
+                Vector3 right = tilemap.GetCellCenterWorld(Vector3Int.right);
+                Vector3 up = tilemap.GetCellCenterWorld(Vector3Int.up);
+                float maxAxis = Mathf.Max(
+                    Vector3.Distance(center, right),
+                    Vector3.Distance(center, up));
                 if (maxAxis > 0f)
                     return maxAxis;
             }

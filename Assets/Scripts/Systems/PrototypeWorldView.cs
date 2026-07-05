@@ -20,8 +20,8 @@ namespace CIGAgamejam
         [Header("Actor Art")]
         [SerializeField] private GameObject[] _customerPrefabs;
         [SerializeField] private GameObject _securityPrefab;
-        [SerializeField, Min(0.1f)] private float _customerHeightInCells = 0.82f;
-        [SerializeField, Min(0.1f)] private float _securityHeightInCells = 0.9f;
+        [SerializeField, Min(0.1f)] private float _customerHeightInCells = 1.394f;
+        [SerializeField, Min(0.1f)] private float _securityHeightInCells = 1.53f;
         [Header("Security Patrol Path")]
         [SerializeField, Min(0.02f)] private float _patrolPathMarkerSizeRatio = 0.06f;
         [SerializeField] private Color _patrolPathColor = new(0.5f, 0.5f, 0.5f, 0.35f);
@@ -479,6 +479,7 @@ namespace CIGAgamejam
                 marker = prefab != null
                     ? CreateActor(prefab, $"Customer {e.CustomerId}", targetPosition, CellSize * _customerHeightInCells, 10)
                     : CreateSquare($"Customer {e.CustomerId}", targetPosition, CellSize * _customerMarkerSizeRatio, ResolveCustomerColor(e.State), 10);
+                RemoveSmoothMover(marker);
                 _customerMarkers[e.CustomerId] = marker;
             }
 
@@ -579,9 +580,11 @@ namespace CIGAgamejam
             {
                 int cellX = Mathf.FloorToInt(gridX);
                 int cellY = Mathf.FloorToInt(gridY);
-                Vector3 cellCenter = coordinateTilemap.GetCellCenterWorld(new Vector3Int(cellX, cellY, 0));
-                Vector3 cellSize = coordinateTilemap.layoutGrid != null ? coordinateTilemap.layoutGrid.cellSize : Vector3.one;
-                return cellCenter + new Vector3((gridX - cellX) * cellSize.x, (gridY - cellY) * cellSize.y, 0f);
+                Vector3Int cell = new(cellX, cellY, 0);
+                Vector3 cellCenter = coordinateTilemap.GetCellCenterWorld(cell);
+                Vector3 xStep = coordinateTilemap.GetCellCenterWorld(cell + Vector3Int.right) - cellCenter;
+                Vector3 yStep = coordinateTilemap.GetCellCenterWorld(cell + Vector3Int.up) - cellCenter;
+                return cellCenter + xStep * (gridX - cellX) + yStep * (gridY - cellY);
             }
 
             return _tilemapBridge.CellToWorld(new GridPosition(Mathf.FloorToInt(gridX), Mathf.FloorToInt(gridY)));
@@ -660,6 +663,16 @@ namespace CIGAgamejam
             }
 
             marker.transform.position = targetPosition;
+        }
+
+        private static void RemoveSmoothMover(GameObject marker)
+        {
+            if (marker == null)
+                return;
+
+            PrototypeSmoothMover mover = marker.GetComponent<PrototypeSmoothMover>();
+            if (mover != null)
+                Destroy(mover);
         }
 
         private static Color ResolveCustomerColor(CustomerState state)

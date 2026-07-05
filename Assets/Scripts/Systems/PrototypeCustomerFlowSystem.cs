@@ -171,20 +171,13 @@ namespace CIGAgamejam
                 if (moving.Context.HasLeftStore)
                 {
                     _activeCustomers[index] = moving;
+                    PublishCustomerPosition(moving.Context, moving.Context.Position.X, moving.Context.Position.Y);
                     return;
                 }
             }
 
-            int nextRouteIndex = Mathf.Min(moving.RouteIndex + 1, lastRouteIndex);
-            float segmentProgress = moving.Progress - moving.RouteIndex;
-            GridPosition from = route[moving.RouteIndex];
-            GridPosition to = route[nextRouteIndex];
-            float gridX = Mathf.Lerp(from.X, to.X, segmentProgress);
-            float gridY = Mathf.Lerp(from.Y, to.Y, segmentProgress);
-
             _activeCustomers[index] = moving;
-            EventBus<OnPrototypeCustomerMoved>.Publish(
-                new OnPrototypeCustomerMoved(moving.Context.CustomerId, moving.Context.Position, gridX, gridY, moving.Context.State));
+            PublishCustomerPosition(moving.Context, route, moving.RouteIndex, moving.Progress);
 
             if (moving.Progress >= lastRouteIndex)
             {
@@ -246,16 +239,8 @@ namespace CIGAgamejam
             moving.EscapeRouteIndex = Mathf.Min(reachedRouteIndex, lastRouteIndex);
             moving.Context.Position = moving.EscapeRoute[moving.EscapeRouteIndex];
 
-            int nextRouteIndex = Mathf.Min(moving.EscapeRouteIndex + 1, lastRouteIndex);
-            float segmentProgress = moving.EscapeProgress - moving.EscapeRouteIndex;
-            GridPosition from = moving.EscapeRoute[moving.EscapeRouteIndex];
-            GridPosition to = moving.EscapeRoute[nextRouteIndex];
-            float gridX = Mathf.Lerp(from.X, to.X, segmentProgress);
-            float gridY = Mathf.Lerp(from.Y, to.Y, segmentProgress);
-
             _activeCustomers[index] = moving;
-            EventBus<OnPrototypeCustomerMoved>.Publish(
-                new OnPrototypeCustomerMoved(moving.Context.CustomerId, moving.Context.Position, gridX, gridY, moving.Context.State));
+            PublishCustomerPosition(moving.Context, moving.EscapeRoute, moving.EscapeRouteIndex, moving.EscapeProgress);
 
             if (moving.EscapeProgress >= lastRouteIndex)
                 RemoveCustomer(index);
@@ -267,6 +252,36 @@ namespace CIGAgamejam
             moving.EscapeProgress = 0f;
             moving.EscapeRouteIndex = 0;
             moving.EscapeRoute = BuildEscapeRoute(moving.Context.Position);
+        }
+
+        private static void PublishCustomerPosition(
+            CustomerContext customer,
+            IReadOnlyList<GridPosition> route,
+            int routeIndex,
+            float progress)
+        {
+            if (customer == null || route == null || route.Count == 0)
+                return;
+
+            int clampedRouteIndex = Mathf.Clamp(routeIndex, 0, route.Count - 1);
+            int nextRouteIndex = Mathf.Min(clampedRouteIndex + 1, route.Count - 1);
+            float segmentProgress = Mathf.Clamp01(progress - clampedRouteIndex);
+            GridPosition from = route[clampedRouteIndex];
+            GridPosition to = route[nextRouteIndex];
+            float gridX = Mathf.Lerp(from.X, to.X, segmentProgress);
+            float gridY = Mathf.Lerp(from.Y, to.Y, segmentProgress);
+            PublishCustomerPosition(customer, gridX, gridY);
+        }
+
+        private static void PublishCustomerPosition(CustomerContext customer, float gridX, float gridY)
+        {
+            EventBus<OnPrototypeCustomerMoved>.Publish(
+                new OnPrototypeCustomerMoved(
+                    customer.CustomerId,
+                    customer.Position,
+                    gridX,
+                    gridY,
+                    customer.State));
         }
 
         private List<GridPosition> BuildEscapeRoute(GridPosition from)

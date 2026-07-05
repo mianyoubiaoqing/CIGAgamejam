@@ -15781,7 +15781,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 824210252}
@@ -16063,8 +16063,8 @@ MonoBehaviour:
   - {fileID: 7404359968199720063, guid: 1a1514de2bec28941aa468e0d48c456a, type: 3}
   - {fileID: 2276606670627846334, guid: 30435ecfe4489d04195c5847fbc73703, type: 3}
   _securityPrefab: {fileID: 8478204302627899022, guid: 914dda16fbc71b74f962911bc1e5d50f, type: 3}
-  _customerHeightInCells: 0.82
-  _securityHeightInCells: 0.9
+  _customerHeightInCells: 1.394
+  _securityHeightInCells: 1.53
   _patrolPathMarkerSizeRatio: 0.06
   _patrolPathColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.35}
   _warehouseTilemap: {fileID: 392454818}
@@ -21457,7 +21457,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1730896812}
