@@ -557,7 +557,7 @@ namespace CIGAgamejam
             SecurityAnimationController animationController =
                 _securityMarker.GetComponentInChildren<SecurityAnimationController>();
             if (animationController != null)
-                animationController.SetForceMoveLoop(_currentPhase == GamePhase.DaySimulation);
+                animationController.SetForceMoveLoop(false);
         }
 
         private void ClearPatrolPathMarkers()

@@ -1320,11 +1320,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[2].additionalEvents.Array.size
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].additionalEvents.Array.size
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[0].entries.Array.data[0].volume
@@ -1695,6 +1695,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].additionalEvents.Array.data[0].eventName
+      value: CustomerScared
+      objectReference: {fileID: 0}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[2].additionalEvents.Array.data[0].eventName
       value: QRCodeTriggered
       objectReference: {fileID: 0}
@@ -1709,6 +1713,10 @@ PrefabInstance:
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[2].additionalEvents.Array.data[3].eventName
       value: BoilingWaterTriggered
+      objectReference: {fileID: 0}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[2].additionalEvents.Array.data[4].eventName
+      value: CustomerAngered
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].entries.Array.data[0].stopEventComponent
@@ -1735,6 +1743,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 978933169}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[2].additionalEvents.Array.data[4].eventSource
+      value: 
+      objectReference: {fileID: 978933169}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].additionalEvents.Array.data[0].eventSource
+      value: 
+      objectReference: {fileID: 978933169}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[2].additionalEvents.Array.data[0].eventComponent
       value: 
       objectReference: {fileID: 978933170}
@@ -1748,6 +1764,14 @@ PrefabInstance:
       objectReference: {fileID: 978933170}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[2].additionalEvents.Array.data[3].eventComponent
+      value: 
+      objectReference: {fileID: 978933170}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[2].additionalEvents.Array.data[4].eventComponent
+      value: 
+      objectReference: {fileID: 978933170}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].additionalEvents.Array.data[0].eventComponent
       value: 
       objectReference: {fileID: 978933170}
     m_RemovedComponents: []

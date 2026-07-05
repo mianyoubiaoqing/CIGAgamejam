@@ -73,7 +73,7 @@ namespace CIGAgamejam
             if (_animatorToDisable == null)
                 _animatorToDisable = GetComponentInChildren<Animator>();
             if (_mover == null)
-                _mover = GetComponent<PrototypeSmoothMover>();
+                _mover = GetComponentInParent<PrototypeSmoothMover>();
         }
 
         private bool IsMoving()
