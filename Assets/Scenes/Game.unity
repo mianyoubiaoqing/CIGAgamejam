@@ -16065,6 +16065,7 @@ MonoBehaviour:
   _securityPrefab: {fileID: 8478204302627899022, guid: 914dda16fbc71b74f962911bc1e5d50f, type: 3}
   _customerHeightInCells: 1.394
   _securityHeightInCells: 1.53
+  _customerReactionSeconds: 0.75
   _patrolPathMarkerSizeRatio: 0.06
   _patrolPathColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.35}
   _warehouseTilemap: {fileID: 392454818}
@@ -16276,7 +16277,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -275.3796, y: -239.66425}
+  m_AnchoredPosition: {x: -275.37958, y: -239.66422}
   m_SizeDelta: {x: -1259.3591, y: -705.38586}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &920951351
@@ -17588,6 +17589,8 @@ MonoBehaviour:
   _maxCustomersPerDay: 15
   _spawnInterval: 0.85
   _cellsPerSecond: 1.176
+  _customerReactionSeconds: 0.75
+  _escapeSpeedMultiplier: 2.4
   _smallLoopRouteChance: 0.15
   _minRandomWaypoints: 2
   _maxRandomWaypoints: 5
