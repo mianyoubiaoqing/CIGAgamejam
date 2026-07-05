@@ -15950,6 +15950,8 @@ MonoBehaviour:
   _phaseBarSprite: {fileID: 21300000, guid: 7a67594313b243d4cbf7a0f7a9b090b9, type: 3}
   _phasePointerSprite: {fileID: 21300000, guid: 8a6fc4764a33f6445987901ce72fa45a, type: 3}
   _logPanelSprite: {fileID: 21300000, guid: 5d155d2d3a1c2104ca83155dc20fb844, type: 3}
+  _guideSprite: {fileID: 21300000, guid: aa27f27f19bcad547a76abfe854436b8, type: 3}
+  _initialGuideLockSeconds: 3
   _dayNightArcCenter: {x: 0, y: 0}
   _dayNightArcRadius: {x: 58, y: 38}
   _nightAngle: 155

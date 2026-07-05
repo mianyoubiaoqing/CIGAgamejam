@@ -24,6 +24,8 @@ namespace CIGAgamejam
         [SerializeField] private Sprite _phaseBarSprite;
         [SerializeField] private Sprite _phasePointerSprite;
         [SerializeField] private Sprite _logPanelSprite;
+        [SerializeField] private Sprite _guideSprite;
+        [SerializeField, Min(0f)] private float _initialGuideLockSeconds = 3f;
         [Header("Day Night Arc")]
         [SerializeField] private Vector2 _dayNightArcCenter = Vector2.zero;
         [SerializeField] private Vector2 _dayNightArcRadius = new(58f, 38f);
@@ -53,10 +55,14 @@ namespace CIGAgamejam
         private RectTransform _dayNightNeedle;
         private RectTransform _toolMenuRoot;
         private RectTransform _actionButtonRoot;
+        private RectTransform _guideEntryRoot;
+        private GameObject _guideOverlay;
+        private Button _guideOverlayButton;
         private RectTransform _tooltipRoot;
         private Text _tooltipText;
         private Canvas _canvas;
         private Coroutine _dayNightPointerAnimation;
+        private Coroutine _guideDismissRoutine;
         private float _currentDayNightAngle;
         private Button _startDayButton;
         private Button _nextNightButton;
@@ -64,6 +70,8 @@ namespace CIGAgamejam
         private GameObject _resultPanel;
         private Text _resultText;
         private bool _hasGameStarted;
+        private bool _initialGuideShown;
+        private bool _guideCanDismiss;
         private int _currentDay = 1;
         private int _maxDays = 1;
         private int _inStoreCount;
@@ -89,6 +97,7 @@ namespace CIGAgamejam
             BuildTooltip(canvas);
             BuildResultPanel(canvas);
             BuildStartScreen(canvas);
+            BuildGuide(canvas);
             _hasGameStarted = _gamePhaseSystem != null && _gamePhaseSystem.CurrentPhase != GamePhase.None;
             SetHudVisible(_hasGameStarted);
             RefreshAll();
@@ -98,6 +107,7 @@ namespace CIGAgamejam
         {
             EnsureToolButtonsForInventory();
             RefreshAll();
+            TryShowInitialGuide();
         }
 
         private void OnEnable()
@@ -117,6 +127,7 @@ namespace CIGAgamejam
 
         private void OnDestroy()
         {
+            StopGuideDismissRoutine();
             EventBus<OnDayStarted>.Unsubscribe(HandleDayStarted);
             EventBus<OnGamePhaseChanged>.Unsubscribe(HandleGamePhaseChanged);
             EventBus<OnNightTurnStarted>.Unsubscribe(HandleNightTurnStarted);
@@ -193,6 +204,7 @@ namespace CIGAgamejam
 
             BuildToolButtons(_toolMenuRoot);
             BuildActionButtons(_actionButtonRoot);
+            BuildGuideEntryButton(canvas);
             ConfigureHudRaycasts(canvas.transform);
         }
 
@@ -246,6 +258,7 @@ namespace CIGAgamejam
             _nextNightButton = FindButton(_actionButtonRoot, "Next Night Button");
             BindActionButton(_startDayButton, () => _gamePhaseSystem?.EndNightAndStartDay());
             BindActionButton(_nextNightButton, () => _gamePhaseSystem?.StartNextNightOrFail());
+            BuildGuideEntryButton(canvas);
 
             return _confidenceText != null
                 && _flowText != null
@@ -345,6 +358,89 @@ namespace CIGAgamejam
             _toolCountTexts[tool] = label;
             _toolButtons[tool] = FindButton(buttonTransform, string.Empty);
             BindTooltip(buttonTransform, tool);
+        }
+
+        private void BuildGuideEntryButton(Canvas canvas)
+        {
+            if (canvas == null || _logPanelRoot == null || _guideEntryRoot != null)
+                return;
+
+            Transform existing = _logPanelRoot.Find("Guide Entry Button");
+            if (existing != null)
+            {
+                _guideEntryRoot = existing as RectTransform;
+                Button existingButton = FindButton(existing, string.Empty);
+                BindActionButton(existingButton, () => ShowGuide(0f));
+                return;
+            }
+
+            _guideEntryRoot = CreatePanel(
+                _logPanelRoot,
+                "Guide Entry Button",
+                new RectSpec(
+                    new Vector2(0.5f, 0f),
+                    new Vector2(0.5f, 0f),
+                    new Vector2(0f, -10f),
+                    new Vector2(58f, 58f),
+                    new Vector2(0.5f, 1f)),
+                new Color(1f, 1f, 1f, 1f));
+
+            Image image = _guideEntryRoot.GetComponent<Image>();
+            image.sprite = _guideSprite;
+            image.preserveAspect = true;
+            image.raycastTarget = true;
+
+            Button button = _guideEntryRoot.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(() => ShowGuide(0f));
+            _guideEntryRoot.SetAsLastSibling();
+        }
+
+        private void BuildGuide(Canvas canvas)
+        {
+            if (canvas == null || _guideOverlay != null)
+                return;
+
+            Transform existing = canvas.transform.Find("Guide Overlay");
+            if (existing != null)
+            {
+                _guideOverlay = existing.gameObject;
+                _guideOverlayButton = existing.GetComponent<Button>();
+                if (_guideOverlayButton != null)
+                    BindActionButton(_guideOverlayButton, TryDismissGuide);
+                _guideOverlay.SetActive(false);
+                return;
+            }
+
+            RectTransform overlay = CreatePanel(
+                canvas.transform,
+                "Guide Overlay",
+                new RectSpec(Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero),
+                new Color(0f, 0f, 0f, 0.72f));
+            _guideOverlay = overlay.gameObject;
+
+            Image blocker = overlay.GetComponent<Image>();
+            blocker.raycastTarget = true;
+            _guideOverlayButton = overlay.gameObject.AddComponent<Button>();
+            _guideOverlayButton.targetGraphic = blocker;
+            _guideOverlayButton.onClick.AddListener(TryDismissGuide);
+
+            RectTransform guideImage = CreatePanel(
+                overlay,
+                "Guide Image",
+                new RectSpec(
+                    new Vector2(0.5f, 0.5f),
+                    new Vector2(0.5f, 0.5f),
+                    Vector2.zero,
+                    new Vector2(960f, 600f),
+                    new Vector2(0.5f, 0.5f)),
+                Color.white);
+            Image image = guideImage.GetComponent<Image>();
+            image.sprite = _guideSprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+
+            _guideOverlay.SetActive(false);
         }
 
         private void BuildTooltip(Canvas canvas)
@@ -479,6 +575,57 @@ namespace CIGAgamejam
         {
             if (_tooltipRoot != null)
                 _tooltipRoot.gameObject.SetActive(false);
+        }
+
+        private void TryShowInitialGuide()
+        {
+            if (_initialGuideShown || _guideOverlay == null || _gamePhaseSystem == null)
+                return;
+
+            if (_gamePhaseSystem.CurrentPhase == GamePhase.None)
+                return;
+
+            _initialGuideShown = true;
+            ShowGuide(_initialGuideLockSeconds);
+        }
+
+        private void ShowGuide(float lockSeconds)
+        {
+            if (_guideOverlay == null)
+                return;
+
+            StopGuideDismissRoutine();
+            _guideCanDismiss = lockSeconds <= 0f;
+            _guideOverlay.SetActive(true);
+            _guideOverlay.transform.SetAsLastSibling();
+
+            if (!_guideCanDismiss)
+                _guideDismissRoutine = StartCoroutine(UnlockGuideDismissAfter(lockSeconds));
+        }
+
+        private IEnumerator UnlockGuideDismissAfter(float seconds)
+        {
+            yield return new WaitForSecondsRealtime(Mathf.Max(0f, seconds));
+            _guideCanDismiss = true;
+            _guideDismissRoutine = null;
+        }
+
+        private void TryDismissGuide()
+        {
+            if (!_guideCanDismiss || _guideOverlay == null)
+                return;
+
+            StopGuideDismissRoutine();
+            _guideOverlay.SetActive(false);
+        }
+
+        private void StopGuideDismissRoutine()
+        {
+            if (_guideDismissRoutine == null)
+                return;
+
+            StopCoroutine(_guideDismissRoutine);
+            _guideDismissRoutine = null;
         }
 
         private void BuildActionButtons(RectTransform bottomBar)
@@ -929,6 +1076,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             if (_topBarRoot != null) _topBarRoot.gameObject.SetActive(visible);
             if (_bottomBarRoot != null) _bottomBarRoot.gameObject.SetActive(visible);
             if (_logPanelRoot != null) _logPanelRoot.gameObject.SetActive(visible);
+            if (_guideEntryRoot != null) _guideEntryRoot.gameObject.SetActive(visible);
         }
 
         private void RefreshButtonStates()
@@ -971,6 +1119,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
 
             RefreshAll(false);
             AnimateDayNightPointer(e.PreviousPhase, e.NewPhase);
+            TryShowInitialGuide();
         }
 
         private void HandleNightTurnStarted(OnNightTurnStarted e) => RefreshAll();
