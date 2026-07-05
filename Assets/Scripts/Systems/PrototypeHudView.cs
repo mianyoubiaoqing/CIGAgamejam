@@ -169,7 +169,7 @@ namespace CIGAgamejam
             topLayout.childForceExpandHeight = true;
             topLayout.childForceExpandWidth = false;
 
-            _confidenceText = CreateLayoutText(topBar, "Favorability", "Favorability 100%", 16, TextAnchor.MiddleLeft, 140f);
+            _confidenceText = CreateLayoutText(topBar, "Favorability", "Consumer Confidence 100%", 16, TextAnchor.MiddleLeft, 140f);
             _flowText = CreateLayoutText(topBar, "Flow", "Traffic In Shop 0 Today 0", 16, TextAnchor.MiddleLeft, 300f);
             _phaseText = CreateLayoutText(topBar, "Phase", "Day 1/1 Night", 16, TextAnchor.MiddleLeft, 140f);
             _turnText = CreateLayoutText(topBar, "Turn", "Turn 1", 16, TextAnchor.MiddleLeft, 70f);
@@ -1005,7 +1005,7 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
             if (_confidenceText == null || _flowText == null || _phaseText == null || _turnText == null)
                 return;
 
-            _confidenceText.text = $"Favorability {_confidence:0}%";
+            _confidenceText.text = $"Consumer Confidence {_confidence:0}%";
             _flowText.text = $"Traffic In Shop {_inStoreCount} Today {_todayTotal}";
             GamePhase currentPhase = _gamePhaseSystem != null
                 ? _gamePhaseSystem.CurrentPhase
