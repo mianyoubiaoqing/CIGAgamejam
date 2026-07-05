@@ -19,6 +19,14 @@ namespace Kaki
         public static AudioPlayer Instance { get; private set; }
 
         [Serializable]
+        public enum AudioGroupTriggerMode
+        {
+            Single = 0,
+            Sequential = 1,
+            RandomNoRepeat = 2
+        }
+
+        [Serializable]
         public class Binding
         {
             [Tooltip("配置项")]
@@ -37,13 +45,21 @@ namespace Kaki
             // 事件名（C# event 或 UnityEvent 成员名）
             [Tooltip("事件名（C# event 或 UnityEvent 成员名）")]
             public string eventName;
+            [Tooltip("停止事件来源（用于 Loop / LoopWithIntro）")]
+            public UnityEngine.Object stopEventSource;
+            [Tooltip("停止事件名（用于 Loop / LoopWithIntro）")]
+            public string stopEventName;
 
             // 运行时缓存（用于解绑）
             [NonSerialized] public Delegate handler;
             [NonSerialized] public EventInfo eventInfo;
             [NonSerialized] public UnityEventBase unityEvent;
+            [NonSerialized] public Delegate stopHandler;
+            [NonSerialized] public EventInfo stopEventInfo;
+            [NonSerialized] public UnityEventBase stopUnityEvent;
             // 选择的具体组件（用于GameObject来源时的精确绑定）
             [HideInInspector] public Component eventComponent;
+            [HideInInspector] public Component stopEventComponent;
             // 运行时音量缓存（用于检测实时变化）
             [NonSerialized] public float lastVolume = -1f;
 
@@ -57,28 +73,60 @@ namespace Kaki
         [Serializable]
         public class AudioGroup
         {
+            [Tooltip("AudioGroup 名称")]
+            public string groupName = "Audio Group";
             // 该组统一的音频类型（BGM/SFX）
             [Tooltip("该组统一的音频类型（BGM/SFX）")]
             public AudioType audioType = AudioType.SFX;
+            [Tooltip("该组的事件触发方式")]
+            public AudioGroupTriggerMode triggerMode = AudioGroupTriggerMode.Single;
+            [Tooltip("该组统一的播放方式")]
+            public AudioPlayMode playMode = AudioPlayMode.Default;
+            [Tooltip("Group 级事件来源（可拖拽 GameObject 或任意组件）")]
+            public UnityEngine.Object eventSource;
+            [Tooltip("Group 级事件名（C# event 或 UnityEvent 成员名）")]
+            public string eventName;
+            [Tooltip("Group 级停止事件来源（用于 Loop / LoopWithIntro）")]
+            public UnityEngine.Object stopEventSource;
+            [Tooltip("Group 级停止事件名（用于 Loop / LoopWithIntro）")]
+            public string stopEventName;
             // 该组内的所有音频条目
             public List<Binding> entries = new List<Binding>();
+
+            [NonSerialized] public Delegate handler;
+            [NonSerialized] public EventInfo eventInfo;
+            [NonSerialized] public UnityEventBase unityEvent;
+            [NonSerialized] public Delegate stopHandler;
+            [NonSerialized] public EventInfo stopEventInfo;
+            [NonSerialized] public UnityEventBase stopUnityEvent;
+            [HideInInspector] public Component eventComponent;
+            [HideInInspector] public Component stopEventComponent;
+            [NonSerialized] public int nextSequentialIndex;
+            [NonSerialized] public List<int> randomOrder = new List<int>();
+            [NonSerialized] public int randomCursor;
+
+            public string DisplayName => string.IsNullOrWhiteSpace(groupName) ? "Audio Group" : groupName;
         }
 
         public readonly struct PlayableEntry
         {
             public readonly int GroupIndex;
             public readonly int EntryIndex;
+            public readonly string GroupName;
             public readonly string Label;
             public readonly AudioType AudioType;
             public readonly AudioPlayMode PlayMode;
+            public readonly AudioGroupTriggerMode TriggerMode;
 
-            public PlayableEntry(int groupIndex, int entryIndex, string label, AudioType audioType, AudioPlayMode playMode)
+            public PlayableEntry(int groupIndex, int entryIndex, string groupName, string label, AudioType audioType, AudioPlayMode playMode, AudioGroupTriggerMode triggerMode)
             {
                 GroupIndex = groupIndex;
                 EntryIndex = entryIndex;
+                GroupName = groupName;
                 Label = label;
                 AudioType = audioType;
                 PlayMode = playMode;
+                TriggerMode = triggerMode;
             }
         }
 
@@ -208,6 +256,26 @@ namespace Kaki
                     continue;
                 }
 
+                if (group.triggerMode != AudioGroupTriggerMode.Single)
+                {
+                    var representativeBinding = GetFirstPlayableBinding(group);
+                    if (representativeBinding == null)
+                    {
+                        continue;
+                    }
+
+                    string label = $"{group.triggerMode} - {group.DisplayName}";
+                    results.Add(new PlayableEntry(
+                        groupIndex,
+                        -1,
+                        group.DisplayName,
+                        label,
+                        group.audioType,
+                        GetEffectivePlayMode(group, representativeBinding),
+                        group.triggerMode));
+                    continue;
+                }
+
                 for (int entryIndex = 0; entryIndex < group.entries.Count; entryIndex++)
                 {
                     var binding = group.entries[entryIndex];
@@ -217,7 +285,7 @@ namespace Kaki
                     }
 
                     var label = string.IsNullOrWhiteSpace(binding.Name) ? binding.clip.name : binding.Name;
-                    results.Add(new PlayableEntry(groupIndex, entryIndex, label, group.audioType, binding.playMode));
+                    results.Add(new PlayableEntry(groupIndex, entryIndex, group.DisplayName, label, group.audioType, GetEffectivePlayMode(group, binding), group.triggerMode));
                 }
             }
 
@@ -259,7 +327,30 @@ namespace Kaki
             }
 
             var group = audioGroups[groupIndex];
-            if (group == null || group.entries == null || entryIndex < 0 || entryIndex >= group.entries.Count)
+            if (group == null || group.entries == null)
+            {
+                return false;
+            }
+
+            if (group.triggerMode != AudioGroupTriggerMode.Single)
+            {
+                int selectedIndex = GetNextPlayableEntryIndex(group);
+                if (selectedIndex < 0 || selectedIndex >= group.entries.Count)
+                {
+                    return false;
+                }
+
+                var selectedBinding = group.entries[selectedIndex];
+                if (selectedBinding == null || selectedBinding.clip == null)
+                {
+                    return false;
+                }
+
+                PlayEntry(selectedBinding, group.audioType, group.playMode);
+                return true;
+            }
+
+            if (entryIndex < 0 || entryIndex >= group.entries.Count)
             {
                 return false;
             }
@@ -279,8 +370,29 @@ namespace Kaki
         {
             EnsureGroups();
             SyncAllNames();
+            foreach (var group in audioGroups)
+            {
+                if (group == null)
+                {
+                    continue;
+                }
+
+                ResetGroupRuntimeState(group);
+                if (group.triggerMode == AudioGroupTriggerMode.Single)
+                {
+                    continue;
+                }
+
+                BindGroup(group);
+            }
+
             foreach (var item in EnumerateEntries())
             {
+                if (item.group.triggerMode != AudioGroupTriggerMode.Single)
+                {
+                    continue;
+                }
+
                 Bind(item.binding, item.audioType);
             }
         }
@@ -288,6 +400,14 @@ namespace Kaki
         // 批量解绑
         private void UnbindAll()
         {
+            if (audioGroups != null)
+            {
+                foreach (var group in audioGroups)
+                {
+                    UnbindGroup(group);
+                }
+            }
+
             foreach (var item in EnumerateEntries())
             {
                 Unbind(item.binding);
@@ -316,8 +436,86 @@ namespace Kaki
                     }
 
                     binding.SyncName();
+                    if (group.triggerMode != AudioGroupTriggerMode.Single)
+                    {
+                        binding.playMode = group.playMode;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(group.groupName))
+                {
+                    group.groupName = $"Audio Group {audioGroups.IndexOf(group) + 1}";
                 }
             }
+        }
+
+        private void BindGroup(AudioGroup group)
+        {
+            if (group == null || group.eventSource == null || string.IsNullOrWhiteSpace(group.eventName))
+            {
+                return;
+            }
+
+            TryBindEvent(
+                group.eventSource,
+                group.eventName,
+                group.eventComponent,
+                () => PlayNextEntryFromGroup(group),
+                ref group.eventInfo,
+                ref group.unityEvent,
+                ref group.handler,
+                ref group.eventComponent);
+
+            if (!RequiresStopEvent(group.playMode))
+            {
+                return;
+            }
+
+            TryBindEvent(
+                group.stopEventSource,
+                group.stopEventName,
+                group.stopEventComponent,
+                () => StopLoopByType(group.audioType),
+                ref group.stopEventInfo,
+                ref group.stopUnityEvent,
+                ref group.stopHandler,
+                ref group.stopEventComponent);
+        }
+
+        private void UnbindGroup(AudioGroup group)
+        {
+            if (group == null)
+            {
+                return;
+            }
+
+            if (group.eventInfo != null && group.handler != null && group.eventComponent != null)
+            {
+                group.eventInfo.RemoveEventHandler(group.eventComponent, group.handler);
+            }
+            else if (group.unityEvent != null && group.handler != null)
+            {
+                TryRemoveUnityEventListener(group.unityEvent, group.handler);
+            }
+
+            group.eventInfo = null;
+            group.unityEvent = null;
+            group.handler = null;
+            group.eventComponent = null;
+
+            if (group.stopEventInfo != null && group.stopHandler != null && group.stopEventComponent != null)
+            {
+                group.stopEventInfo.RemoveEventHandler(group.stopEventComponent, group.stopHandler);
+            }
+            else if (group.stopUnityEvent != null && group.stopHandler != null)
+            {
+                TryRemoveUnityEventListener(group.stopUnityEvent, group.stopHandler);
+            }
+
+            group.stopEventInfo = null;
+            group.stopUnityEvent = null;
+            group.stopHandler = null;
+            group.stopEventComponent = null;
         }
 
         // 绑定单个事件
@@ -328,48 +526,30 @@ namespace Kaki
                 return;
             }
 
-            var source = ResolveEventComponent(binding);
-            if (source == null)
+            TryBindEvent(
+                binding.eventSource,
+                binding.eventName,
+                binding.eventComponent,
+                () => PlayEntry(binding, audioType),
+                ref binding.eventInfo,
+                ref binding.unityEvent,
+                ref binding.handler,
+                ref binding.eventComponent);
+
+            if (!RequiresStopEvent(binding.playMode))
             {
                 return;
             }
-            var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            var sourceType = source.GetType();
 
-            // 优先绑定 C# event
-            var eventInfo = sourceType.GetEvent(binding.eventName, flags);
-            if (eventInfo != null)
-            {
-                var del = CreateDelegate(eventInfo.EventHandlerType, () => PlayEntry(binding, audioType));
-                if (del == null)
-                {
-                    Debug.LogWarning($"AudioPlayer: event '{binding.eventName}' has unsupported signature on {sourceType.Name}.", this);
-                    return;
-                }
-
-                eventInfo.AddEventHandler(source, del);
-                binding.eventInfo = eventInfo;
-                binding.handler = del;
-                binding.eventComponent = source;
-                return;
-            }
-
-            // 其次绑定 UnityEvent（字段或属性）
-            if (TryGetUnityEvent(source, binding.eventName, flags, out var unityEvent))
-            {
-                if (TryAddUnityEventListener(unityEvent, () => PlayEntry(binding, audioType), out var del))
-                {
-                    binding.unityEvent = unityEvent;
-                    binding.handler = del;
-                    binding.eventComponent = source;
-                    return;
-                }
-
-                Debug.LogWarning($"AudioPlayer: UnityEvent '{binding.eventName}' has unsupported signature on {sourceType.Name}.", this);
-                return;
-            }
-
-            Debug.LogWarning($"AudioPlayer: event '{binding.eventName}' not found on {sourceType.Name}.", this);
+            TryBindEvent(
+                binding.stopEventSource,
+                binding.stopEventName,
+                binding.stopEventComponent,
+                () => StopLoopByType(audioType),
+                ref binding.stopEventInfo,
+                ref binding.stopUnityEvent,
+                ref binding.stopHandler,
+                ref binding.stopEventComponent);
         }
 
         // 解绑单个事件
@@ -393,10 +573,24 @@ namespace Kaki
             binding.unityEvent = null;
             binding.handler = null;
             binding.eventComponent = null;
+
+            if (binding.stopEventInfo != null && binding.stopHandler != null && binding.stopEventComponent != null)
+            {
+                binding.stopEventInfo.RemoveEventHandler(binding.stopEventComponent, binding.stopHandler);
+            }
+            else if (binding.stopUnityEvent != null && binding.stopHandler != null)
+            {
+                TryRemoveUnityEventListener(binding.stopUnityEvent, binding.stopHandler);
+            }
+
+            binding.stopEventInfo = null;
+            binding.stopUnityEvent = null;
+            binding.stopHandler = null;
+            binding.stopEventComponent = null;
         }
 
         // 实际播放逻辑：根据类型走不同通道
-        private void PlayEntry(Binding binding, AudioType audioType)
+        private void PlayEntry(Binding binding, AudioType audioType, AudioPlayMode? overridePlayMode = null)
         {
             if (binding == null || binding.clip == null)
             {
@@ -409,7 +603,8 @@ namespace Kaki
                 return;
             }
 
-            switch (binding.playMode)
+            var playMode = overridePlayMode ?? binding.playMode;
+            switch (playMode)
             {
                 case AudioPlayMode.Default:
                     PlayDefaultByType(binding, audioType, manager);
@@ -428,7 +623,7 @@ namespace Kaki
                     break;
             }
 
-            UpdateCurrentEntry(binding, audioType);
+            UpdateCurrentEntry(binding, audioType, playMode);
         }
 
         private void PlayTrigger(Binding binding, AudioType audioType, AudioManager manager)
@@ -477,7 +672,7 @@ namespace Kaki
             }
         }
 
-        private void UpdateCurrentEntry(Binding binding, AudioType audioType)
+        private void UpdateCurrentEntry(Binding binding, AudioType audioType, AudioPlayMode playMode)
         {
             if (binding == null)
             {
@@ -486,7 +681,7 @@ namespace Kaki
 
             binding.lastVolume = binding.volume;
 
-            if (binding.playMode == AudioPlayMode.Default)
+            if (playMode == AudioPlayMode.Default)
             {
                 if (audioType == AudioType.BGM)
                 {
@@ -500,7 +695,7 @@ namespace Kaki
             }
 
             if (audioType == AudioType.BGM &&
-                (binding.playMode == AudioPlayMode.Loop || binding.playMode == AudioPlayMode.LoopWithIntro))
+                (playMode == AudioPlayMode.Loop || playMode == AudioPlayMode.LoopWithIntro))
             {
                 currentBgmEntry = binding;
                 currentDefaultBgmEntry = null;
@@ -508,7 +703,7 @@ namespace Kaki
             }
 
             if (audioType == AudioType.SFX &&
-                (binding.playMode == AudioPlayMode.Loop || binding.playMode == AudioPlayMode.LoopWithIntro))
+                (playMode == AudioPlayMode.Loop || playMode == AudioPlayMode.LoopWithIntro))
             {
                 currentSfxLoopEntry = binding;
                 currentDefaultSfxEntry = null;
@@ -524,11 +719,161 @@ namespace Kaki
 
             if (audioGroups.Count > 0)
             {
+                for (int i = 0; i < audioGroups.Count; i++)
+                {
+                    var group = audioGroups[i];
+                    if (group == null)
+                    {
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(group.groupName))
+                    {
+                        group.groupName = $"Audio Group {i + 1}";
+                    }
+
+                    if (group.entries == null)
+                    {
+                        group.entries = new List<Binding>();
+                    }
+
+                    if (group.randomOrder == null)
+                    {
+                        group.randomOrder = new List<int>();
+                    }
+                }
+
                 return;
             }
         }
 
-        private IEnumerable<(Binding binding, AudioType audioType)> EnumerateEntries()
+        private void PlayNextEntryFromGroup(AudioGroup group)
+        {
+            if (group == null || group.triggerMode == AudioGroupTriggerMode.Single)
+            {
+                return;
+            }
+
+            int entryIndex = GetNextPlayableEntryIndex(group);
+            if (entryIndex < 0 || group.entries == null || entryIndex >= group.entries.Count)
+            {
+                return;
+            }
+
+            var binding = group.entries[entryIndex];
+            if (binding == null || binding.clip == null)
+            {
+                return;
+            }
+
+            PlayEntry(binding, group.audioType, group.playMode);
+        }
+
+        private int GetNextPlayableEntryIndex(AudioGroup group)
+        {
+            if (group == null || group.entries == null || group.entries.Count == 0)
+            {
+                return -1;
+            }
+
+            var playableIndices = new List<int>();
+            for (int i = 0; i < group.entries.Count; i++)
+            {
+                var binding = group.entries[i];
+                if (binding != null && binding.clip != null)
+                {
+                    playableIndices.Add(i);
+                }
+            }
+
+            if (playableIndices.Count == 0)
+            {
+                return -1;
+            }
+
+            if (group.triggerMode == AudioGroupTriggerMode.Sequential)
+            {
+                int selected = playableIndices[group.nextSequentialIndex % playableIndices.Count];
+                group.nextSequentialIndex = (group.nextSequentialIndex + 1) % playableIndices.Count;
+                return selected;
+            }
+
+            if (group.triggerMode == AudioGroupTriggerMode.RandomNoRepeat)
+            {
+                if (group.randomOrder == null)
+                {
+                    group.randomOrder = new List<int>();
+                }
+
+                bool needsRefresh = group.randomOrder.Count != playableIndices.Count || group.randomCursor >= group.randomOrder.Count;
+                if (!needsRefresh)
+                {
+                    for (int i = 0; i < playableIndices.Count; i++)
+                    {
+                        if (!group.randomOrder.Contains(playableIndices[i]))
+                        {
+                            needsRefresh = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (needsRefresh)
+                {
+                    group.randomOrder.Clear();
+                    group.randomOrder.AddRange(playableIndices);
+                    Shuffle(group.randomOrder);
+                    group.randomCursor = 0;
+                }
+
+                int selected = group.randomOrder[group.randomCursor];
+                group.randomCursor++;
+                if (group.randomCursor >= group.randomOrder.Count)
+                {
+                    group.randomCursor = group.randomOrder.Count;
+                }
+
+                return selected;
+            }
+
+            return playableIndices[0];
+        }
+
+        private static void Shuffle(List<int> values)
+        {
+            if (values == null)
+            {
+                return;
+            }
+
+            for (int i = values.Count - 1; i > 0; i--)
+            {
+                int swapIndex = UnityEngine.Random.Range(0, i + 1);
+                (values[i], values[swapIndex]) = (values[swapIndex], values[i]);
+            }
+        }
+
+        private static void ResetGroupRuntimeState(AudioGroup group)
+        {
+            if (group == null)
+            {
+                return;
+            }
+
+            group.nextSequentialIndex = 0;
+            if (group.randomOrder == null)
+            {
+                group.randomOrder = new List<int>();
+            }
+            else
+            {
+                group.randomOrder.Clear();
+            }
+
+            group.randomCursor = 0;
+        }
+
+        private IEnumerable<(AudioGroup group, Binding binding, AudioType audioType)> EnumerateEntries()
         {
             if (audioGroups == null)
             {
@@ -550,7 +895,7 @@ namespace Kaki
                         continue;
                     }
 
-                    yield return (binding, type);
+                    yield return (group, binding, type);
                 }
             }
         }
@@ -578,6 +923,58 @@ namespace Kaki
             return false;
         }
 
+        private static Binding GetFirstPlayableBinding(AudioGroup group)
+        {
+            if (group == null || group.entries == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < group.entries.Count; i++)
+            {
+                var binding = group.entries[i];
+                if (binding != null && binding.clip != null)
+                {
+                    return binding;
+                }
+            }
+
+            return null;
+        }
+
+        private static AudioPlayMode GetEffectivePlayMode(AudioGroup group, Binding binding)
+        {
+            if (group != null && group.triggerMode != AudioGroupTriggerMode.Single)
+            {
+                return group.playMode;
+            }
+
+            return binding != null ? binding.playMode : AudioPlayMode.Default;
+        }
+
+        private static bool RequiresStopEvent(AudioPlayMode playMode)
+        {
+            return playMode == AudioPlayMode.Loop || playMode == AudioPlayMode.LoopWithIntro;
+        }
+
+        private void StopLoopByType(AudioType audioType)
+        {
+            var manager = AudioManager.Instance;
+            if (manager == null)
+            {
+                return;
+            }
+
+            if (audioType == AudioType.BGM)
+            {
+                manager.StopBGM();
+            }
+            else
+            {
+                manager.StopSFX();
+            }
+        }
+
         // 从绑定中解析实际的事件组件：
         // 1) 若拖入的是组件，直接使用
         // 2) 若拖入的是GameObject，则在其所有组件中查找包含该事件名的组件
@@ -588,18 +985,23 @@ namespace Kaki
                 return null;
             }
 
-            if (binding.eventComponent != null)
+            return ResolveEventComponent(binding.eventSource, binding.eventName, binding.eventComponent);
+        }
+
+        private static Component ResolveEventComponent(UnityEngine.Object eventSource, string eventName, Component cachedComponent)
+        {
+            if (cachedComponent != null)
             {
-                return binding.eventComponent;
+                return cachedComponent;
             }
 
-            if (binding.eventSource is Component component)
+            if (eventSource is Component component)
             {
                 return component;
             }
 
-            var go = binding.eventSource as GameObject;
-            if (go == null || string.IsNullOrWhiteSpace(binding.eventName))
+            var go = eventSource as GameObject;
+            if (go == null || string.IsNullOrWhiteSpace(eventName))
             {
                 return null;
             }
@@ -617,13 +1019,10 @@ namespace Kaki
                 }
 
                 var type = comp.GetType();
-                bool hasEvent = type.GetEvent(binding.eventName, flags) != null;
-                if (!hasEvent)
+                bool hasEvent = type.GetEvent(eventName, flags) != null;
+                if (!hasEvent && TryGetUnityEvent(comp, eventName, flags, out _))
                 {
-                    if (TryGetUnityEvent(comp, binding.eventName, flags, out _))
-                    {
-                        hasEvent = true;
-                    }
+                    hasEvent = true;
                 }
 
                 if (!hasEvent)
@@ -640,10 +1039,67 @@ namespace Kaki
 
             if (matchCount > 1)
             {
-                Debug.LogWarning($"AudioPlayer: multiple components on '{go.name}' contain event '{binding.eventName}', using the first match.");
+                Debug.LogWarning($"AudioPlayer: multiple components on '{go.name}' contain event '{eventName}', using the first match.");
             }
 
             return firstMatch;
+        }
+
+        private void TryBindEvent(
+            UnityEngine.Object eventSource,
+            string eventName,
+            Component cachedComponent,
+            Action callback,
+            ref EventInfo eventInfo,
+            ref UnityEventBase unityEvent,
+            ref Delegate handler,
+            ref Component eventComponent)
+        {
+            if (eventSource == null || string.IsNullOrWhiteSpace(eventName) || callback == null)
+            {
+                return;
+            }
+
+            var source = ResolveEventComponent(eventSource, eventName, cachedComponent);
+            if (source == null)
+            {
+                return;
+            }
+
+            var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+            var sourceType = source.GetType();
+            eventInfo = sourceType.GetEvent(eventName, flags);
+            if (eventInfo != null)
+            {
+                var del = CreateDelegate(eventInfo.EventHandlerType, callback);
+                if (del == null)
+                {
+                    Debug.LogWarning($"AudioPlayer: event '{eventName}' has unsupported signature on {sourceType.Name}.", this);
+                    eventInfo = null;
+                    return;
+                }
+
+                eventInfo.AddEventHandler(source, del);
+                handler = del;
+                eventComponent = source;
+                return;
+            }
+
+            if (TryGetUnityEvent(source, eventName, flags, out unityEvent))
+            {
+                if (TryAddUnityEventListener(unityEvent, callback, out var del))
+                {
+                    handler = del;
+                    eventComponent = source;
+                    return;
+                }
+
+                Debug.LogWarning($"AudioPlayer: UnityEvent '{eventName}' has unsupported signature on {sourceType.Name}.", this);
+                unityEvent = null;
+                return;
+            }
+
+            Debug.LogWarning($"AudioPlayer: event '{eventName}' not found on {sourceType.Name}.", this);
         }
 
         // 使用反射为 UnityEvent 添加监听
