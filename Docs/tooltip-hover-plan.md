@@ -64,9 +64,9 @@ public string Description => _description;
 
 #### 3c. 定位逻辑
 
-提示框锚点为 `(0.5f, 1f)`（底部居中），按钮的 RectTransform 锚点为 `(0f, 0.5f)`（左中）。  
-PointerEnter 时计算提示框出现在按钮正上方 10px 偏移处。  
-提示框尺寸约 200×90，自适应文本换行。
+提示框 pivot 为 `(0.5f, 0f)`（底部居中），从底部中心向上展开。  
+PointerEnter 时通过 `GetWorldCorners` + canvas 坐标转换定位在按钮正上方 10px 处，并进行 Canvas 边界 Clamp。  
+提示框尺寸 240×100，Text 使用 `ContentSizeFitter` 风格的贴边 offset 自适应。
 
 #### 3d. 关键注意事项
 

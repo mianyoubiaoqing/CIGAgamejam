@@ -7,6 +7,8 @@ namespace CIGAgamejam
 {
     public sealed class TilemapGridBridge : MonoBehaviour
     {
+        private const string BathroomDoorTag = "BATH_door";
+
         [SerializeField] private Tilemap _groundTilemap;
         [SerializeField] private LogicTilemapLayer[] _visualLayers = Array.Empty<LogicTilemapLayer>();
 
@@ -47,6 +49,21 @@ namespace CIGAgamejam
                 }
             }
 
+            Tilemap bathroomDoorTilemap = FindBathroomDoorTilemap();
+            if (bathroomDoorTilemap != null)
+            {
+                bounds = hasBounds
+                    ? Union(bounds, bathroomDoorTilemap.cellBounds)
+                    : bathroomDoorTilemap.cellBounds;
+                hasBounds = true;
+
+                foreach (Vector3Int cell in bathroomDoorTilemap.cellBounds.allPositionsWithin)
+                {
+                    if (!bathroomDoorTilemap.HasTile(cell)) continue;
+                    cells[new GridPosition(cell.x, cell.y)] = GridCellType.Restroom;
+                }
+            }
+
             return cells.Count > 0;
         }
 
@@ -78,6 +95,16 @@ namespace CIGAgamejam
             for (int i = 0; i < _visualLayers.Length; i++)
                 if (_visualLayers[i].Tilemap != null)
                     return _visualLayers[i].Tilemap;
+
+            return null;
+        }
+
+        private static Tilemap FindBathroomDoorTilemap()
+        {
+            Tilemap[] tilemaps = FindObjectsOfType<Tilemap>(true);
+            for (int i = 0; i < tilemaps.Length; i++)
+                if (tilemaps[i].gameObject.tag == BathroomDoorTag)
+                    return tilemaps[i];
 
             return null;
         }
