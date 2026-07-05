@@ -66,6 +66,16 @@ namespace CIGAgamejam
     {
     }
 
+    public readonly struct OnSecurityPositionBribed
+    {
+        public readonly GridPosition Position;
+
+        public OnSecurityPositionBribed(GridPosition position)
+        {
+            Position = position;
+        }
+    }
+
     public readonly struct OnToolInventoryChanged
     {
         public readonly ToolConfig Tool;

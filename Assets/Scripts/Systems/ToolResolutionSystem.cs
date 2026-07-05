@@ -360,6 +360,8 @@ namespace CIGAgamejam
             context.Customer.HasLeftStore = true;
             context.Customer.State = CustomerState.Scared;
             context.Customer.WasRemovedBySecurity = true;
+            EventBus<OnSecurityPositionBribed>.Publish(
+                new OnSecurityPositionBribed(context.Tool.Origin));
             EventBus<OnCustomerLeftStore>.Publish(
                 new OnCustomerLeftStore(context.Customer.CustomerId, ToolEffectType.BribeSecurity, CustomerState.Scared));
         }

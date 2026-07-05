@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,15 +7,22 @@ namespace CIGAgamejam
     public sealed class SecurityPatrolSystem : MonoBehaviour
     {
         [SerializeField] private GridSystem _gridSystem;
-        [SerializeField, Min(3)] private int _minPathLength = 4;
-        [SerializeField, Min(3)] private int _maxPathLength = 8;
-        [SerializeField, Min(0)] private int _visionRange = 1;
-        [SerializeField, Min(1)] private int _stepsPerTurn = 1;
+        [SerializeField, Min(3)] private int _minPathLength = 6;
+        [SerializeField, Min(3)] private int _maxPathLength = 10;
+        [SerializeField, Min(0)] private int _visionRange = 2;
+        [SerializeField, Min(1)] private int _stepsPerTurn = 2;
+
+        [Header("Day Patrol")]
+        [SerializeField] private bool _enableDayPatrol = true;
+        [SerializeField, Min(0.5f)] private float _dayPatrolInterval = 3f;
 
         private readonly List<GridPosition> _patrolPath = new();
+        private readonly HashSet<GridPosition> _bribedPositions = new();
         private int _patrolIndex;
         private GridPosition _currentPosition;
         private bool _hasConfigError;
+        private GamePhase _currentPhase = GamePhase.None;
+        private Coroutine _dayPatrolCoroutine;
 
         public GridPosition CurrentPosition => _currentPosition;
         public int VisionRange => _visionRange;
@@ -36,11 +44,14 @@ namespace CIGAgamejam
         private void OnEnable()
         {
             EventBus<OnGamePhaseChanged>.Subscribe(HandleGamePhaseChanged);
+            EventBus<OnSecurityPositionBribed>.Subscribe(HandleSecurityPositionBribed);
         }
 
         private void OnDestroy()
         {
+            StopDayPatrol();
             EventBus<OnGamePhaseChanged>.Unsubscribe(HandleGamePhaseChanged);
+            EventBus<OnSecurityPositionBribed>.Unsubscribe(HandleSecurityPositionBribed);
         }
 
         public void BeginNightPatrol()
@@ -71,7 +82,7 @@ namespace CIGAgamejam
             if (_hasConfigError || _gridSystem == null)
                 return;
 
-            List<GridPosition> candidates = CollectWalkableCandidates();
+            List<GridPosition> candidates = CollectWeightedCandidates();
             if (candidates.Count == 0)
                 return;
 
@@ -85,7 +96,7 @@ namespace CIGAgamejam
 
             for (int i = 1; i < targetLength; i++)
             {
-                List<GridPosition> neighbors = CollectWalkableUnvisitedNeighbors(current, visited);
+                List<GridPosition> neighbors = CollectWeightedWalkableUnvisitedNeighbors(current, visited);
                 if (neighbors.Count == 0)
                     break;
 
@@ -129,45 +140,109 @@ namespace CIGAgamejam
 
         private void HandleGamePhaseChanged(OnGamePhaseChanged e)
         {
+            _currentPhase = e.NewPhase;
+
             if (e.NewPhase == GamePhase.NightPlanning)
             {
+                StopDayPatrol();
+                _bribedPositions.Clear();
                 GenerateRandomPatrolPath();
                 ResetPositionRandomly();
                 PublishPatrolPathChanged();
+                PublishMoved();
+                CheckVisibleTools();
                 return;
             }
 
             if (e.NewPhase == GamePhase.DaySimulation)
             {
-                EventBus<OnSecurityPatrolPathCleared>.Publish(new OnSecurityPatrolPathCleared());
-                EventBus<OnSecurityPatrolCleared>.Publish(new OnSecurityPatrolCleared());
+                if (_enableDayPatrol)
+                {
+                    BeginNightPatrol();
+                    StartDayPatrol();
+                }
+                else
+                {
+                    EventBus<OnSecurityPatrolPathCleared>.Publish(new OnSecurityPatrolPathCleared());
+                    EventBus<OnSecurityPatrolCleared>.Publish(new OnSecurityPatrolCleared());
+                }
+                return;
             }
+
+            StopDayPatrol();
         }
 
-        private List<GridPosition> CollectWalkableCandidates()
+        private List<GridPosition> CollectWeightedCandidates()
         {
             var candidates = new List<GridPosition>();
             for (int y = _gridSystem.MinY; y < _gridSystem.MaxYExclusive; y++)
             for (int x = _gridSystem.MinX; x < _gridSystem.MaxXExclusive; x++)
             {
                 var position = new GridPosition(x, y);
-                if (_gridSystem.IsRouteWalkable(position))
+                if (!IsPatrolWalkable(position)) continue;
+
+                int weight = GetPatrolWeight(position);
+                for (int i = 0; i < weight; i++)
                     candidates.Add(position);
             }
 
             return candidates;
         }
 
-        private List<GridPosition> CollectWalkableUnvisitedNeighbors(GridPosition position, HashSet<GridPosition> visited)
+        private List<GridPosition> CollectWeightedWalkableUnvisitedNeighbors(
+            GridPosition position,
+            HashSet<GridPosition> visited)
         {
             var neighbors = new List<GridPosition>();
             foreach (GridPosition neighbor in GetNeighbors(position))
             {
-                if (!visited.Contains(neighbor) && _gridSystem.IsRouteWalkable(neighbor))
+                if (visited.Contains(neighbor) || !IsPatrolWalkable(neighbor))
+                    continue;
+
+                int weight = GetPatrolWeight(neighbor);
+                for (int i = 0; i < weight; i++)
                     neighbors.Add(neighbor);
             }
 
             return neighbors;
+        }
+
+        private bool IsPatrolWalkable(GridPosition position)
+        {
+            if (!_gridSystem.IsRouteWalkable(position))
+                return false;
+
+            if (!_gridSystem.TryGetCellType(position, out GridCellType cellType))
+                return false;
+
+            return cellType != GridCellType.Wall
+                && cellType != GridCellType.Warehouse
+                && cellType != GridCellType.Restroom
+                && cellType != GridCellType.FortuneTree
+                && cellType != GridCellType.Blocked;
+        }
+
+        private int GetPatrolWeight(GridPosition position)
+        {
+            int weight = HasAdjacentCellType(position, GridCellType.Wall)
+                || HasAdjacentCellType(position, GridCellType.Warehouse)
+                ? 3
+                : 1;
+
+            if (HasAdjacentCellType(position, GridCellType.Security))
+                weight = Mathf.Max(1, weight - 1);
+
+            return weight;
+        }
+
+        private bool HasAdjacentCellType(GridPosition position, GridCellType targetType)
+        {
+            foreach (GridPosition neighbor in GetNeighbors(position))
+                if (_gridSystem.TryGetCellType(neighbor, out GridCellType cellType)
+                    && cellType == targetType)
+                    return true;
+
+            return false;
         }
 
         private static IEnumerable<GridPosition> GetNeighbors(GridPosition position)
@@ -178,23 +253,69 @@ namespace CIGAgamejam
             yield return new GridPosition(position.X, position.Y - 1);
         }
 
+        private void StartDayPatrol()
+        {
+            StopDayPatrol();
+            _dayPatrolCoroutine = StartCoroutine(DayPatrolRoutine());
+        }
+
+        private IEnumerator DayPatrolRoutine()
+        {
+            while (_currentPhase == GamePhase.DaySimulation)
+            {
+                yield return new WaitForSeconds(Mathf.Max(0.5f, _dayPatrolInterval));
+                if (_currentPhase == GamePhase.DaySimulation)
+                    AdvancePatrolStep();
+            }
+
+            _dayPatrolCoroutine = null;
+        }
+
+        private void StopDayPatrol()
+        {
+            if (_dayPatrolCoroutine == null)
+                return;
+
+            StopCoroutine(_dayPatrolCoroutine);
+            _dayPatrolCoroutine = null;
+        }
+
+        private void HandleSecurityPositionBribed(OnSecurityPositionBribed e)
+        {
+            _bribedPositions.Add(e.Position);
+        }
+
         private void CheckVisibleTools()
         {
             for (int i = _gridSystem.PlacedTools.Count - 1; i >= 0; i--)
             {
                 PlacedTool tool = _gridSystem.PlacedTools[i];
                 if (tool == null || tool.IsDisabled || tool.IsExhausted) continue;
+                if (ToolIsProtectedByBribe(tool)) continue;
                 if (!ToolIsVisible(tool)) continue;
 
                 if (tool.Disable(ToolDisableReason.SecurityPatrol))
                 {
                     EventBus<OnToolDisabled>.Publish(new OnToolDisabled(tool, ToolDisableReason.SecurityPatrol));
                     EventBus<OnSecurityRemovedTool>.Publish(new OnSecurityRemovedTool(tool, _currentPosition));
+                    string message = _currentPhase == GamePhase.DaySimulation
+                        ? $"保安在日常巡逻中发现了 {tool.Config.DisplayName} 并拆除！"
+                        : $"保安在夜间巡逻时发现了 {tool.Config.DisplayName} 并拆除！";
                     EventBus<OnPrototypeLogMessage>.Publish(
-                        new OnPrototypeLogMessage($"保安发现并拆除了 {tool.Config.DisplayName}。"));
+                        new OnPrototypeLogMessage(message));
                     _gridSystem.RemoveToolFromBoard(tool);
                 }
             }
+        }
+
+        private bool ToolIsProtectedByBribe(PlacedTool tool)
+        {
+            GridPosition[] cells = tool.OccupiedCells;
+            for (int i = 0; i < cells.Length; i++)
+                if (_bribedPositions.Contains(cells[i]))
+                    return true;
+
+            return false;
         }
 
         private bool ToolIsVisible(PlacedTool tool)

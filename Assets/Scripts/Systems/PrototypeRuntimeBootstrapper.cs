@@ -64,8 +64,8 @@ namespace CIGAgamejam
                 new Vector2Int(3, 10),
                 new Vector2Int(2, 7)
             });
-            SetField(securityPatrolSystem, "_visionRange", 1);
-            SetField(securityPatrolSystem, "_stepsPerTurn", 1);
+            SetField(securityPatrolSystem, "_visionRange", 2);
+            SetField(securityPatrolSystem, "_stepsPerTurn", 2);
 
             SetField(inventorySystem, "_blackBossSupport", new[]
             {
