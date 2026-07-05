@@ -51,6 +51,14 @@ namespace CIGAgamejam
             SetField(routeSystem, "_checkout", new Vector2Int(1, 5));
             SetField(routeSystem, "_exit", new Vector2Int(0, 6));
             SetField(routeSystem, "_routeOverride", BuildCustomerLoopRoute());
+            SetField(routeSystem, "_detourWaypoints", new[]
+            {
+                new Vector2Int(4, 3),
+                new Vector2Int(6, 7),
+                new Vector2Int(3, 8),
+                new Vector2Int(4, 6)
+            });
+            SetField(routeSystem, "_detourChance", 0.4f);
 
             SetField(securityPatrolSystem, "_gridSystem", gridSystem);
             SetField(securityPatrolSystem, "_patrolPath", new[]

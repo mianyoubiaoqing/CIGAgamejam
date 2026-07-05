@@ -141,6 +141,12 @@ namespace CIGAgamejam
             IReadOnlyList<GridPosition> mainRoute = _routeSystem.CustomerRoute;
             IReadOnlyList<RouteSystem.RouteVariant> variants = _routeSystem.AvailableVariants;
 
+            if (Random.value < _routeSystem.DetourChance
+                && _routeSystem.TryBuildDetourRoute(out List<GridPosition> detourRoute))
+            {
+                return ValidateRouteContainsCheckout(detourRoute);
+            }
+
             for (int i = 0; i < variants.Count; i++)
             {
                 RouteSystem.RouteVariant variant = variants[i];
@@ -158,13 +164,13 @@ namespace CIGAgamejam
                     route.Add(mainRoute[routeIndex]);
                 for (int tailIndex = 0; tailIndex < variant.Tail.Count; tailIndex++)
                     route.Add(variant.Tail[tailIndex]);
-                return route;
+                return ValidateRouteContainsCheckout(route);
             }
 
-            return new List<GridPosition>(mainRoute);
+            return ValidateRouteContainsCheckout(new List<GridPosition>(mainRoute));
         }
 
-private void AdvanceCustomer(int index, float deltaTime)
+        private void AdvanceCustomer(int index, float deltaTime)
         {
             MovingCustomer moving = _activeCustomers[index];
             if (moving.Context.HasLeftStore)
@@ -203,7 +209,22 @@ private void AdvanceCustomer(int index, float deltaTime)
             if (moving.Progress >= lastRouteIndex)
             {
                 if (!moving.HasPurchased)
-                    _economySystem?.RecordCustomerPurchase(moving.Context);
+                {
+                    if (TryBuildCheckoutRecoveryRoute(moving.Context.Position, out List<GridPosition> recoveryRoute))
+                    {
+                        Debug.LogWarning(
+                            $"[PrototypeCustomerFlowSystem] Customer {moving.Context.CustomerId} reached route end without checkout. Rerouting to checkout.");
+                        moving.PersonalRoute = recoveryRoute;
+                        moving.RouteIndex = 0;
+                        moving.Progress = 0f;
+                        _activeCustomers[index] = moving;
+                        return;
+                    }
+
+                    Debug.LogError(
+                        $"[PrototypeCustomerFlowSystem] Customer {moving.Context.CustomerId} reached route end without checkout and no recovery route could be built.");
+                }
+
                 RemoveCustomer(index);
             }
         }
@@ -282,6 +303,32 @@ private void AdvanceCustomer(int index, float deltaTime)
             if (_routeSystem != null && !from.Equals(_routeSystem.Entrance))
                 _scratchEscapeRoute.Add(_routeSystem.Entrance);
             return new List<GridPosition>(_scratchEscapeRoute);
+        }
+
+        private List<GridPosition> ValidateRouteContainsCheckout(List<GridPosition> route)
+        {
+            if (route != null && route.Contains(_routeSystem.Checkout))
+                return route;
+
+            Debug.LogWarning("[PrototypeCustomerFlowSystem] Built customer route without checkout. Falling back to main route.");
+            return new List<GridPosition>(_routeSystem.CustomerRoute);
+        }
+
+        private bool TryBuildCheckoutRecoveryRoute(GridPosition from, out List<GridPosition> route)
+        {
+            route = null;
+            if (_routeSystem == null
+                || !_routeSystem.TryFindRoute(from, _routeSystem.Checkout, null, out List<GridPosition> toCheckout)
+                || !_routeSystem.TryFindRoute(_routeSystem.Checkout, _routeSystem.Exit, null, out List<GridPosition> toExit))
+            {
+                return false;
+            }
+
+            route = new List<GridPosition>(toCheckout.Count + toExit.Count - 1);
+            route.AddRange(toCheckout);
+            for (int i = 1; i < toExit.Count; i++)
+                route.Add(toExit[i]);
+            return route.Count > 0 && route.Contains(_routeSystem.Checkout);
         }
 
         private void RemoveCustomer(int index)

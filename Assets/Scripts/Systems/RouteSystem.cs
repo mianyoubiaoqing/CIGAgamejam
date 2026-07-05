@@ -22,6 +22,9 @@ namespace CIGAgamejam
         [SerializeField] private Vector2Int _checkout = new(5, 2);
         [SerializeField] private Vector2Int _exit = new(7, 2);
         [SerializeField] private Vector2Int[] _routeOverride;
+        [Header("Detour")]
+        [SerializeField] private Vector2Int[] _detourWaypoints = System.Array.Empty<Vector2Int>();
+        [SerializeField, Range(0f, 1f)] private float _detourChance = 0.4f;
 
         private readonly List<GridPosition> _customerRoute = new();
         private readonly List<RouteVariant> _routeVariants = new();
@@ -33,6 +36,7 @@ namespace CIGAgamejam
         public GridPosition Entrance => new(_entrance);
         public GridPosition Checkout => new(_checkout);
         public GridPosition Exit => new(_exit);
+        public float DetourChance => _detourChance;
 
         private void Awake()
         {
@@ -85,6 +89,56 @@ namespace CIGAgamejam
             }
 
             RebuildCustomerRoute();
+        }
+
+        public bool TryBuildDetourRoute(out List<GridPosition> route)
+        {
+            route = null;
+            if (_hasConfigError || _gridSystem == null || _detourWaypoints == null || _detourWaypoints.Length == 0)
+                return false;
+
+            int checkoutIndex = _customerRoute.IndexOf(Checkout);
+            if (checkoutIndex < 0)
+                return false;
+
+            var candidates = new List<GridPosition>(_detourWaypoints.Length);
+            for (int i = 0; i < _detourWaypoints.Length; i++)
+            {
+                var waypoint = new GridPosition(_detourWaypoints[i]);
+                if (waypoint.Equals(Entrance) || waypoint.Equals(Checkout) || waypoint.Equals(Exit))
+                    continue;
+                if (!_gridSystem.IsRouteWalkable(waypoint) || _reservedRouteBlocks.Contains(waypoint))
+                    continue;
+
+                candidates.Add(waypoint);
+            }
+
+            while (candidates.Count > 0)
+            {
+                int index = Random.Range(0, candidates.Count);
+                GridPosition waypoint = candidates[index];
+                candidates.RemoveAt(index);
+
+                if (!TryFindRoute(Entrance, waypoint, _reservedRouteBlocks, out List<GridPosition> toWaypoint)
+                    || !TryFindRoute(waypoint, Checkout, _reservedRouteBlocks, out List<GridPosition> toCheckout))
+                {
+                    continue;
+                }
+
+                var detourRoute = new List<GridPosition>(
+                    toWaypoint.Count + toCheckout.Count + _customerRoute.Count - checkoutIndex);
+                AppendRouteSegment(detourRoute, toWaypoint, false);
+                AppendRouteSegment(detourRoute, toCheckout, true);
+                AppendRouteSegment(detourRoute, _customerRoute, true, checkoutIndex);
+
+                if (!detourRoute.Contains(Checkout))
+                    continue;
+
+                route = detourRoute;
+                return true;
+            }
+
+            return false;
         }
 
         private bool TryBuildRouteOverride()
@@ -225,6 +279,23 @@ namespace CIGAgamejam
             return TryFindRoute(start, Exit, blockedCells, out List<GridPosition> toExit)
                 ? toExit
                 : null;
+        }
+
+        private static void AppendRouteSegment(
+            List<GridPosition> target,
+            IReadOnlyList<GridPosition> segment,
+            bool skipFirst,
+            int startIndex = 0)
+        {
+            int firstIndex = startIndex + (skipFirst ? 1 : 0);
+            for (int i = firstIndex; i < segment.Count; i++)
+            {
+                GridPosition next = segment[i];
+                if (target.Count > 0 && target[target.Count - 1].Equals(next))
+                    continue;
+
+                target.Add(next);
+            }
         }
 
         private IEnumerable<GridPosition> GetNeighbors(GridPosition position)
