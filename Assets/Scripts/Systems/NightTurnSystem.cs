@@ -45,7 +45,6 @@ namespace CIGAgamejam
                 _isNightActive = true;
                 EventBus<OnNightTurnStarted>.Publish(new OnNightTurnStarted(_currentTurn));
                 EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("进入夜晚: 选择道具并放置，避开保安巡逻视野。"));
-                _securityPatrolSystem?.BeginNightPatrol();
                 return;
             }
 

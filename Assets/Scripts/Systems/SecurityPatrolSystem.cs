@@ -57,10 +57,8 @@ namespace CIGAgamejam
         public void BeginNightPatrol()
         {
             if (_hasConfigError) return;
-            if (_patrolPath.Count == 0)
-                GenerateRandomPatrolPath();
-
-            ResetPosition();
+            GeneratePatrolPathFrom(_currentPosition);
+            _patrolIndex = 0;
             PublishPatrolPathChanged();
             PublishMoved();
             CheckVisibleTools();
@@ -106,6 +104,37 @@ namespace CIGAgamejam
             }
         }
 
+        public void GeneratePatrolPathFrom(GridPosition start)
+        {
+            _patrolPath.Clear();
+            if (_hasConfigError || _gridSystem == null)
+                return;
+
+            if (!TryResolvePatrolStart(start, out GridPosition current))
+                return;
+
+            int minLength = Mathf.Max(1, _minPathLength);
+            int maxLength = Mathf.Max(minLength, _maxPathLength);
+            int targetLength = Random.Range(minLength, maxLength + 1);
+
+            _patrolPath.Add(current);
+            var visited = new HashSet<GridPosition> { current };
+
+            for (int i = 1; i < targetLength; i++)
+            {
+                List<GridPosition> neighbors = CollectWeightedWalkableUnvisitedNeighbors(current, visited);
+                if (neighbors.Count == 0)
+                    break;
+
+                current = neighbors[Random.Range(0, neighbors.Count)];
+                _patrolPath.Add(current);
+                visited.Add(current);
+            }
+
+            _patrolIndex = 0;
+            _currentPosition = _patrolPath[0];
+        }
+
         public void AdvancePatrolTurn()
         {
             for (int i = 0; i < _stepsPerTurn; i++)
@@ -146,8 +175,7 @@ namespace CIGAgamejam
             {
                 StopDayPatrol();
                 _bribedPositions.Clear();
-                GenerateRandomPatrolPath();
-                ResetPositionRandomly();
+                GeneratePatrolPathFrom(_currentPosition);
                 PublishPatrolPathChanged();
                 PublishMoved();
                 CheckVisibleTools();
@@ -158,7 +186,10 @@ namespace CIGAgamejam
             {
                 if (_enableDayPatrol)
                 {
-                    BeginNightPatrol();
+                    GeneratePatrolPathFrom(_currentPosition);
+                    PublishPatrolPathChanged();
+                    PublishMoved();
+                    CheckVisibleTools();
                     StartDayPatrol();
                 }
                 else
@@ -170,6 +201,51 @@ namespace CIGAgamejam
             }
 
             StopDayPatrol();
+        }
+
+        private bool TryResolvePatrolStart(GridPosition requestedStart, out GridPosition start)
+        {
+            if (IsPatrolWalkable(requestedStart))
+            {
+                start = requestedStart;
+                return true;
+            }
+
+            if (TryFindNearestPatrolWalkable(requestedStart, out start))
+            {
+                Debug.LogWarning(
+                    $"[SecurityPatrolSystem] Patrol start {requestedStart} is not walkable. Using nearest walkable cell {start}.");
+                return true;
+            }
+
+            start = default;
+            Debug.LogError("[SecurityPatrolSystem] Could not find a walkable patrol start.");
+            return false;
+        }
+
+        private bool TryFindNearestPatrolWalkable(GridPosition origin, out GridPosition nearest)
+        {
+            nearest = default;
+            bool found = false;
+            int bestDistance = int.MaxValue;
+
+            for (int y = _gridSystem.MinY; y < _gridSystem.MaxYExclusive; y++)
+            for (int x = _gridSystem.MinX; x < _gridSystem.MaxXExclusive; x++)
+            {
+                var position = new GridPosition(x, y);
+                if (!IsPatrolWalkable(position))
+                    continue;
+
+                int distance = Mathf.Abs(position.X - origin.X) + Mathf.Abs(position.Y - origin.Y);
+                if (found && distance >= bestDistance)
+                    continue;
+
+                found = true;
+                bestDistance = distance;
+                nearest = position;
+            }
+
+            return found;
         }
 
         private List<GridPosition> CollectWeightedCandidates()
