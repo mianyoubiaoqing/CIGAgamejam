@@ -14,9 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: smith_agent
   _displayName: "\u53F2\u5BC6\u65AF\u4E13\u5458"
+  _description: 
   _category: 0
   _icon: {fileID: 21300000, guid: 1d8e9b21e63009b49bd9233b7417e5cd, type: 3}
-  _prefab: {fileID: 0}
+  _prefab: {fileID: 8161125473837441079, guid: 3dcfe5e9fede8f1468cd67e7ef5d746b, type: 3}
   _placementKind: 0
   _allowedCellTypes: 02000000
   _footprint:

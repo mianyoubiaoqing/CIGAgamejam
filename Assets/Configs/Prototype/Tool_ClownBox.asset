@@ -17,7 +17,7 @@ MonoBehaviour:
   _description: Spooks one customer into leaving. Place near aisles for maximum effect.
   _category: 2
   _icon: {fileID: 21300000, guid: d8c17040bc70c834f97d131a5bf0239d, type: 3}
-  _prefab: {fileID: 0}
+  _prefab: {fileID: 3517372010933775206, guid: 01dbc1d819a7713448064d96f5e5fbe4, type: 3}
   _placementKind: 1
   _allowedCellTypes: 01000000
   _footprint:

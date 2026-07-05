@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: fake_goods
   _displayName: "\u5047\u8D27"
-  _description: Replaces a customer's purchase with defective goods. Works in warehouse areas.
+  _description: Replaces a customer's purchase with defective goods. Works in warehouse
+    areas.
   _category: 3
   _icon: {fileID: 21300000, guid: 5d88c6498aa73d94196a27c489b55152, type: 3}
-  _prefab: {fileID: 0}
+  _prefab: {fileID: 6477574084570753627, guid: b56cb9fa5c432644789ccf182f92bf01, type: 3}
   _placementKind: 1
   _allowedCellTypes: 02000000
   _footprint:
