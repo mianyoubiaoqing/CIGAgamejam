@@ -16051,7 +16051,7 @@ MonoBehaviour:
   _routeSystem: {fileID: 835562132}
   _securityPatrolSystem: {fileID: 835562130}
   _tilemapBridge: {fileID: 835562134}
-  _actorMoveSpeed: 5
+  _actorMoveSpeed: 3.5
   _routeMarkerSizeRatio: 0.08
   _showRouteMarkers: 0
   _showAllWalkableRouteMarkers: 0
@@ -17584,8 +17584,8 @@ MonoBehaviour:
   _toolResolutionSystem: {fileID: 150997780}
   _economySystem: {fileID: 1210059815}
   _gamePhaseSystem: {fileID: 990416147}
-  _minCustomersPerDay: 5
-  _maxCustomersPerDay: 10
+  _minCustomersPerDay: 8
+  _maxCustomersPerDay: 15
   _spawnInterval: 0.85
   _cellsPerSecond: 1.176
   _smallLoopRouteChance: 0.15

@@ -15,6 +15,6 @@ MonoBehaviour:
   _startingRevenueIndex: 100
   _maximumRevenueIndex: 100
   _bankruptcyThreshold: 20
-  _successfulPurchaseFavorabilityDelta: 3
-  _scaredCustomerFavorabilityPenalty: 10
-  _angryCustomerFavorabilityPenalty: 5
+  _successfulPurchaseFavorabilityDelta: 2
+  _scaredCustomerFavorabilityPenalty: 6
+  _angryCustomerFavorabilityPenalty: 3

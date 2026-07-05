@@ -93,7 +93,7 @@ namespace CIGAgamejam
             SetField(worldView, "_gridSystem", gridSystem);
             SetField(worldView, "_routeSystem", routeSystem);
             SetField(worldView, "_securityPatrolSystem", securityPatrolSystem);
-            SetField(worldView, "_actorMoveSpeed", 5f);
+            SetField(worldView, "_actorMoveSpeed", 3.5f);
             SetField(worldView, "_showRouteMarkers", false);
             SetField(worldView, "_showAllWalkableRouteMarkers", false);
             SetField(worldView, "_customerMarkerSizeRatio", 0.22f);

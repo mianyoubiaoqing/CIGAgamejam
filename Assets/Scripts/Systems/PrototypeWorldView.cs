@@ -10,7 +10,7 @@ namespace CIGAgamejam
         [SerializeField] private RouteSystem _routeSystem;
         [SerializeField] private SecurityPatrolSystem _securityPatrolSystem;
         [SerializeField] private TilemapGridBridge _tilemapBridge;
-        [SerializeField, Min(0.1f)] private float _actorMoveSpeed = 5f;
+        [SerializeField, Min(0.1f)] private float _actorMoveSpeed = 3.5f;
         [SerializeField, Min(0.02f)] private float _routeMarkerSizeRatio = 0.08f;
         [SerializeField] private bool _showRouteMarkers = false;
         [SerializeField] private bool _showAllWalkableRouteMarkers = false;
@@ -44,6 +44,7 @@ namespace CIGAgamejam
         private GameObject _securityMarker;
         private GameObject _placementPreview;
         private SpriteRenderer _placementPreviewRenderer;
+        private GamePhase _currentPhase = GamePhase.NightPlanning;
 
         public float CellSize => ResolveCellSize();
 
@@ -66,6 +67,7 @@ namespace CIGAgamejam
             EventBus<OnPrototypeCustomerMoved>.Subscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Subscribe(HandleCustomerRemoved);
             EventBus<OnWorldObjectDestroyed>.Subscribe(HandleWorldObjectDestroyed);
+            EventBus<OnGamePhaseChanged>.Subscribe(HandleGamePhaseChanged);
         }
 
         private void OnDestroy()
@@ -81,6 +83,7 @@ namespace CIGAgamejam
             EventBus<OnPrototypeCustomerMoved>.Unsubscribe(HandleCustomerMoved);
             EventBus<OnPrototypeCustomerRemoved>.Unsubscribe(HandleCustomerRemoved);
             EventBus<OnWorldObjectDestroyed>.Unsubscribe(HandleWorldObjectDestroyed);
+            EventBus<OnGamePhaseChanged>.Unsubscribe(HandleGamePhaseChanged);
         }
 
         public bool TryWorldToGrid(Vector3 worldPosition, out GridPosition gridPosition)
@@ -526,10 +529,29 @@ namespace CIGAgamejam
                     ? CreateActor(_securityPrefab, "Security", targetPosition, CellSize * _securityHeightInCells, 9)
                     : CreateSquare("Security", targetPosition, CellSize * _securityMarkerSizeRatio, new Color(0.05f, 0.05f, 0.05f), 9);
                 AddSmoothMover(_securityMarker, targetPosition);
+                ApplySecurityAnimationPhase();
                 return;
             }
 
             MoveMarker(_securityMarker, targetPosition);
+            ApplySecurityAnimationPhase();
+        }
+
+        private void HandleGamePhaseChanged(OnGamePhaseChanged e)
+        {
+            _currentPhase = e.NewPhase;
+            ApplySecurityAnimationPhase();
+        }
+
+        private void ApplySecurityAnimationPhase()
+        {
+            if (_securityMarker == null)
+                return;
+
+            SecurityAnimationController animationController =
+                _securityMarker.GetComponentInChildren<SecurityAnimationController>();
+            if (animationController != null)
+                animationController.SetForceMoveLoop(_currentPhase == GamePhase.DaySimulation);
         }
 
         private void ClearPatrolPathMarkers()
