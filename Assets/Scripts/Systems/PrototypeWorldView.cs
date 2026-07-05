@@ -252,12 +252,22 @@ namespace CIGAgamejam
 
             ApplyToolTileFeedback(e.Tool);
 
-            GameObject marker = CreateSquare(
+            if (e.Tool.Config.Prefab == null)
+            {
+                Debug.LogError($"[PrototypeWorldView] Tool '{e.Tool.Config.DisplayName}' is missing Prefab. Assign ToolConfig.Prefab before placing it.");
+                return;
+            }
+
+            GameObject marker = CreateActor(
+                e.Tool.Config.Prefab,
                 $"Tool {e.Tool.InstanceId}",
                 GridToWorld(e.Tool.Origin) + new Vector3(0f, 0f, -0.14f),
-                CellSize * _toolMarkerSizeRatio,
-                new Color(0.95f, 0.28f, 0.18f),
+                CellSize * Mathf.Max(_toolMarkerSizeRatio, 0.72f),
                 8);
+
+            if (marker.GetComponentInChildren<SpriteRenderer>() == null)
+                Debug.LogError($"[PrototypeWorldView] Tool prefab '{e.Tool.Config.Prefab.name}' has no SpriteRenderer in children.");
+
             _toolMarkers[e.Tool] = marker;
         }
 
@@ -339,8 +349,9 @@ namespace CIGAgamejam
             if (e.Tool == null || !_toolMarkers.TryGetValue(e.Tool, out GameObject marker) || marker == null)
                 return;
 
-            SpriteRenderer renderer = marker.GetComponent<SpriteRenderer>();
-            renderer.color = new Color(0.35f, 0.35f, 0.35f);
+            SpriteRenderer renderer = marker.GetComponentInChildren<SpriteRenderer>();
+            if (renderer != null)
+                renderer.color = new Color(0.35f, 0.35f, 0.35f);
         }
 
         private void HandleToolRemoved(OnToolRemoved e)

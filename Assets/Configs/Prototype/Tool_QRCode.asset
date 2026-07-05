@@ -14,9 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: qrcode
   _displayName: "\u4E8C\u7EF4\u7801"
+  _description: 
   _category: 5
   _icon: {fileID: 21300000, guid: 5aa5a4b2d2089504b80d69baf9e23f45, type: 3}
-  _prefab: {fileID: 0}
+  _prefab: {fileID: 2971073412011318327, guid: d944dbd8774374646bd34d2188fcac91, type: 3}
   _placementKind: 0
   _allowedCellTypes: 06000000
   _footprint:

@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: bribe_envelope
   _displayName: "\u4E00\u4EFD\u4FE1\u5C01"
-  _description: Bribes a security guard to look the other way. Place along patrol routes.
+  _description: Bribes a security guard to look the other way. Place along patrol
+    routes.
   _category: 4
   _icon: {fileID: 21300000, guid: 5f37635130dc5d041a9d36dfc431f732, type: 3}
-  _prefab: {fileID: 0}
+  _prefab: {fileID: 1555718405223531444, guid: 6bdd2defaaf505c4faeed307837b81f4, type: 3}
   _placementKind: 0
   _allowedCellTypes: 05000000
   _footprint:
