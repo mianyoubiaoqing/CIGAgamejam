@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _id: clown_box
   _displayName: "\u5C0F\u4E11\u76D2"
+  _description: Spooks one customer into leaving. Place near aisles for maximum effect.
   _category: 2
   _icon: {fileID: 21300000, guid: d8c17040bc70c834f97d131a5bf0239d, type: 3}
   _prefab: {fileID: 0}

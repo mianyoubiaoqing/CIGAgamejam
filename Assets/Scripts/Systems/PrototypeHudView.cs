@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -26,6 +27,7 @@ namespace CIGAgamejam
         private readonly Dictionary<ToolConfig, Text> _toolCountTexts = new();
         private readonly Dictionary<ToolConfig, Button> _toolButtons = new();
         private readonly Dictionary<ToolConfig, Image> _toolIcons = new();
+        private readonly HashSet<Transform> _tooltipBoundButtons = new();
         private Font _font;
         private Text _confidenceText;
         private Text _flowText;
@@ -38,6 +40,9 @@ namespace CIGAgamejam
         private RectTransform _dayNightNeedle;
         private RectTransform _toolMenuRoot;
         private RectTransform _actionButtonRoot;
+        private RectTransform _tooltipRoot;
+        private Text _tooltipText;
+        private Canvas _canvas;
         private Button _startDayButton;
         private Button _nextNightButton;
         private GameObject _startScreen;
@@ -63,7 +68,9 @@ namespace CIGAgamejam
             if (canvas == null)
                 return;
 
+            _canvas = canvas;
             BuildHud(canvas);
+            BuildTooltip(canvas);
             BuildResultPanel(canvas);
             BuildStartScreen(canvas);
             _hasGameStarted = _gamePhaseSystem != null && _gamePhaseSystem.CurrentPhase != GamePhase.None;
@@ -289,6 +296,141 @@ namespace CIGAgamejam
 
             _toolCountTexts[tool] = label;
             _toolButtons[tool] = FindButton(buttonTransform, string.Empty);
+            BindTooltip(buttonTransform, tool);
+        }
+
+        private void BuildTooltip(Canvas canvas)
+        {
+            if (canvas == null || _tooltipRoot != null) return;
+
+            Transform existing = canvas.transform.Find("Tool Tooltip");
+            if (existing != null)
+            {
+                _tooltipRoot = existing as RectTransform;
+                _tooltipText = existing.GetComponentInChildren<Text>(true);
+            }
+
+            if (_tooltipRoot == null)
+            {
+                _tooltipRoot = CreatePanel(
+                    canvas.transform,
+                    "Tool Tooltip",
+                    new RectSpec(
+                        new Vector2(0.5f, 0.5f),
+                        new Vector2(0.5f, 0.5f),
+                        Vector2.zero,
+                        new Vector2(240f, 100f),
+                        new Vector2(0.5f, 0f)),
+                    new Color(0.08f, 0.08f, 0.08f, 0.95f));
+
+                Image background = _tooltipRoot.GetComponent<Image>();
+                background.raycastTarget = false;
+
+                Outline outline = _tooltipRoot.gameObject.AddComponent<Outline>();
+                outline.effectColor = new Color(0.98f, 0.92f, 0.78f, 0.8f);
+                outline.effectDistance = new Vector2(1f, -1f);
+
+                _tooltipText = CreateText(
+                    _tooltipRoot,
+                    "Tooltip Text",
+                    string.Empty,
+                    13,
+                    TextAnchor.UpperLeft,
+                    Vector2.zero,
+                    Vector2.zero);
+                RectTransform textRect = _tooltipText.rectTransform;
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.pivot = new Vector2(0.5f, 0.5f);
+                textRect.offsetMin = new Vector2(10f, 8f);
+                textRect.offsetMax = new Vector2(-10f, -8f);
+                _tooltipText.supportRichText = true;
+                _tooltipText.horizontalOverflow = HorizontalWrapMode.Wrap;
+                _tooltipText.verticalOverflow = VerticalWrapMode.Overflow;
+                _tooltipText.raycastTarget = false;
+            }
+
+            _tooltipRoot.gameObject.SetActive(false);
+        }
+
+        private void BindTooltip(RectTransform buttonTransform, ToolConfig tool)
+        {
+            if (buttonTransform == null || tool == null || !_tooltipBoundButtons.Add(buttonTransform))
+                return;
+
+            EventTrigger trigger = buttonTransform.GetComponent<EventTrigger>();
+            if (trigger == null)
+                trigger = buttonTransform.gameObject.AddComponent<EventTrigger>();
+
+            trigger.triggers ??= new List<EventTrigger.Entry>();
+            AddTooltipTrigger(trigger, EventTriggerType.PointerEnter, _ => ShowTooltip(tool, buttonTransform));
+            AddTooltipTrigger(trigger, EventTriggerType.PointerExit, _ => HideTooltip());
+        }
+
+        private static void AddTooltipTrigger(
+            EventTrigger trigger,
+            EventTriggerType eventType,
+            UnityEngine.Events.UnityAction<BaseEventData> callback)
+        {
+            var entry = new EventTrigger.Entry { eventID = eventType };
+            entry.callback.AddListener(callback);
+            trigger.triggers.Add(entry);
+        }
+
+        private void ShowTooltip(ToolConfig tool, RectTransform buttonTransform)
+        {
+            if (_tooltipRoot == null || _tooltipText == null || tool == null || buttonTransform == null)
+                return;
+
+            string description = string.IsNullOrWhiteSpace(tool.Description)
+                ? "No description available."
+                : tool.Description;
+            _tooltipText.text =
+                $"<size=15><b><color=#FAEBC7>{tool.DisplayName}</color></b></size>\n{description}";
+
+            _tooltipRoot.gameObject.SetActive(true);
+            _tooltipRoot.SetAsLastSibling();
+            PositionTooltipAbove(buttonTransform);
+        }
+
+        private void PositionTooltipAbove(RectTransform buttonTransform)
+        {
+            RectTransform canvasRect = _canvas != null ? _canvas.transform as RectTransform : null;
+            if (canvasRect == null) return;
+
+            var corners = new Vector3[4];
+            buttonTransform.GetWorldCorners(corners);
+            Vector3 worldTopCenter = (corners[1] + corners[2]) * 0.5f;
+            Camera eventCamera = _canvas.renderMode == RenderMode.ScreenSpaceOverlay
+                ? null
+                : _canvas.worldCamera;
+            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(eventCamera, worldTopCenter);
+
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    canvasRect,
+                    screenPoint,
+                    eventCamera,
+                    out Vector2 localPoint))
+                return;
+
+            localPoint.y += 10f;
+            Rect canvasBounds = canvasRect.rect;
+            Vector2 tooltipSize = _tooltipRoot.rect.size;
+            localPoint.x = Mathf.Clamp(
+                localPoint.x,
+                canvasBounds.xMin + tooltipSize.x * 0.5f,
+                canvasBounds.xMax - tooltipSize.x * 0.5f);
+            localPoint.y = Mathf.Clamp(
+                localPoint.y,
+                canvasBounds.yMin,
+                canvasBounds.yMax - tooltipSize.y);
+            _tooltipRoot.anchoredPosition = localPoint;
+        }
+
+        private void HideTooltip()
+        {
+            if (_tooltipRoot != null)
+                _tooltipRoot.gameObject.SetActive(false);
         }
 
         private void BuildActionButtons(RectTransform bottomBar)
@@ -824,6 +966,8 @@ private Text CreateLayoutText(RectTransform parent, string name, string value, i
                 button.onClick.AddListener(() => _inputController?.SelectTool(selectedTool));
                 _toolButtons[tool] = button;
             }
+
+            BindTooltip(root as RectTransform, tool);
 
             if (label != null)
             {

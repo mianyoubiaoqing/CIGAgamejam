@@ -2962,7 +2962,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4, y: 6.14, z: -10}
+  m_LocalPosition: {x: 1, y: 1, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2981,12 +2981,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _camera: {fileID: 519420031}
-  _movementMin: {x: -20, y: -20}
-  _movementMax: {x: 20, y: 20}
+  _movementMin: {x: 0.3, y: 0.2}
+  _movementMax: {x: 10, y: 10}
   _dragMouseButton: 2
   _zoomSpeed: 1
   _minSize: 3
-  _maxSize: 10
+  _maxSize: 7
 --- !u!1 &588504902
 GameObject:
   m_ObjectHideFlags: 0
