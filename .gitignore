@@ -110,3 +110,16 @@ Packages/packages-lock.json
 ProjectSettings/PackageManagerSettings.asset
 ProjectSettings/ProjectVersion.txt
 ProjectSettings/ProjectVersion.txt
+
+# Local documentation and fix logs (not part of the project)
+/Docs/LogicFramework.md
+/Docs/*FixLog*.txt
+ProjectSettings/PackageManagerSettings.asset
+ProjectSettings/ProjectVersion.txt
+Packages/packages-lock.json
+Packages/packages-lock.json
+testlog/tilemap_logic_plan.md
+Packages/packages-lock.json
+testlog/action_buttons.md
+Packages/packages-lock.json
+Packages/packages-lock.json
