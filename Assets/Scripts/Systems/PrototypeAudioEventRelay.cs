@@ -37,6 +37,30 @@ namespace CIGAgamejam
         public UnityEvent ToolTriggered = new();
         public UnityEvent ToolEffectResolved = new();
 
+        [Header("Tool Placed By Type")]
+        public UnityEvent SmithAgentPlaced = new();
+        public UnityEvent QRCodePlaced = new();
+        public UnityEvent FakeGoodsPlaced = new();
+        public UnityEvent ClownBoxPlaced = new();
+        public UnityEvent BribeEnvelopePlaced = new();
+        public UnityEvent BoilingWaterPlaced = new();
+
+        [Header("Tool Triggered By Type")]
+        public UnityEvent SmithAgentTriggered = new();
+        public UnityEvent QRCodeTriggered = new();
+        public UnityEvent FakeGoodsTriggered = new();
+        public UnityEvent ClownBoxTriggered = new();
+        public UnityEvent BribeEnvelopeTriggered = new();
+        public UnityEvent BoilingWaterTriggered = new();
+
+        [Header("Tool Effect Resolved By Type")]
+        public UnityEvent SmithAgentEffectResolved = new();
+        public UnityEvent QRCodeEffectResolved = new();
+        public UnityEvent FakeGoodsEffectResolved = new();
+        public UnityEvent ClownBoxEffectResolved = new();
+        public UnityEvent BribeEnvelopeEffectResolved = new();
+        public UnityEvent BoilingWaterEffectResolved = new();
+
         [Header("Tool Effects")]
         public UnityEvent EffectScareCustomer = new();
         public UnityEvent EffectScareGroup = new();
@@ -191,6 +215,7 @@ namespace CIGAgamejam
             LastPlacedTool = e.Tool;
             LastToolConfig = e.Tool != null ? e.Tool.Config : null;
             ToolPlaced.Invoke();
+            InvokeToolPlacedEvent(LastToolConfig);
         }
 
         private void HandleToolRemoved(OnToolRemoved e)
@@ -230,6 +255,7 @@ namespace CIGAgamejam
             LastPlacedTool = e.Tool;
             LastToolConfig = e.Tool != null ? e.Tool.Config : null;
             ToolTriggered.Invoke();
+            InvokeToolTriggeredEvent(LastToolConfig);
         }
 
         private void HandleToolEffectResolved(OnToolEffectResolved e)
@@ -238,6 +264,7 @@ namespace CIGAgamejam
             LastToolConfig = e.Tool != null ? e.Tool.Config : null;
             LastToolEffectType = e.Effect.EffectType;
             ToolEffectResolved.Invoke();
+            InvokeToolEffectResolvedEvent(LastToolConfig);
             InvokeEffectEvent(e.Effect.EffectType);
         }
 
@@ -283,6 +310,81 @@ namespace CIGAgamejam
         }
 
         private void HandleShopBankrupted(OnShopBankrupted e) => ShopBankrupted.Invoke();
+
+        private void InvokeToolPlacedEvent(ToolConfig tool)
+        {
+            switch (tool != null ? tool.Id : string.Empty)
+            {
+                case "smith_agent":
+                    SmithAgentPlaced.Invoke();
+                    break;
+                case "qrcode":
+                    QRCodePlaced.Invoke();
+                    break;
+                case "fake_goods":
+                    FakeGoodsPlaced.Invoke();
+                    break;
+                case "clown_box":
+                    ClownBoxPlaced.Invoke();
+                    break;
+                case "bribe_envelope":
+                    BribeEnvelopePlaced.Invoke();
+                    break;
+                case "boiling_water":
+                    BoilingWaterPlaced.Invoke();
+                    break;
+            }
+        }
+
+        private void InvokeToolTriggeredEvent(ToolConfig tool)
+        {
+            switch (tool != null ? tool.Id : string.Empty)
+            {
+                case "smith_agent":
+                    SmithAgentTriggered.Invoke();
+                    break;
+                case "qrcode":
+                    QRCodeTriggered.Invoke();
+                    break;
+                case "fake_goods":
+                    FakeGoodsTriggered.Invoke();
+                    break;
+                case "clown_box":
+                    ClownBoxTriggered.Invoke();
+                    break;
+                case "bribe_envelope":
+                    BribeEnvelopeTriggered.Invoke();
+                    break;
+                case "boiling_water":
+                    BoilingWaterTriggered.Invoke();
+                    break;
+            }
+        }
+
+        private void InvokeToolEffectResolvedEvent(ToolConfig tool)
+        {
+            switch (tool != null ? tool.Id : string.Empty)
+            {
+                case "smith_agent":
+                    SmithAgentEffectResolved.Invoke();
+                    break;
+                case "qrcode":
+                    QRCodeEffectResolved.Invoke();
+                    break;
+                case "fake_goods":
+                    FakeGoodsEffectResolved.Invoke();
+                    break;
+                case "clown_box":
+                    ClownBoxEffectResolved.Invoke();
+                    break;
+                case "bribe_envelope":
+                    BribeEnvelopeEffectResolved.Invoke();
+                    break;
+                case "boiling_water":
+                    BoilingWaterEffectResolved.Invoke();
+                    break;
+            }
+        }
 
         private void InvokeEffectEvent(ToolEffectType effectType)
         {
