@@ -98,7 +98,8 @@ namespace CIGAgamejam
     public enum ToolStockSource
     {
         BlackBossSupport,
-        CarriedOver
+        CarriedOver,
+        ScheduledSupport
     }
 
     public enum PlacementResult

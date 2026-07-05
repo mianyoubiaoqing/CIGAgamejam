@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Tool_BoilingWater
   m_EditorClassIdentifier: 
   _id: boiling_water
-  _displayName: "\u4E00\u6876\u5F00\u6C34"
-  _description: Destroys a nearby object on command. Manual trigger - use with precision.
+  _displayName: Meltdown Drip
+  _description: Interacts with objects such as money trees and shelves, turning them
+    into destroyed objects. Each customer within 1 tile of a destroyed object loses
+    5 favorability.
   _category: 1
   _icon: {fileID: 21300000, guid: 36049648b834e834ab12e0dbb837b7e9, type: 3}
   _prefab: {fileID: 4927471667786843761, guid: 1d560aee6f23f984084ff120d0fde660, type: 3}

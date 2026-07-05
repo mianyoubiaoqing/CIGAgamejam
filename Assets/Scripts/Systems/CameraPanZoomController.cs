@@ -7,6 +7,7 @@ namespace CIGAgamejam
     {
         [Header("References")]
         [SerializeField] private Camera _camera;
+        [SerializeField] private bool _preserveSceneCameraOnStart = true;
 
         [Header("Movement")]
         [Tooltip("相机中心点允许移动到的最小世界坐标。")]
@@ -34,10 +35,11 @@ namespace CIGAgamejam
             if (_camera == null)
                 _camera = GetComponent<Camera>();
 
-            if (_camera != null && _camera.orthographic)
+            if (!_preserveSceneCameraOnStart && _camera != null && _camera.orthographic)
                 _camera.orthographicSize = Mathf.Clamp(_camera.orthographicSize, _minSize, _maxSize);
 
-            ClampPosition();
+            if (!_preserveSceneCameraOnStart)
+                ClampPosition();
         }
 
         private void Update()
@@ -121,15 +123,15 @@ namespace CIGAgamejam
             if (_camera == null)
                 _camera = GetComponent<Camera>();
 
-            if (_camera != null && _camera.orthographic)
+            if (!_preserveSceneCameraOnStart && _camera != null && _camera.orthographic)
             {
                 _camera.orthographicSize = Mathf.Clamp(
                     _camera.orthographicSize,
                     _minSize,
                     _maxSize);
-            }
 
-            ClampPosition();
+                ClampPosition();
+            }
         }
     }
 }

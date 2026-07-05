@@ -82,7 +82,10 @@ namespace CIGAgamejam
         {
             if (_hasConfigError || customer == null || customer.HasLeftStore) return;
 
-            ApplyRevenueDelta(_config.SuccessfulPurchaseFavorabilityDelta);
+            float delta = _config.SuccessfulPurchaseFavorabilityDelta;
+            ApplyRevenueDelta(delta);
+            EventBus<OnCustomerPurchaseFavorabilityGained>.Publish(
+                new OnCustomerPurchaseFavorabilityGained(customer.CustomerId, delta));
         }
 
         private void HandleCustomerLeftStore(OnCustomerLeftStore e)

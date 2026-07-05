@@ -28,13 +28,13 @@ namespace CIGAgamejam
 
             _currentTurn++;
             EventBus<OnNightTurnAdvanced>.Publish(new OnNightTurnAdvanced(_currentTurn, actionLabel));
-            EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage($"夜晚回合 {_currentTurn}: {actionLabel}"));
+            EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage($"Night turn {_currentTurn}: {actionLabel}"));
             _securityPatrolSystem?.AdvancePatrolTurn();
         }
 
         public void SkipTurn()
         {
-            RecordPlayerAction("跳过");
+            RecordPlayerAction("Skip");
         }
 
         private void HandleGamePhaseChanged(OnGamePhaseChanged e)
@@ -44,7 +44,7 @@ namespace CIGAgamejam
                 _currentTurn = 1;
                 _isNightActive = true;
                 EventBus<OnNightTurnStarted>.Publish(new OnNightTurnStarted(_currentTurn));
-                EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("进入夜晚: 选择道具并放置，避开保安巡逻视野。"));
+                EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("Night begins: choose tools, place traps, and avoid security patrol vision."));
                 return;
             }
 

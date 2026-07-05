@@ -50,14 +50,6 @@ namespace CIGAgamejam
             SetField(routeSystem, "_entrance", new Vector2Int(0, 6));
             SetField(routeSystem, "_checkout", new Vector2Int(1, 5));
             SetField(routeSystem, "_exit", new Vector2Int(0, 6));
-            SetField(routeSystem, "_routeOverride", BuildCustomerLoopRoute());
-            SetField(routeSystem, "_detourWaypoints", new[]
-            {
-                new Vector2Int(4, 3),
-                new Vector2Int(6, 7),
-                new Vector2Int(3, 8),
-                new Vector2Int(4, 6)
-            });
             SetField(routeSystem, "_detourChance", 0.4f);
 
             SetField(securityPatrolSystem, "_gridSystem", gridSystem);
@@ -79,8 +71,11 @@ namespace CIGAgamejam
             {
                 new ToolStockDefinition { Tool = tools[0], Count = 2 },
                 new ToolStockDefinition { Tool = tools[1], Count = 1 },
-                new ToolStockDefinition { Tool = tools[2], Count = 1 },
-                new ToolStockDefinition { Tool = tools[3], Count = 1 }
+                new ToolStockDefinition { Tool = tools[2], Count = 1 }
+            });
+            SetField(inventorySystem, "_scheduledSupport", new[]
+            {
+                new ToolDayStockDefinition { Tool = tools[3], Count = 1, Days = new[] { 2, 4 } }
             });
 
             SetField(nightTurnSystem, "_securityPatrolSystem", securityPatrolSystem);
@@ -89,12 +84,18 @@ namespace CIGAgamejam
             SetField(customerFlowSystem, "_toolResolutionSystem", toolResolutionSystem);
             SetField(customerFlowSystem, "_economySystem", economySystem);
             SetField(customerFlowSystem, "_gamePhaseSystem", gamePhaseSystem);
+            SetField(customerFlowSystem, "_minCustomersPerDay", 5);
+            SetField(customerFlowSystem, "_maxCustomersPerDay", 10);
+            SetField(customerFlowSystem, "_smallLoopRouteChance", 0.15f);
+            SetField(customerFlowSystem, "_minRandomWaypoints", 2);
+            SetField(customerFlowSystem, "_maxRandomWaypoints", 5);
 
             SetField(worldView, "_gridSystem", gridSystem);
             SetField(worldView, "_routeSystem", routeSystem);
             SetField(worldView, "_securityPatrolSystem", securityPatrolSystem);
             SetField(worldView, "_actorMoveSpeed", 5f);
-            SetField(worldView, "_routeMarkerSizeRatio", 0.08f);
+            SetField(worldView, "_showRouteMarkers", false);
+            SetField(worldView, "_showAllWalkableRouteMarkers", false);
             SetField(worldView, "_customerMarkerSizeRatio", 0.22f);
             SetField(worldView, "_securityMarkerSizeRatio", 0.24f);
             SetField(worldView, "_toolMarkerSizeRatio", 0.26f);
@@ -169,52 +170,10 @@ namespace CIGAgamejam
         {
             return new[]
             {
-                CreateTool("clown_box", "\u5c0f\u4e11\u76d2", "Spooks one customer into leaving. Place near aisles for maximum effect.", ToolCategory.Scare, ToolTriggerTiming.OnCustomerPassFrontCell, ToolTriggerAreaMode.ExactOffsets, true, true, new[] { GridCellType.Wall, GridCellType.Floor }, ToolEffectType.ScareCustomerAway, 10f, 0.35f),
-                CreateTool("fake_goods", "\u5047\u8d27", "Replaces a customer's purchase with defective goods. Works in warehouse areas.", ToolCategory.FakeGoods, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Warehouse }, ToolEffectType.ReplaceGoodsWithFake, 8f, 0.2f),
-                CreateTool("bribe_envelope", "\u4fe1\u5c01", "Bribes a security guard to look the other way. Place along patrol routes.", ToolCategory.Bribe, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Security, GridCellType.Floor }, ToolEffectType.BribeSecurity, 10f, 0.4f),
-                CreateTool("boiling_water", "\u5f00\u6c34", "Destroys a nearby object on command. Manual trigger - use with precision.", ToolCategory.Destroy, ToolTriggerTiming.OnManualResolve, ToolTriggerAreaMode.ExactOffsets, true, false, new[] { GridCellType.Floor, GridCellType.Warehouse }, ToolEffectType.DestroyObject, 5f, 0f, false)
-            };
-        }
-
-        private static Vector2Int[] BuildCustomerLoopRoute()
-        {
-            return new[]
-            {
-                new Vector2Int(0, 6),
-                new Vector2Int(1, 6),
-                new Vector2Int(1, 7),
-                new Vector2Int(1, 8),
-                new Vector2Int(1, 9),
-                new Vector2Int(1, 10),
-                new Vector2Int(2, 10),
-                new Vector2Int(3, 10),
-                new Vector2Int(4, 10),
-                new Vector2Int(5, 10),
-                new Vector2Int(6, 10),
-                new Vector2Int(7, 10),
-                new Vector2Int(8, 10),
-                new Vector2Int(8, 9),
-                new Vector2Int(8, 8),
-                new Vector2Int(8, 7),
-                new Vector2Int(8, 6),
-                new Vector2Int(8, 5),
-                new Vector2Int(8, 4),
-                new Vector2Int(8, 3),
-                new Vector2Int(8, 2),
-                new Vector2Int(8, 1),
-                new Vector2Int(7, 1),
-                new Vector2Int(6, 1),
-                new Vector2Int(5, 1),
-                new Vector2Int(4, 1),
-                new Vector2Int(3, 1),
-                new Vector2Int(2, 1),
-                new Vector2Int(1, 1),
-                new Vector2Int(1, 2),
-                new Vector2Int(1, 3),
-                new Vector2Int(1, 4),
-                new Vector2Int(1, 5),
-                new Vector2Int(1, 6),
-                new Vector2Int(0, 6)
+                CreateTool("clown_box", "Boo-tique Trap", "Place inside a wall. When a customer passes the tile in front of it, the trap triggers and scares that customer away.", ToolCategory.Scare, ToolTriggerTiming.OnCustomerPassFrontCell, ToolTriggerAreaMode.ExactOffsets, true, true, new[] { GridCellType.Wall, GridCellType.Floor }, ToolEffectType.ScareCustomerAway, 10f, 0.35f),
+                CreateTool("fake_goods", "Fake Goods", "Place on a shelf tile. Replaces goods with low-saturation fake goods. Customers who buy fake goods become angry and leave without a successful purchase.", ToolCategory.FakeGoods, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Warehouse }, ToolEffectType.ReplaceGoodsWithFake, 8f, 0.2f),
+                CreateTool("bribe_envelope", "Fake Fiver", "Place on a checkout tile to bribe security. The bribed guard drives customers away once.", ToolCategory.Bribe, ToolTriggerTiming.OnCustomerEnterCell, ToolTriggerAreaMode.CustomerProximity, true, true, new[] { GridCellType.Security, GridCellType.Floor }, ToolEffectType.BribeSecurity, 10f, 0.4f),
+                CreateTool("boiling_water", "Meltdown Drip", "Interacts with objects such as money trees and shelves, turning them into destroyed objects. Each customer within 1 tile of a destroyed object loses 5 favorability.", ToolCategory.Destroy, ToolTriggerTiming.OnManualResolve, ToolTriggerAreaMode.ExactOffsets, true, false, new[] { GridCellType.Floor, GridCellType.Warehouse }, ToolEffectType.DestroyObject, 5f, 0f, false)
             };
         }
 

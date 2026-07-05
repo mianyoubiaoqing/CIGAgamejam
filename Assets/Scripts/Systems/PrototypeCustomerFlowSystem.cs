@@ -9,10 +9,13 @@ namespace CIGAgamejam
         [SerializeField] private ToolResolutionSystem _toolResolutionSystem;
         [SerializeField] private EconomySystem _economySystem;
         [SerializeField] private GamePhaseSystem _gamePhaseSystem;
-        [SerializeField, Min(1)] private int _customersPerDay = 5;
+        [SerializeField, Min(1)] private int _minCustomersPerDay = 5;
+        [SerializeField, Min(1)] private int _maxCustomersPerDay = 10;
         [SerializeField, Min(0.1f)] private float _spawnInterval = 0.85f;
         [SerializeField, Min(0.1f)] private float _cellsPerSecond = 1.176f;
-        [SerializeField, Range(0f, 1f)] private float _routeVariantChance = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float _smallLoopRouteChance = 0.15f;
+        [SerializeField, Min(0)] private int _minRandomWaypoints = 2;
+        [SerializeField, Min(0)] private int _maxRandomWaypoints = 5;
 
         private readonly List<MovingCustomer> _activeCustomers = new();
         private readonly List<GridPosition> _scratchEscapeRoute = new();
@@ -26,7 +29,6 @@ namespace CIGAgamejam
         private void OnEnable()
         {
             EventBus<OnGamePhaseChanged>.Subscribe(HandleGamePhaseChanged);
-            EventBus<OnRevenueChanged>.Subscribe(HandleRevenueChanged);
             EventBus<OnGroupScareRequested>.Subscribe(HandleGroupScareRequested);
             EventBus<OnDayStartScareQuotaRequested>.Subscribe(HandleDayStartScareQuotaRequested);
         }
@@ -34,7 +36,6 @@ namespace CIGAgamejam
         private void OnDestroy()
         {
             EventBus<OnGamePhaseChanged>.Unsubscribe(HandleGamePhaseChanged);
-            EventBus<OnRevenueChanged>.Unsubscribe(HandleRevenueChanged);
             EventBus<OnGroupScareRequested>.Unsubscribe(HandleGroupScareRequested);
             EventBus<OnDayStartScareQuotaRequested>.Unsubscribe(HandleDayStartScareQuotaRequested);
         }
@@ -84,23 +85,23 @@ namespace CIGAgamejam
             _spawnedToday = 0;
             _dayStartScareQuota = 0;
             _activeCustomers.Clear();
-            _customersPerDayForCurrentDay = Mathf.Max(1, ResolveCustomersForCurrentFavorability());
+            _customersPerDayForCurrentDay = ResolveCustomersForDay();
             _toolResolutionSystem?.ResolveDayStartTools();
             PublishFlow();
             if (!HasCustomerRoute())
             {
                 EventBus<OnPrototypeLogMessage>.Publish(
-                    new OnPrototypeLogMessage("白天无法生成顾客: 顾客路线未生成，请检查 RouteSystem 的入口、收银台、出口是否落在可行走地板上。"));
+                    new OnPrototypeLogMessage("Day cannot spawn customers: no customer route was generated. Check that RouteSystem entrance, checkout, and exit are on walkable floor tiles."));
             }
 
-            EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("进入白天: 老板先随机破坏一个可破坏陷阱，顾客开始进店。"));
+            EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("Day begins: the boss may remove one vulnerable trap, then customers enter the shop."));
         }
 
         private void CompleteDaySimulation()
         {
             _isSimulating = false;
             _gamePhaseSystem?.CompleteDaySimulation();
-            EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("白天结束: 查看信心变化，准备进入下一夜。"));
+            EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage("Day ends: review favorability changes and prepare for the next night."));
         }
 
         private bool TrySpawnCustomer()
@@ -109,7 +110,7 @@ namespace CIGAgamejam
             if (personalRoute == null || personalRoute.Count == 0)
             {
                 EventBus<OnPrototypeLogMessage>.Publish(
-                    new OnPrototypeLogMessage("白天无法生成顾客: 当前顾客路线为空。"));
+                    new OnPrototypeLogMessage("Day cannot spawn customers: the current customer route is empty."));
                 return false;
             }
 
@@ -139,32 +140,11 @@ namespace CIGAgamejam
         private List<GridPosition> BuildPersonalRoute()
         {
             IReadOnlyList<GridPosition> mainRoute = _routeSystem.CustomerRoute;
-            IReadOnlyList<RouteSystem.RouteVariant> variants = _routeSystem.AvailableVariants;
 
-            if (Random.value < _routeSystem.DetourChance
-                && _routeSystem.TryBuildDetourRoute(out List<GridPosition> detourRoute))
+            if (Random.value >= _smallLoopRouteChance
+                && _routeSystem.TryBuildRandomShoppingRoute(_minRandomWaypoints, _maxRandomWaypoints, out List<GridPosition> randomRoute))
             {
-                return ValidateRouteContainsCheckout(detourRoute);
-            }
-
-            for (int i = 0; i < variants.Count; i++)
-            {
-                RouteSystem.RouteVariant variant = variants[i];
-                if (variant.ForkIndex < 0
-                    || variant.ForkIndex >= mainRoute.Count
-                    || variant.Tail == null
-                    || variant.Tail.Count == 0
-                    || Random.value >= _routeVariantChance)
-                {
-                    continue;
-                }
-
-                var route = new List<GridPosition>(variant.ForkIndex + 1 + variant.Tail.Count);
-                for (int routeIndex = 0; routeIndex <= variant.ForkIndex; routeIndex++)
-                    route.Add(mainRoute[routeIndex]);
-                for (int tailIndex = 0; tailIndex < variant.Tail.Count; tailIndex++)
-                    route.Add(variant.Tail[tailIndex]);
-                return ValidateRouteContainsCheckout(route);
+                return ValidateRouteContainsCheckout(randomRoute);
             }
 
             return ValidateRouteContainsCheckout(new List<GridPosition>(mainRoute));
@@ -349,27 +329,11 @@ namespace CIGAgamejam
             EventBus<OnCustomerFlowChanged>.Publish(new OnCustomerFlowChanged(_activeCustomers.Count, _spawnedToday, trend));
         }
 
-        private void HandleRevenueChanged(OnRevenueChanged e)
+        private int ResolveCustomersForDay()
         {
-            _customersPerDayForCurrentDay = Mathf.Max(1, ResolveCustomersForFavorability(e.CurrentRevenueIndex));
-        }
-
-        private int ResolveCustomersForCurrentFavorability()
-        {
-            return _economySystem != null
-                ? ResolveCustomersForFavorability(_economySystem.CurrentRevenueIndex)
-                : _customersPerDay;
-        }
-
-        private int ResolveCustomersForFavorability(float favorability)
-        {
-            if (favorability < 35f)
-                return Mathf.Max(1, Mathf.RoundToInt(_customersPerDay * 0.4f));
-
-            if (favorability < 65f)
-                return Mathf.Max(1, Mathf.RoundToInt(_customersPerDay * 0.7f));
-
-            return _customersPerDay;
+            int min = Mathf.Max(1, _minCustomersPerDay);
+            int max = Mathf.Max(min, _maxCustomersPerDay);
+            return Random.Range(min, max + 1);
         }
 
         private void HandleGroupScareRequested(OnGroupScareRequested e)

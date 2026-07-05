@@ -375,8 +375,8 @@ namespace CIGAgamejam
                     EventBus<OnToolDisabled>.Publish(new OnToolDisabled(tool, ToolDisableReason.SecurityPatrol));
                     EventBus<OnSecurityRemovedTool>.Publish(new OnSecurityRemovedTool(tool, _currentPosition));
                     string message = _currentPhase == GamePhase.DaySimulation
-                        ? $"保安在日常巡逻中发现了 {tool.Config.DisplayName} 并拆除！"
-                        : $"保安在夜间巡逻时发现了 {tool.Config.DisplayName} 并拆除！";
+                        ? $"Security found {tool.Config.DisplayName} during the day patrol and removed it!"
+                        : $"Security found {tool.Config.DisplayName} during the night patrol and removed it!";
                     EventBus<OnPrototypeLogMessage>.Publish(
                         new OnPrototypeLogMessage(message));
                     _gridSystem.RemoveToolFromBoard(tool);

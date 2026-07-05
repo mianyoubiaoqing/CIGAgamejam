@@ -11634,8 +11634,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0.42}
-  m_AnchoredPosition: {x: 0, y: -7.5999985}
-  m_SizeDelta: {x: -10, y: -6}
+  m_AnchoredPosition: {x: 0, y: 20.300003}
+  m_SizeDelta: {x: -10, y: 47.19}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &91186303
 MonoBehaviour:
@@ -11719,7 +11719,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 7b709563e4a08344c86e40b73eb049b7, type: 3}
-    m_FontSize: 10
+    m_FontSize: 13
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
@@ -11730,7 +11730,12 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u5C0F\u4E11\u76D2\nx0"
+  m_Text: 'Boo-tique Trap
+
+
+
+
+    x0'
 --- !u!222 &91186308
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -11778,12 +11783,14 @@ MonoBehaviour:
     Count: 2
   - Tool: {fileID: 11400000, guid: 020a0a9a783e42545ad5939a2d423215, type: 2}
     Count: 1
-  - Tool: {fileID: 11400000, guid: f4bc73b4213810244a70437d79f82560, type: 2}
-    Count: 1
   - Tool: {fileID: 11400000, guid: 4a92d54cf0944e449ad1242bd8d11926, type: 2}
     Count: 1
   - Tool: {fileID: 11400000, guid: a90d8201306340e4fae76503930bde67, type: 2}
     Count: 1
+  _scheduledSupport:
+  - Tool: {fileID: 11400000, guid: f4bc73b4213810244a70437d79f82560, type: 2}
+    Count: 1
+    Days: 0200000004000000
   _carryUnusedTools: 0
 --- !u!114 &150997779
 MonoBehaviour:
@@ -12070,7 +12077,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -6, y: -35}
+  m_AnchoredPosition: {x: -0.000022888, y: -34.5}
   m_SizeDelta: {x: -12, y: -8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &173267134
@@ -12136,7 +12143,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4E0B\u4E00\u65E5"
+  m_Text: ' the next Day'
 --- !u!222 &173267137
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -12595,8 +12602,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0.42}
-  m_AnchoredPosition: {x: 0, y: -8.599998}
-  m_SizeDelta: {x: -10, y: -6}
+  m_AnchoredPosition: {x: 0, y: 20.299992}
+  m_SizeDelta: {x: -10, y: 43.63}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &304001035
 MonoBehaviour:
@@ -12680,7 +12687,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 7b709563e4a08344c86e40b73eb049b7, type: 3}
-    m_FontSize: 10
+    m_FontSize: 13
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
@@ -12691,7 +12698,12 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u53F2\u5BC6\u65AF\u4E13\u5458\nx0"
+  m_Text: 'The Tollkeeper
+
+
+
+
+    x0'
 --- !u!222 &304001040
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -14167,7 +14179,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u91CD\u65B0\u5F00\u59CB"
+  m_Text: Restart
 --- !u!222 &424332810
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -14214,8 +14226,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0.42}
-  m_AnchoredPosition: {x: 0, y: -8.099998}
-  m_SizeDelta: {x: -10, y: -6}
+  m_AnchoredPosition: {x: 0, y: 20.299995}
+  m_SizeDelta: {x: -10, y: 55.88}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &490806735
 MonoBehaviour:
@@ -14299,7 +14311,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 7b709563e4a08344c86e40b73eb049b7, type: 3}
-    m_FontSize: 10
+    m_FontSize: 13
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
@@ -14310,7 +14322,12 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u5047\u8D27\nx0"
+  m_Text: 'Fake Goods
+
+
+
+
+    x0'
 --- !u!222 &490806740
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -14425,6 +14442,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _camera: {fileID: 519420031}
+  _preserveSceneCameraOnStart: 1
   _movementMin: {x: 0.3, y: 0.2}
   _movementMax: {x: 10, y: 10}
   _dragMouseButton: 2
@@ -14623,7 +14641,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 140, y: 0}
+  m_SizeDelta: {x: 150, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &671714401
 MonoBehaviour:
@@ -14738,7 +14756,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u7B2C1/1\u5929 \u591C\u665A"
+  m_Text: The 1/1 Days Night
 --- !u!222 &671714407
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -14787,7 +14805,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 105.37, y: 0}
+  m_SizeDelta: {x: 233.3, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &682973370
 MonoBehaviour:
@@ -14892,7 +14910,7 @@ MonoBehaviour:
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
     m_FontSize: 16
-    m_FontStyle: 0
+    m_FontStyle: 3
     m_BestFit: 0
     m_MinSize: 10
     m_MaxSize: 40
@@ -14902,7 +14920,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u597D\u611F\u5EA6 100%"
+  m_Text: Consumer Confidence 100%
 --- !u!222 &682973376
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -15331,7 +15349,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u56DE\u5408 1"
+  m_Text: Turn 1
 --- !u!222 &763972081
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -15526,7 +15544,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4E8B\u4EF6\u65E5\u5FD7"
+  m_Text: Logs
 --- !u!222 &790389911
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -15943,6 +15961,8 @@ MonoBehaviour:
   _nightTurnSystem: {fileID: 990416145}
   _inputController: {fileID: 853436403}
   _allowRuntimeHudGeneration: 0
+  _preserveSceneHudLayout: 1
+  _preserveSceneHudVisuals: 1
   _labelFont: {fileID: 12800000, guid: 7b709563e4a08344c86e40b73eb049b7, type: 3}
   _buttonDaylightSprite: {fileID: 21300000, guid: ffdaa40f7d64aae45a3bbfb1f8e5978e, type: 3}
   _buttonNightSprite: {fileID: 21300000, guid: 3bc0f402b69a5d84abedc80ca00e808e, type: 3}
@@ -16001,6 +16021,8 @@ MonoBehaviour:
   _tilemapBridge: {fileID: 835562134}
   _actorMoveSpeed: 5
   _routeMarkerSizeRatio: 0.08
+  _showRouteMarkers: 0
+  _showAllWalkableRouteMarkers: 0
   _customerMarkerSizeRatio: 0.22
   _securityMarkerSizeRatio: 0.24
   _toolMarkerSizeRatio: 0.26
@@ -16413,8 +16435,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0.42}
-  m_AnchoredPosition: {x: 0, y: -9.599998}
-  m_SizeDelta: {x: -10, y: -6}
+  m_AnchoredPosition: {x: 0, y: 20.034996}
+  m_SizeDelta: {x: -10, y: 35.13}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &989325028
 MonoBehaviour:
@@ -16498,7 +16520,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 7b709563e4a08344c86e40b73eb049b7, type: 3}
-    m_FontSize: 10
+    m_FontSize: 13
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
@@ -16509,7 +16531,12 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4E00\u4EFD\u4FE1\u5C01\nx0"
+  m_Text: 'Fake Fiver
+
+
+
+
+    x0'
 --- !u!222 &989325033
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -16578,6 +16605,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _campaignProgressSystem: {fileID: 990416146}
   _beginOnStart: 1
+--- !u!4 &990416148
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 990416144}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 824210252}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &990416149
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16597,21 +16639,6 @@ MonoBehaviour:
   _sfxVolume: 1
   _restartDelayAfterTransition: 0
   _stopOnResultAndGameOver: 1
---- !u!4 &990416148
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 990416144}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 824210252}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &992961106
 GameObject:
   m_ObjectHideFlags: 0
@@ -17490,10 +17517,13 @@ MonoBehaviour:
   _toolResolutionSystem: {fileID: 150997780}
   _economySystem: {fileID: 1210059815}
   _gamePhaseSystem: {fileID: 990416147}
-  _customersPerDay: 5
+  _minCustomersPerDay: 5
+  _maxCustomersPerDay: 10
   _spawnInterval: 0.85
   _cellsPerSecond: 1.176
-  _routeVariantChance: 0.5
+  _smallLoopRouteChance: 0.15
+  _minRandomWaypoints: 2
+  _maxRandomWaypoints: 5
 --- !u!4 &1210059817
 Transform:
   m_ObjectHideFlags: 0
@@ -17707,7 +17737,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -0.0000019073}
+  m_AnchoredPosition: {x: 0, y: -0.0000019073486}
   m_SizeDelta: {x: 40, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1239293936
@@ -18251,9 +18281,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -6, y: -33}
+  m_AnchoredPosition: {x: -1.1937027, y: -33}
   m_SizeDelta: {x: -12, y: -8}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0.59947777, y: 0.5}
 --- !u!114 &1325769130
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18317,7 +18347,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4E0B\u4E00\u591C"
+  m_Text: the next night
 --- !u!222 &1325769133
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -18530,8 +18560,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0.42}
-  m_AnchoredPosition: {x: 0, y: -8.799999}
-  m_SizeDelta: {x: -10, y: -6}
+  m_AnchoredPosition: {x: 0, y: 17.68}
+  m_SizeDelta: {x: -10, y: 39.84}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1436997735
 MonoBehaviour:
@@ -18615,7 +18645,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 7b709563e4a08344c86e40b73eb049b7, type: 3}
-    m_FontSize: 10
+    m_FontSize: 13
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
@@ -18626,7 +18656,12 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4E8C\u7EF4\u7801\nx0"
+  m_Text: 'Scam Scan
+
+
+
+
+    x0'
 --- !u!222 &1436997740
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -20005,8 +20040,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0.42}
-  m_AnchoredPosition: {x: 0, y: -9.099998}
-  m_SizeDelta: {x: -10, y: -6}
+  m_AnchoredPosition: {x: 0, y: 20.299995}
+  m_SizeDelta: {x: -10, y: 41.99}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1595645906
 MonoBehaviour:
@@ -20090,7 +20125,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: 7b709563e4a08344c86e40b73eb049b7, type: 3}
-    m_FontSize: 10
+    m_FontSize: 13
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
@@ -20101,7 +20136,12 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4E00\u6876\u5F00\u6C34\nx0"
+  m_Text: 'Meltdown Drip
+
+
+
+
+    x0'
 --- !u!222 &1595645911
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -21140,7 +21180,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u5BA2\u6D41 \u5E97\u51850 \u4ECA\u65E50"
+  m_Text: Consumers Current 0 Total 0
 --- !u!222 &1788499055
 CanvasRenderer:
   m_ObjectHideFlags: 0

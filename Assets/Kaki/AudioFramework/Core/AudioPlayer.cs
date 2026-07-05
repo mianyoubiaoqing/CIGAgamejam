@@ -27,6 +27,20 @@ namespace Kaki
         }
 
         [Serializable]
+        public class EventBinding
+        {
+            [Tooltip("事件来源（可拖拽 GameObject 或任意组件）")]
+            public UnityEngine.Object eventSource;
+            [Tooltip("事件名（C# event 或 UnityEvent 成员名）")]
+            public string eventName;
+
+            [NonSerialized] public Delegate handler;
+            [NonSerialized] public EventInfo eventInfo;
+            [NonSerialized] public UnityEventBase unityEvent;
+            [HideInInspector] public Component eventComponent;
+        }
+
+        [Serializable]
         public class Binding
         {
             [Tooltip("配置项")]
@@ -86,6 +100,8 @@ namespace Kaki
             public UnityEngine.Object eventSource;
             [Tooltip("Group 级事件名（C# event 或 UnityEvent 成员名）")]
             public string eventName;
+            [Tooltip("额外 Group 级事件。任意一个事件触发时，都会播放同一个组内音频池。")]
+            public List<EventBinding> additionalEvents = new List<EventBinding>();
             [Tooltip("Group 级停止事件来源（用于 Loop / LoopWithIntro）")]
             public UnityEngine.Object stopEventSource;
             [Tooltip("Group 级停止事件名（用于 Loop / LoopWithIntro）")]
@@ -451,20 +467,31 @@ namespace Kaki
 
         private void BindGroup(AudioGroup group)
         {
-            if (group == null || group.eventSource == null || string.IsNullOrWhiteSpace(group.eventName))
+            if (group == null)
             {
                 return;
             }
 
-            TryBindEvent(
-                group.eventSource,
-                group.eventName,
-                group.eventComponent,
-                () => PlayNextEntryFromGroup(group),
-                ref group.eventInfo,
-                ref group.unityEvent,
-                ref group.handler,
-                ref group.eventComponent);
+            if (group.eventSource != null && !string.IsNullOrWhiteSpace(group.eventName))
+            {
+                TryBindEvent(
+                    group.eventSource,
+                    group.eventName,
+                    group.eventComponent,
+                    () => PlayNextEntryFromGroup(group),
+                    ref group.eventInfo,
+                    ref group.unityEvent,
+                    ref group.handler,
+                    ref group.eventComponent);
+            }
+
+            if (group.additionalEvents != null)
+            {
+                foreach (var binding in group.additionalEvents)
+                {
+                    BindGroupEvent(binding, group);
+                }
+            }
 
             if (!RequiresStopEvent(group.playMode))
             {
@@ -503,6 +530,14 @@ namespace Kaki
             group.handler = null;
             group.eventComponent = null;
 
+            if (group.additionalEvents != null)
+            {
+                foreach (var binding in group.additionalEvents)
+                {
+                    UnbindGroupEvent(binding);
+                }
+            }
+
             if (group.stopEventInfo != null && group.stopHandler != null && group.stopEventComponent != null)
             {
                 group.stopEventInfo.RemoveEventHandler(group.stopEventComponent, group.stopHandler);
@@ -516,6 +551,46 @@ namespace Kaki
             group.stopUnityEvent = null;
             group.stopHandler = null;
             group.stopEventComponent = null;
+        }
+
+        private void BindGroupEvent(EventBinding binding, AudioGroup group)
+        {
+            if (binding == null || group == null || binding.eventSource == null || string.IsNullOrWhiteSpace(binding.eventName))
+            {
+                return;
+            }
+
+            TryBindEvent(
+                binding.eventSource,
+                binding.eventName,
+                binding.eventComponent,
+                () => PlayNextEntryFromGroup(group),
+                ref binding.eventInfo,
+                ref binding.unityEvent,
+                ref binding.handler,
+                ref binding.eventComponent);
+        }
+
+        private void UnbindGroupEvent(EventBinding binding)
+        {
+            if (binding == null)
+            {
+                return;
+            }
+
+            if (binding.eventInfo != null && binding.handler != null && binding.eventComponent != null)
+            {
+                binding.eventInfo.RemoveEventHandler(binding.eventComponent, binding.handler);
+            }
+            else if (binding.unityEvent != null && binding.handler != null)
+            {
+                TryRemoveUnityEventListener(binding.unityEvent, binding.handler);
+            }
+
+            binding.eventInfo = null;
+            binding.unityEvent = null;
+            binding.handler = null;
+            binding.eventComponent = null;
         }
 
         // 绑定单个事件
@@ -740,6 +815,11 @@ namespace Kaki
                     if (group.randomOrder == null)
                     {
                         group.randomOrder = new List<int>();
+                    }
+
+                    if (group.additionalEvents == null)
+                    {
+                        group.additionalEvents = new List<EventBinding>();
                     }
                 }
 

@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Tool_FakeGoods
   m_EditorClassIdentifier: 
   _id: fake_goods
-  _displayName: "\u5047\u8D27"
-  _description: Replaces a customer's purchase with defective goods. Works in warehouse
-    areas.
+  _displayName: Fake Goods
+  _description: Place on a shelf tile. Replaces goods with low-saturation fake goods.
+    Customers who buy fake goods become angry and leave without a successful purchase.
   _category: 3
   _icon: {fileID: 21300000, guid: 5d88c6498aa73d94196a27c489b55152, type: 3}
   _prefab: {fileID: 6477574084570753627, guid: b56cb9fa5c432644789ccf182f92bf01, type: 3}

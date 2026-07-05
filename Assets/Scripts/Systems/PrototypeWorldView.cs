@@ -12,6 +12,8 @@ namespace CIGAgamejam
         [SerializeField] private TilemapGridBridge _tilemapBridge;
         [SerializeField, Min(0.1f)] private float _actorMoveSpeed = 5f;
         [SerializeField, Min(0.02f)] private float _routeMarkerSizeRatio = 0.08f;
+        [SerializeField] private bool _showRouteMarkers = false;
+        [SerializeField] private bool _showAllWalkableRouteMarkers = false;
         [SerializeField, Min(0.02f)] private float _customerMarkerSizeRatio = 0.22f;
         [SerializeField, Min(0.02f)] private float _securityMarkerSizeRatio = 0.24f;
         [SerializeField, Min(0.02f)] private float _toolMarkerSizeRatio = 0.26f;
@@ -235,13 +237,44 @@ namespace CIGAgamejam
                     Destroy(_routeMarkers[i]);
             _routeMarkers.Clear();
 
+            if (!_showRouteMarkers)
+                return;
+
+            float markerSize = CellSize * _routeMarkerSizeRatio;
+            if (_showAllWalkableRouteMarkers && _gridSystem != null)
+            {
+                int markerIndex = 0;
+                for (int y = _gridSystem.MinY; y < _gridSystem.MaxYExclusive; y++)
+                for (int x = _gridSystem.MinX; x < _gridSystem.MaxXExclusive; x++)
+                {
+                    var position = new GridPosition(x, y);
+                    if (!_gridSystem.IsRouteWalkable(position))
+                        continue;
+
+                    GameObject marker = CreateSquare(
+                        $"Walkable {markerIndex}",
+                        GridToWorld(position) + new Vector3(0f, 0f, -0.08f),
+                        markerSize,
+                        new Color(0.20f, 0.25f, 0.95f, 0.25f),
+                        5);
+                    _routeMarkers.Add(marker);
+                    markerIndex++;
+                }
+
+                return;
+            }
+
             if (_routeSystem == null) return;
 
             IReadOnlyList<GridPosition> route = _routeSystem.CustomerRoute;
-            float markerSize = CellSize * _routeMarkerSizeRatio;
             for (int i = 0; i < route.Count; i++)
             {
-                GameObject marker = CreateSquare($"Route {i}", GridToWorld(route[i]) + new Vector3(0f, 0f, -0.08f), markerSize, new Color(0.20f, 0.25f, 0.95f, 0.25f), 5);
+                GameObject marker = CreateSquare(
+                    $"Route {i}",
+                    GridToWorld(route[i]) + new Vector3(0f, 0f, -0.08f),
+                    markerSize,
+                    new Color(0.20f, 0.25f, 0.95f, 0.25f),
+                    5);
                 _routeMarkers.Add(marker);
             }
         }

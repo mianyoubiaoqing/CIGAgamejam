@@ -33,6 +33,18 @@ namespace CIGAgamejam
         }
     }
 
+    public readonly struct OnCustomerPurchaseFavorabilityGained
+    {
+        public readonly int CustomerId;
+        public readonly float Delta;
+
+        public OnCustomerPurchaseFavorabilityGained(int customerId, float delta)
+        {
+            CustomerId = customerId;
+            Delta = delta;
+        }
+    }
+
     public readonly struct OnCustomerAngered
     {
         public readonly int CustomerId;

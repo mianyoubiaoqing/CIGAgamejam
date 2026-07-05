@@ -94,24 +94,14 @@ namespace CIGAgamejam
         public bool TryBuildDetourRoute(out List<GridPosition> route)
         {
             route = null;
-            if (_hasConfigError || _gridSystem == null || _detourWaypoints == null || _detourWaypoints.Length == 0)
+            if (_hasConfigError || _gridSystem == null)
                 return false;
 
             int checkoutIndex = _customerRoute.IndexOf(Checkout);
             if (checkoutIndex < 0)
                 return false;
 
-            var candidates = new List<GridPosition>(_detourWaypoints.Length);
-            for (int i = 0; i < _detourWaypoints.Length; i++)
-            {
-                var waypoint = new GridPosition(_detourWaypoints[i]);
-                if (waypoint.Equals(Entrance) || waypoint.Equals(Checkout) || waypoint.Equals(Exit))
-                    continue;
-                if (!_gridSystem.IsRouteWalkable(waypoint) || _reservedRouteBlocks.Contains(waypoint))
-                    continue;
-
-                candidates.Add(waypoint);
-            }
+            List<GridPosition> candidates = BuildDetourCandidates();
 
             while (candidates.Count > 0)
             {
@@ -139,6 +129,105 @@ namespace CIGAgamejam
             }
 
             return false;
+        }
+
+        public bool TryBuildRandomShoppingRoute(int minWaypoints, int maxWaypoints, out List<GridPosition> route)
+        {
+            route = null;
+            if (_hasConfigError || _gridSystem == null)
+                return false;
+
+            List<GridPosition> candidates = BuildShoppingWaypointCandidates();
+            if (candidates.Count == 0)
+                return false;
+
+            int waypointCount = Random.Range(
+                Mathf.Max(0, minWaypoints),
+                Mathf.Max(minWaypoints, maxWaypoints) + 1);
+
+            var selectedWaypoints = new List<GridPosition>(waypointCount);
+            while (candidates.Count > 0 && selectedWaypoints.Count < waypointCount)
+            {
+                int index = Random.Range(0, candidates.Count);
+                selectedWaypoints.Add(candidates[index]);
+                candidates.RemoveAt(index);
+            }
+
+            var builtRoute = new List<GridPosition>();
+            GridPosition current = Entrance;
+            builtRoute.Add(current);
+
+            for (int i = 0; i < selectedWaypoints.Count; i++)
+            {
+                GridPosition waypoint = selectedWaypoints[i];
+                if (waypoint.Equals(current))
+                    continue;
+
+                if (!TryFindRoute(current, waypoint, _reservedRouteBlocks, out List<GridPosition> segment))
+                    continue;
+
+                AppendRouteSegment(builtRoute, segment, true);
+                current = waypoint;
+            }
+
+            if (!TryFindRoute(current, Checkout, _reservedRouteBlocks, out List<GridPosition> toCheckout)
+                || !TryFindRoute(Checkout, Exit, _reservedRouteBlocks, out List<GridPosition> toExit))
+                return false;
+
+            AppendRouteSegment(builtRoute, toCheckout, true);
+            AppendRouteSegment(builtRoute, toExit, true);
+
+            route = builtRoute;
+            return route.Count > 0;
+        }
+
+        private List<GridPosition> BuildDetourCandidates()
+        {
+            if (_detourWaypoints != null && _detourWaypoints.Length > 0)
+            {
+                var configuredCandidates = new List<GridPosition>(_detourWaypoints.Length);
+                for (int i = 0; i < _detourWaypoints.Length; i++)
+                    AddDetourCandidate(configuredCandidates, new GridPosition(_detourWaypoints[i]));
+
+                return configuredCandidates;
+            }
+
+            var candidates = new List<GridPosition>();
+            for (int y = _gridSystem.MinY; y < _gridSystem.MaxYExclusive; y++)
+            for (int x = _gridSystem.MinX; x < _gridSystem.MaxXExclusive; x++)
+                AddDetourCandidate(candidates, new GridPosition(x, y));
+
+            return candidates;
+        }
+
+        private List<GridPosition> BuildShoppingWaypointCandidates()
+        {
+            var candidates = new List<GridPosition>();
+            for (int y = _gridSystem.MinY; y < _gridSystem.MaxYExclusive; y++)
+            for (int x = _gridSystem.MinX; x < _gridSystem.MaxXExclusive; x++)
+            {
+                var waypoint = new GridPosition(x, y);
+                if (waypoint.Equals(Entrance) || waypoint.Equals(Checkout) || waypoint.Equals(Exit))
+                    continue;
+                if (!_gridSystem.IsRouteWalkable(waypoint) || _reservedRouteBlocks.Contains(waypoint))
+                    continue;
+
+                candidates.Add(waypoint);
+            }
+
+            return candidates;
+        }
+
+        private void AddDetourCandidate(List<GridPosition> candidates, GridPosition waypoint)
+        {
+            if (waypoint.Equals(Entrance) || waypoint.Equals(Checkout) || waypoint.Equals(Exit))
+                return;
+            if (_customerRoute.Contains(waypoint))
+                return;
+            if (!_gridSystem.IsRouteWalkable(waypoint) || _reservedRouteBlocks.Contains(waypoint))
+                return;
+
+            candidates.Add(waypoint);
         }
 
         private bool TryBuildRouteOverride()

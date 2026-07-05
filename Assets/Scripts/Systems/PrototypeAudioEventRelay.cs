@@ -74,6 +74,7 @@ namespace CIGAgamejam
         public UnityEvent CustomerScared = new();
         public UnityEvent CustomerLeftStore = new();
         public UnityEvent CustomerPurchased = new();
+        public UnityEvent CustomerPurchaseFavorabilityGained = new();
         public UnityEvent CustomerFinalized = new();
 
         [Header("World / Security")]
@@ -88,6 +89,8 @@ namespace CIGAgamejam
         public ToolEffectType LastToolEffectType { get; private set; }
         public ToolDisableReason LastToolDisableReason { get; private set; } = ToolDisableReason.None;
         public CustomerState LastCustomerState { get; private set; } = CustomerState.Normal;
+        public int LastCustomerId { get; private set; } = -1;
+        public float LastFavorabilityDelta { get; private set; }
 
         private void Awake()
         {
@@ -119,6 +122,7 @@ namespace CIGAgamejam
             EventBus<OnToolEffectResolved>.Subscribe(HandleToolEffectResolved);
             EventBus<OnCustomerAngered>.Subscribe(HandleCustomerAngered);
             EventBus<OnCustomerLeftStore>.Subscribe(HandleCustomerLeftStore);
+            EventBus<OnCustomerPurchaseFavorabilityGained>.Subscribe(HandleCustomerPurchaseFavorabilityGained);
             EventBus<OnCustomerFinalized>.Subscribe(HandleCustomerFinalized);
             EventBus<OnWorldObjectDestroyed>.Subscribe(HandleWorldObjectDestroyed);
             EventBus<OnSecurityRemovedTool>.Subscribe(HandleSecurityRemovedTool);
@@ -143,6 +147,7 @@ namespace CIGAgamejam
             EventBus<OnToolEffectResolved>.Unsubscribe(HandleToolEffectResolved);
             EventBus<OnCustomerAngered>.Unsubscribe(HandleCustomerAngered);
             EventBus<OnCustomerLeftStore>.Unsubscribe(HandleCustomerLeftStore);
+            EventBus<OnCustomerPurchaseFavorabilityGained>.Unsubscribe(HandleCustomerPurchaseFavorabilityGained);
             EventBus<OnCustomerFinalized>.Unsubscribe(HandleCustomerFinalized);
             EventBus<OnWorldObjectDestroyed>.Unsubscribe(HandleWorldObjectDestroyed);
             EventBus<OnSecurityRemovedTool>.Unsubscribe(HandleSecurityRemovedTool);
@@ -274,6 +279,7 @@ namespace CIGAgamejam
             LastToolConfig = e.SourceTool != null ? e.SourceTool.Config : null;
             LastToolEffectType = e.Reason;
             LastCustomerState = CustomerState.Angry;
+            LastCustomerId = e.CustomerId;
             CustomerAngered.Invoke();
         }
 
@@ -281,15 +287,24 @@ namespace CIGAgamejam
         {
             LastToolEffectType = e.Reason;
             LastCustomerState = e.State;
+            LastCustomerId = e.CustomerId;
             CustomerLeftStore.Invoke();
 
             if (e.State == CustomerState.Scared)
                 CustomerScared.Invoke();
         }
 
+        private void HandleCustomerPurchaseFavorabilityGained(OnCustomerPurchaseFavorabilityGained e)
+        {
+            LastCustomerId = e.CustomerId;
+            LastFavorabilityDelta = e.Delta;
+            CustomerPurchaseFavorabilityGained.Invoke();
+        }
+
         private void HandleCustomerFinalized(OnCustomerFinalized e)
         {
             LastCustomerState = e.State;
+            LastCustomerId = e.CustomerId;
             CustomerFinalized.Invoke();
 
             if (e.Purchased)

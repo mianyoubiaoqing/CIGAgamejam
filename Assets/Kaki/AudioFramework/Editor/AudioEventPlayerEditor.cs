@@ -17,6 +17,7 @@ namespace Kaki
         private SerializedProperty groupsProp;
         private ReorderableList groupsList;
         private readonly Dictionary<string, ReorderableList> entriesLists = new Dictionary<string, ReorderableList>();
+        private readonly Dictionary<string, ReorderableList> additionalEventLists = new Dictionary<string, ReorderableList>();
 
         private void OnEnable()
         {
@@ -37,6 +38,11 @@ namespace Kaki
                 groupProp.FindPropertyRelative("eventSource").objectReferenceValue = null;
                 groupProp.FindPropertyRelative("eventName").stringValue = string.Empty;
                 groupProp.FindPropertyRelative("eventComponent").objectReferenceValue = null;
+                var additionalEventsProp = groupProp.FindPropertyRelative("additionalEvents");
+                if (additionalEventsProp != null)
+                {
+                    additionalEventsProp.arraySize = 0;
+                }
                 groupProp.FindPropertyRelative("stopEventSource").objectReferenceValue = null;
                 groupProp.FindPropertyRelative("stopEventName").stringValue = string.Empty;
                 groupProp.FindPropertyRelative("stopEventComponent").objectReferenceValue = null;
@@ -59,6 +65,7 @@ namespace Kaki
         {
             var groupProp = groupsProp.GetArrayElementAtIndex(index);
             var list = GetEntriesList(groupProp);
+            var additionalEventsList = GetAdditionalEventsList(groupProp);
             float line = EditorGUIUtility.singleLineHeight + 4f;
             int groupLines = GetGroupTriggerMode(groupProp) == AudioPlayer.AudioGroupTriggerMode.Single ? 3 : 6;
             if (GetGroupTriggerMode(groupProp) != AudioPlayer.AudioGroupTriggerMode.Single &&
@@ -66,7 +73,11 @@ namespace Kaki
             {
                 groupLines += 2;
             }
-            return line * groupLines + list.GetHeight() + 6f;
+
+            float additionalEventsHeight = GetGroupTriggerMode(groupProp) == AudioPlayer.AudioGroupTriggerMode.Single
+                ? 0f
+                : additionalEventsList.GetHeight() + 4f;
+            return line * groupLines + additionalEventsHeight + list.GetHeight() + 6f;
         }
 
         private void DrawGroupElement(Rect rect, int index, bool isActive, bool isFocused)
@@ -105,6 +116,12 @@ namespace Kaki
 
                 line.y += lineHeight + 4f;
                 DrawEventPopup(line, eventSourceProp, eventNameProp, eventComponentProp, "Group Event");
+
+                line.y += lineHeight + 4f;
+                var additionalEventsList = GetAdditionalEventsList(groupProp);
+                var additionalEventsRect = new Rect(rect.x, line.y, rect.width, additionalEventsList.GetHeight());
+                additionalEventsList.DoList(additionalEventsRect);
+                line.y += additionalEventsList.GetHeight();
 
                 if (RequiresStopEvent(GetPlayMode(groupPlayModeProp)))
                 {
@@ -176,6 +193,57 @@ namespace Kaki
             };
 
             entriesLists[key] = list;
+            return list;
+        }
+
+        private ReorderableList GetAdditionalEventsList(SerializedProperty groupProp)
+        {
+            var eventsProp = groupProp.FindPropertyRelative("additionalEvents");
+            var key = eventsProp.propertyPath;
+            if (additionalEventLists.TryGetValue(key, out var list))
+            {
+                return list;
+            }
+
+            list = new ReorderableList(serializedObject, eventsProp, true, true, true, true);
+            list.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "Additional Group Events");
+            list.elementHeightCallback = _ => (EditorGUIUtility.singleLineHeight + 4f) * 2 + 4f;
+            list.drawElementCallback = (rect, index, isActive, isFocused) =>
+            {
+                var element = eventsProp.GetArrayElementAtIndex(index);
+                var sourceProp = element.FindPropertyRelative("eventSource");
+                var nameProp = element.FindPropertyRelative("eventName");
+                var componentProp = element.FindPropertyRelative("eventComponent");
+
+                float lineHeight = EditorGUIUtility.singleLineHeight;
+                rect.y += 2f;
+
+                var line = new Rect(rect.x, rect.y, rect.width, lineHeight);
+                DrawEventSourceField(line, sourceProp, nameProp, componentProp, "Event Source");
+
+                line.y += lineHeight + 4f;
+                DrawEventPopup(line, sourceProp, nameProp, componentProp, "Event");
+            };
+            list.onAddCallback = _ =>
+            {
+                int newIndex = eventsProp.arraySize;
+                eventsProp.InsertArrayElementAtIndex(newIndex);
+                var element = eventsProp.GetArrayElementAtIndex(newIndex);
+                element.FindPropertyRelative("eventSource").objectReferenceValue = null;
+                element.FindPropertyRelative("eventName").stringValue = string.Empty;
+                element.FindPropertyRelative("eventComponent").objectReferenceValue = null;
+            };
+            list.onRemoveCallback = _ =>
+            {
+                if (list.index < 0 || list.index >= eventsProp.arraySize)
+                {
+                    return;
+                }
+
+                eventsProp.DeleteArrayElementAtIndex(list.index);
+            };
+
+            additionalEventLists[key] = list;
             return list;
         }
 

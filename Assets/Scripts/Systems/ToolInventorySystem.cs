@@ -7,6 +7,7 @@ namespace CIGAgamejam
     public sealed class ToolInventorySystem : MonoBehaviour
     {
         [SerializeField] private ToolStockDefinition[] _blackBossSupport = Array.Empty<ToolStockDefinition>();
+        [SerializeField] private ToolDayStockDefinition[] _scheduledSupport = Array.Empty<ToolDayStockDefinition>();
         [SerializeField] private bool _carryUnusedTools = false;
 
         private readonly Dictionary<ToolConfig, ToolStockState> _stocks = new();
@@ -61,6 +62,11 @@ namespace CIGAgamejam
 
         public void RebuildForNewDay()
         {
+            RebuildForDay(1);
+        }
+
+        public void RebuildForDay(int currentDay)
+        {
             if (!_carryUnusedTools || !_hasStarted)
                 _stocks.Clear();
             else
@@ -69,12 +75,21 @@ namespace CIGAgamejam
             for (int i = 0; i < _blackBossSupport.Length; i++)
                 AddTool(_blackBossSupport[i].Tool, _blackBossSupport[i].Count, ToolStockSource.BlackBossSupport);
 
+            for (int i = 0; i < _scheduledSupport.Length; i++)
+            {
+                ToolDayStockDefinition scheduledStock = _scheduledSupport[i];
+                if (scheduledStock.IncludesDay(currentDay))
+                    AddTool(scheduledStock.Tool, scheduledStock.Count, ToolStockSource.ScheduledSupport);
+                else
+                    EnsureToolListed(scheduledStock.Tool, ToolStockSource.ScheduledSupport);
+            }
+
             _hasStarted = true;
         }
 
         private void HandleDayStarted(OnDayStarted e)
         {
-            RebuildForNewDay();
+            RebuildForDay(e.CurrentDay);
         }
 
         private void MarkExistingToolsAsCarriedOver()
@@ -89,6 +104,15 @@ namespace CIGAgamejam
                 EventBus<OnToolInventoryChanged>.Publish(new OnToolInventoryChanged(key, stock.Count, stock.Source));
             }
         }
+
+        private void EnsureToolListed(ToolConfig tool, ToolStockSource source)
+        {
+            if (tool == null || _stocks.ContainsKey(tool))
+                return;
+
+            _stocks[tool] = new ToolStockState(0, source);
+            EventBus<OnToolInventoryChanged>.Publish(new OnToolInventoryChanged(tool, 0, source));
+        }
     }
 
     [Serializable]
@@ -96,6 +120,26 @@ namespace CIGAgamejam
     {
         public ToolConfig Tool;
         [Min(0)] public int Count;
+    }
+
+    [Serializable]
+    public struct ToolDayStockDefinition
+    {
+        public ToolConfig Tool;
+        [Min(0)] public int Count;
+        public int[] Days;
+
+        public bool IncludesDay(int day)
+        {
+            if (Tool == null || Count <= 0 || Days == null)
+                return false;
+
+            for (int i = 0; i < Days.Length; i++)
+                if (Days[i] == day)
+                    return true;
+
+            return false;
+        }
     }
 
     public struct ToolStockState

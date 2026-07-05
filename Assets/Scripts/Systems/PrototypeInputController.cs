@@ -139,8 +139,8 @@ namespace CIGAgamejam
             EventBus<OnToolSelected>.Publish(new OnToolSelected(tool));
             EventBus<OnPrototypeLogMessage>.Publish(
                 new OnPrototypeLogMessage(tool == null
-                    ? "\u53d6\u6d88\u9009\u62e9\u9053\u5177\u3002"
-                    : $"\u9009\u62e9 {tool.DisplayName}: \u70b9\u51fb\u5e97\u94fa\u683c\u5b50\u653e\u7f6e\u3002"));
+                    ? "Tool selection canceled."
+                    : $"Selected {tool.DisplayName}: click a shop tile to place it."));
         }
 
         public bool TryPlaceSelectedTool(GridPosition gridPosition)
@@ -150,7 +150,7 @@ namespace CIGAgamejam
             ToolConfig tool = _selectedTool;
             if (_inventorySystem.GetCount(tool) <= 0)
             {
-                EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage($"{tool.DisplayName} \u5e93\u5b58\u4e0d\u8db3\u3002"));
+                EventBus<OnPrototypeLogMessage>.Publish(new OnPrototypeLogMessage($"{tool.DisplayName} is out of stock."));
                 return false;
             }
 
@@ -158,7 +158,7 @@ namespace CIGAgamejam
                 return false;
 
             _inventorySystem.TryConsume(tool);
-            _nightTurnSystem?.RecordPlayerAction($"\u653e\u7f6e {tool.DisplayName}");
+            _nightTurnSystem?.RecordPlayerAction($"Placed {tool.DisplayName}");
             return true;
         }
 
