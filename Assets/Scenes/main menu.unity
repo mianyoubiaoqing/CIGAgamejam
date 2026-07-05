@@ -633,6 +633,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1051992063}
   - component: {fileID: 1051992064}
+  - component: {fileID: 1051992065}
+  - component: {fileID: 1051992066}
   m_Layer: 0
   m_Name: Menu Controller
   m_TagString: Untagged
@@ -667,9 +669,124 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1dfe280726067a40a9e0d13675ff0dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _startButton: {fileID: 0}
+  _startButton: {fileID: 968036310}
   _quitButton: {fileID: 0}
   _gameSceneName: Game
+--- !u!82 &1051992065
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1051992062}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 7a2b82aaf046cbe4e87042f1313c8d64, type: 3}
+  m_PlayOnAwake: 0
+  m_Volume: 0.8
+  m_Pitch: 1
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &1051992066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1051992062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c52110f3d2074d04e9e482b087475b42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _bgmClip: {fileID: 8300000, guid: 7a2b82aaf046cbe4e87042f1313c8d64, type: 3}
+  _volume: 0.8
+  _playOnStart: 1
+  _stopWhenSceneChanges: 1
+  _stopButtons:
+  - {fileID: 968036310}
+  _fadeOutSeconds: 0.35
 --- !u!1 &1063315854
 GameObject:
   m_ObjectHideFlags: 0
@@ -896,7 +1013,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.size
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[0].playMode
@@ -964,7 +1081,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].entries.Array.size
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[0].entries.Array.data[0].clip
@@ -1055,6 +1172,22 @@ PrefabInstance:
       value: "\u4E8C\u7EF4\u7801 2"
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[0].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: 300cacad1409e794a855fe108d6ca99a, type: 3}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[0].name
+      value: Velvet Keycap
+      objectReference: {fileID: 0}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: 7a2b82aaf046cbe4e87042f1313c8d64, type: 3}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].name
+      value: Midnight Corridor Plot
+      objectReference: {fileID: 0}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[0].entries.Array.data[0].volume
       value: 1
       objectReference: {fileID: 0}
@@ -1104,6 +1237,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].entries.Array.data[0].volume
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].volume
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
@@ -1159,6 +1296,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].playMode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[0].entries.Array.data[0].eventName
       value: ToolDisabledBySecurity
       objectReference: {fileID: 0}
@@ -1204,7 +1345,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].entries.Array.data[0].eventName
-      value: 
+      value: PhaseDay
+      objectReference: {fileID: 0}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].eventName
+      value: PhaseNight
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[0].entries.Array.data[0].eventSource
@@ -1253,10 +1398,18 @@ PrefabInstance:
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].entries.Array.data[0].eventSource
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 978933169}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].eventSource
+      value: 
+      objectReference: {fileID: 978933169}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].entries.Array.data[0].stopEventName
-      value: 
+      value: PhaseNight
+      objectReference: {fileID: 0}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].stopEventName
+      value: PhaseDay
       objectReference: {fileID: 0}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[0].entries.Array.data[0].eventComponent
@@ -1305,15 +1458,27 @@ PrefabInstance:
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].entries.Array.data[0].eventComponent
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 978933170}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].eventComponent
+      value: 
+      objectReference: {fileID: 978933170}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].entries.Array.data[0].stopEventSource
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 978933169}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].stopEventSource
+      value: 
+      objectReference: {fileID: 978933169}
     - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
       propertyPath: audioGroups.Array.data[3].entries.Array.data[0].stopEventComponent
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 978933170}
+    - target: {fileID: 5259874488868467578, guid: d2049fe61ebfe4815b5caf37cb55da92, type: 3}
+      propertyPath: audioGroups.Array.data[3].entries.Array.data[1].stopEventComponent
+      value: 
+      objectReference: {fileID: 978933170}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -16528,6 +16528,7 @@ GameObject:
   - component: {fileID: 990416146}
   - component: {fileID: 990416147}
   - component: {fileID: 990416145}
+  - component: {fileID: 990416149}
   m_Layer: 5
   m_Name: Game Flow
   m_TagString: Untagged
@@ -16575,6 +16576,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _campaignProgressSystem: {fileID: 990416146}
   _beginOnStart: 1
+--- !u!114 &990416149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 990416144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5771438cfa524df4939e48fd55de2602, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _nightBgmClip: {fileID: 8300000, guid: 7a2b82aaf046cbe4e87042f1313c8d64, type: 3}
+  _dayBgmClip: {fileID: 8300000, guid: 300cacad1409e794a855fe108d6ca99a, type: 3}
+  _phaseTransitionSfxClip: {fileID: 8300000, guid: 934b9dfea1f021c41aefd5af66f8bfe1, type: 3}
+  _bgmVolume: 0.8
+  _sfxVolume: 1
+  _restartDelayAfterTransition: 0
+  _stopOnResultAndGameOver: 1
 --- !u!4 &990416148
 Transform:
   m_ObjectHideFlags: 0
