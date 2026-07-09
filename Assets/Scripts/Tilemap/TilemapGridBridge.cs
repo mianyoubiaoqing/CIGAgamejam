@@ -22,6 +22,31 @@ namespace CIGAgamejam
                 && _groundTilemap.HasTile(new Vector3Int(position.X, position.Y, 0));
         }
 
+        public bool IsGroundOnlyTile(GridPosition position)
+        {
+            if (!HasGroundTile(position))
+                return false;
+
+            var cell = new Vector3Int(position.X, position.Y, 0);
+            for (int i = 0; i < _visualLayers.Length; i++)
+            {
+                Tilemap tilemap = _visualLayers[i].Tilemap;
+                if (tilemap == null || tilemap == _groundTilemap || !tilemap.HasTile(cell))
+                    continue;
+
+                TileBase tile = tilemap.GetTile(cell);
+                GridCellType cellType = ResolveCellType(tile, _visualLayers[i].CellType);
+                if (BlocksSecurityMovement(cellType))
+                    return false;
+            }
+
+            Tilemap bathroomDoorTilemap = FindBathroomDoorTilemap();
+            if (bathroomDoorTilemap != null && bathroomDoorTilemap.HasTile(cell))
+                return false;
+
+            return true;
+        }
+
         public bool TryReadCells(
             out Dictionary<GridPosition, GridCellType> cells,
             out BoundsInt bounds)
@@ -156,6 +181,15 @@ namespace CIGAgamejam
                 return GridCellType.Wall;
 
             return fallback;
+        }
+
+        private static bool BlocksSecurityMovement(GridCellType cellType)
+        {
+            return cellType == GridCellType.Wall
+                || cellType == GridCellType.Warehouse
+                || cellType == GridCellType.Restroom
+                || cellType == GridCellType.FortuneTree
+                || cellType == GridCellType.Blocked;
         }
 
         [Serializable]

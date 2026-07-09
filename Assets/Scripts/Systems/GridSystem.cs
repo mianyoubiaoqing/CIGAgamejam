@@ -116,6 +116,12 @@ namespace CIGAgamejam
             return _tilemapBridge != null && _tilemapBridge.HasGroundTile(position);
         }
 
+        public bool IsSecurityWalkable(GridPosition position)
+        {
+            if (!IsInBounds(position)) return false;
+            return _tilemapBridge != null && _tilemapBridge.IsGroundOnlyTile(position);
+        }
+
         public PlacementResult CanPlaceTool(ToolConfig tool, GridPosition origin)
         {
             if (_hasConfigError) return PlacementResult.OutOfBounds;

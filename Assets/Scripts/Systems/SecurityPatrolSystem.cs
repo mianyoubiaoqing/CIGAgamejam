@@ -285,7 +285,7 @@ namespace CIGAgamejam
 
         private bool IsPatrolWalkable(GridPosition position)
         {
-            if (!_gridSystem.IsRouteWalkable(position))
+            if (!_gridSystem.IsSecurityWalkable(position))
                 return false;
 
             if (!_gridSystem.TryGetCellType(position, out GridCellType cellType))
